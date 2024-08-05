@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+    <script type="importmap">
+      {
+         "imports": {
+             "three": "./three.js-master/build/three.module.js",
+             "three/addons/": "./three.js-master/examples/jsm/"
+         }
+      }
+   </script>
+  </head>
+  <body id="body">
+    <script type="module" src="/main.js"></script>
+    <div id="interface">
+      <div id="meuble">
+        <p>Meuble</p>
+        <input type="text" list="listMeubles" id="listMeublesPopup" class="popup">
+        <datalist id="listMeubles">
+        </datalist>
+        <input type="button" id="buttonNewMeuble" value="Nouveau">
+      <div id="meubleSliders"></div>
+    </div>
+      <div id="blocs">
+        <p>Blocs</p>
+        <input type="text" list="listBlocs" id="listBlocsPopup" class="popup">
+        <datalist id="listBlocs">
+        </datalist>
+        <div id="blocsSliders"></div>
+      </div>
+    </div>
+    <div id="canvas"></div>
+  </body>
+</html>

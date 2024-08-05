@@ -129,8 +129,8 @@ controls.maxDistance = 1000;
 controls.maxPolarAngle = Math.PI / 2;
 
 //raycast sur les objets 3d lors d'un changement de souris ou de camera
-controls.addEventListener( 'change', checkRaycast );
-canvas.addEventListener( 'mousemove', checkRaycast );
+
+
 
 function getfocaleV(focale,width,height) {
   if ((height/width)>1) return focale
@@ -239,6 +239,7 @@ function checkRaycast() {
       IntersectedBloc.visible = true;
       raycastedBloc = intersects[0].object.numero;
     }
+    //else IntersectedBloc.visible = true;
   }
   else {
     if (IntersectedBloc) IntersectedBloc.visible = false;
@@ -246,15 +247,16 @@ function checkRaycast() {
     raycastedBloc = -1;
   }
   //check intersect with meubles
+  //raycaster.setFromCamera(pointer, camera, 0, 1000);
   const intersectsMeuble = raycaster.intersectObjects(selectableMeuble, true);
   if (intersectsMeuble.length > 0  && intersectsMeuble[0].object.numero!=indiceCurrentMeuble) {
-    console.log("raycasted");
+    //console.log("raycasted");
     if (IntersectedMeuble != intersectsMeuble[0].object) {
       if (IntersectedMeuble) IntersectedMeuble.visible = false;
       IntersectedMeuble = intersectsMeuble[0].object;
       IntersectedMeuble.visible = true;
       raycastedMeuble = intersectsMeuble[0].object.numero;
-      console.log("raycasted meuble = ",raycastedMeuble);
+      //console.log("raycasted meuble = ",raycastedMeuble);
     }
   }
   else {
@@ -262,6 +264,25 @@ function checkRaycast() {
     IntersectedMeuble = null;
     raycastedMeuble = -1;
   }
+}
+
+function listenToRaycast() {
+  controls.addEventListener('change', checkRaycast);
+  canvas.addEventListener('mouseout', clearRaycast);
+}
+
+function initializeRaycast() {
+  canvas.addEventListener('mouseenter', listenToRaycast);
+  canvas.addEventListener('mousemove', checkRaycast);
+}
+
+function clearRaycast() {
+  //console.log("out");
+  controls.removeEventListener('change',checkRaycast);
+  //console.log("visible=",IntersectedBloc.visible);
+  if (IntersectedBloc!=null) {IntersectedBloc.visible = false; IntersectedBloc = null;}
+  //console.log("visible=",IntersectedBloc.visible);
+  if (IntersectedMeuble!=null) {IntersectedMeuble.visible = false; IntersectedMeuble = null;}
 }
 
 function getBoundingBoxCenter () {
@@ -311,7 +332,7 @@ function animate() {
   let distL = ((boundingBoxWidth/2)/Math.tan(0.0174533*(focale/2)));
   let distH = ((boundingBoxHeight/2)/Math.tan((focaleV/2)));
   let dist = Math.max(distL,distH);
-  console.log("dist=",distL,distH,dist);
+  //console.log("dist=",distL,distH,dist);
   camera.translateZ((dist-(controls.getDistance(cameraTarget)))/100);
   //((-controls.getDistance(meubleRoot[indiceCurrentMeuble].cube)+Math.max(dx,dy))/100);
   //controls.target = meubleRoot[indiceCurrentMeuble].position;
@@ -332,50 +353,28 @@ function placeMeuble (indiceMeuble) {
 }
 
 function updateMeuble (indiceMeuble) {
-  //meubleRoot[indiceMeuble].position.set(0,0,0);
-  console.log("meuble ",indiceMeuble,meubleRoot[indiceMeuble]);
   selectableBloc=[];
-  console.log("qté avant=",meubleRoot[indiceMeuble].children[0].children.length);
-  /*for (var i=0; i<meubleRoot[indiceMeuble].children[0].children.length+1; i++) {
-    let temp=meubleRoot[indiceMeuble].children[0].children[0];
-    meubleRoot[indiceMeuble].children[0].remove(temp);
-    console.log("temp=",temp);
-    scene.remove(temp);
-  }*/
-    meubleRoot[indiceMeuble].children[0].children=[];
-  console.log("qté après=",meubleRoot[indiceMeuble].children[0].children.length);
+  meubleRoot[indiceMeuble].children[0].children=[];
   for (var i=0; i<meubles[indiceMeuble].nbBlocs; i++) {
     updateBloc(indiceMeuble,i);
     meubleRoot[indiceMeuble].children[0].add(blocRoot[i]); //children 0 = blocs
-    //console.log("bloc added");
   }
-  //scene.add(meubleRoot[indiceMeuble]);
-  //updateCube(indiceCurrentMeuble);
-
-  //console.log("meubleRoot[indiceMeuble].cube=",(typeof meubleRoot[indiceMeuble].children[meubles[indiceMeuble].numBloc+1]));
 if (meubleRoot[indiceMeuble].children[1])
     {
       meubleRoot[indiceMeuble].remove(cube);
       delete selectableMeuble[indiceMeuble];
-      //console.log("selectableMeuble=",selectableMeuble);
     }
-  //scene.remove(cube);
-  //if (cubeVisible) {
     geometry = new THREE.BoxGeometry(meubles[indiceMeuble].largeur + epsilon, meubles[indiceMeuble].hauteur + epsilon, meubles[indiceMeuble].profondeur + epsilon);
     cube = new THREE.Mesh(geometry, materialSelectionMeuble);
     cube.numero=indiceMeuble;
     cube.name="cube"+indiceMeuble;
     console.log("cube.numero = ",cube.numero);
-    //scene.add(cube);
     cube.visible=false;
     meubleRoot[indiceMeuble].add(cube);
-  //}
 
   meubleRoot[indiceMeuble].add(cube);
   selectableMeuble[indiceMeuble]=cube;
   placeMeuble(indiceMeuble);
-  //console.log("All meuble apres update ", meubleRoot);
-  //console.log("All meuble class apres update ", meubles);
 }
 
 function changeBlocsQuantity (indiceMeuble) {
@@ -411,6 +410,7 @@ function updateScene () {
 
 //Interface
 
+var body;
 var interfaceDiv;
 var meubleDiv;
 var divPortes;
@@ -449,6 +449,7 @@ function buildEnvironnement () {
 function initializeScene() {
     buildEnvironnement ();
     initializeInterface();
+    initializeRaycast();
     initializePoignees();
     //indiceCurrentMeuble = 0;
     //initializeMeuble(indiceCurrentMeuble);
@@ -463,6 +464,7 @@ function initializeScene() {
 }
 
 function initializeInterface() {
+  body=document.getElementById("body");
   interfaceDiv = document.getElementById("interface");
   meubleDiv = document.getElementById("meuble");
   buttonNewMeuble = document.getElementById("buttonNewMeuble");
@@ -725,40 +727,35 @@ function rebuildInterfaceMeuble() {
 }
 
 function changeCurrentMeuble(num) {
-
-}
-
-function changeCurrentMeubleFromClick(num) {
   let indicePreviousMeuble = indiceCurrentMeuble;
   indiceCurrentMeuble = num;
   if (meubleRoot[indicePreviousMeuble].cube) meubleRoot[indicePreviousMeuble].cube.visible=false;
   updateInterfaceMeuble();
-  indiceCurrentBloc=0;
+  //listMeublesName.classList.add("animationMeublesName");
   updateInterfaceBlocs(indiceCurrentMeuble);
-  /*for (var j=0; j<meubleRoot[indiceCurrentMeuble].children.length-1; j++) {
-    blocRoot[j]=meubleRoot[indiceCurrentMeuble].children[j];
-    console.log("link child ",j);
-  }*/
-  
   updateMeuble(indiceCurrentMeuble);
-  //selectableMeuble.push(meubles[indicePreviousMeuble].cube);
-  //console.log("selectableMeuble=",selectableMeuble);
+}
+
+function changeCurrentMeubleFromClick(num) {
+  changeCurrentMeuble(num);
+  listMeublesName.classList.add("animationMeublesName");
+  checkRaycast();
+  checkRaycast();
 }
 
 function changeCurrentMeubleFromPopup(event) {
   console.log(event.target.value);
-  //console.log("All meuble avant switch ", meubleRoot);
   let indicePreviousMeuble = indiceCurrentMeuble;
   for (var i=0; i<meubles.length; i++) {
     if (meubles[i].name==event.target.value) {
-      changeCurrentMeubleFromClick(i);
+      changeCurrentMeuble(i);
+      //listMeublesName.classList.add("animationMeublesName");
       }
-      //updateMeuble(indiceCurrentMeuble);
-      //selectableMeuble.push(meubles[indicePreviousMeuble].cube);
-      //console.log("selectableMeuble=",selectableMeuble);
+      checkRaycast();
+      console.log("toto");
+      //listMeublesName.classList.add("animationMeublesName");
     }
   }
-  //console.log("All meuble après switch ", meubleRoot);
 
 function createInterfaceMeuble(indiceMeuble) {
   //console.log("indice create",indiceMeuble);
@@ -814,6 +811,7 @@ function updateInterfaceLargeur(indiceMeuble) {
 function changeCurrentBlocFromClick(num) {
   indiceCurrentBloc = num;
   updateInterfaceBlocs(indiceCurrentMeuble);
+  listBlocsName.classList.add("animationBlocsName");
 }
 
 function onChangeBlocsQuantity(indiceMeuble) {
@@ -829,6 +827,7 @@ function rebuildInterfaceBlocs(indiceMeuble) {
   listBlocsName = document.createElement("input");
   listBlocsName.type=("text");
   listBlocsName.id=("listBlocsName");
+  //listBlocsName.classList.add("animationBlocsName");
   listBlocsName.value="Bloc "+(indiceCurrentBloc+1);
   blocsDiv.append(listBlocsName);
   listBlocsPopup = document.createElement("input");
@@ -848,7 +847,7 @@ function rebuildInterfaceBlocs(indiceMeuble) {
   blocsSliders = document.createElement("div");
   blocsSliders.id="blocsSliders";
   blocsDiv.append(blocsSliders);
-  listBlocsPopup.addEventListener("change",function changeCurrentBlocFromPopup() { indiceCurrentBloc=listBlocsPopup.value.slice(-1)-1; updateInterfaceBlocs(indiceMeuble)},false);
+  listBlocsPopup.addEventListener("change",function changeCurrentBlocFromPopup() { indiceCurrentBloc=listBlocsPopup.value.slice(-1)-1; updateInterfaceBlocs(indiceMeuble);},false);
 }
 
 function updateInterfaceBlocs(indiceMeuble) {
