@@ -61,7 +61,7 @@ var indiceCurrentMeuble = 0;
 const epaisseur = 1;
 const maxBlocs = 9;
 const maxEtageres = 20;
-const cubeVisible = false;
+const cubeVisible = true;
 const epsilon = 5;
 const taillePoignees = 1.5;
 const focale=60;
@@ -79,12 +79,15 @@ var blocRoot=[];    //Racine 3D de chaque bloc
 var etagere=[];
 var meubles=new Array;
 var boite=[];       //pour selection des blocs dans la vue 3D
-var selectable=[];  //liste des boites selectionnables par raycast
+var selectableBloc=[];  //liste des boites selectionnables par raycast
+var selectableMeuble=[];
 var raycastedBloc=-1;
+var raycastedMeuble=-1;
 
 //raycaster
 let raycaster;
-let INTERSECTED;
+let IntersectedBloc;
+let IntersectedMeuble;
 const pointer = new THREE.Vector2();
 pointer.x=-1;
 pointer.y=-1;
@@ -162,6 +165,7 @@ function onPointerMove( event ) {
 function onCanvasClick () {
   console.log("click");
   if (raycastedBloc>-1) changeCurrentBlocFromClick(raycastedBloc);
+  if (raycastedMeuble>-1) changeCurrentMeubleFromClick(raycastedMeuble);
 }
 
 //Materials
@@ -186,7 +190,14 @@ const materialPoigneesParams = {
   opacity: 1
 };
 
-const materialSelectionParams = {
+const materialSelectionBlocParams = {
+  color: '#00ffff',
+  refractionRatio: 0.98,
+  transparent: true,
+  opacity: 0.5
+};
+
+const materialSelectionMeubleParams = {
   color: '#00ff00',
   refractionRatio: 0.98,
   transparent: true,
@@ -196,7 +207,8 @@ const materialSelectionParams = {
 const material = new THREE.MeshPhongMaterial( materialParams);
 const materialTiroirs = new THREE.MeshPhongMaterial( materialTiroirsParams);
 const materialPoignees = new THREE.MeshPhongMaterial( materialPoigneesParams);
-const materialSelection = new THREE.MeshPhongMaterial( materialSelectionParams);
+const materialSelectionBloc = new THREE.MeshPhongMaterial( materialSelectionBlocParams);
+const materialSelectionMeuble = new THREE.MeshPhongMaterial( materialSelectionMeubleParams);
 const wireframeMaterial = new THREE.MeshBasicMaterial( 0x00ff00 );
 wireframeMaterial.wireframe = true;
 
@@ -218,19 +230,37 @@ scene.add( ambientLight );
 
 function checkRaycast() {
   raycaster.setFromCamera(pointer, camera, 0, 1000);
-  const intersects = raycaster.intersectObjects(selectable, true);
+  //check intersect with blocs
+  const intersects = raycaster.intersectObjects(selectableBloc, true);
   if (intersects.length > 0) {
-    if (INTERSECTED != intersects[0].object) {
-      if (INTERSECTED) INTERSECTED.visible = false;
-      INTERSECTED = intersects[0].object;
-      INTERSECTED.visible = true;
+    if (IntersectedBloc != intersects[0].object) {
+      if (IntersectedBloc) IntersectedBloc.visible = false;
+      IntersectedBloc = intersects[0].object;
+      IntersectedBloc.visible = true;
       raycastedBloc = intersects[0].object.numero;
     }
   }
   else {
-    if (INTERSECTED) INTERSECTED.visible = false;
-    INTERSECTED = null;
+    if (IntersectedBloc) IntersectedBloc.visible = false;
+    IntersectedBloc = null;
     raycastedBloc = -1;
+  }
+  //check intersect with meubles
+  const intersectsMeuble = raycaster.intersectObjects(selectableMeuble, true);
+  if (intersectsMeuble.length > 0  && intersectsMeuble[0].object.numero!=indiceCurrentMeuble) {
+    console.log("raycasted");
+    if (IntersectedMeuble != intersectsMeuble[0].object) {
+      if (IntersectedMeuble) IntersectedMeuble.visible = false;
+      IntersectedMeuble = intersectsMeuble[0].object;
+      IntersectedMeuble.visible = true;
+      raycastedMeuble = intersectsMeuble[0].object.numero;
+      console.log("raycasted meuble = ",raycastedMeuble);
+    }
+  }
+  else {
+    if (IntersectedMeuble) IntersectedMeuble.visible = false;
+    IntersectedMeuble = null;
+    raycastedMeuble = -1;
   }
 }
 
@@ -290,10 +320,10 @@ function animate() {
 }
 
 function updateCube (indiceMeuble) {
-  meubleRoot[indiceMeuble].remove(cube);
+  if (cube) meubleRoot[indiceMeuble].remove(cube);
   scene.remove(cube);
   if (cubeVisible) {geometry = new THREE.BoxGeometry( meubles[indiceMeuble].largeur, meubles[indiceMeuble].hauteur, meubles[indiceMeuble].profondeur );
-  cube = new THREE.Mesh( geometry, wireframeMaterial );
+  cube = new THREE.Mesh( geometry, materialSelectionMeuble );
   scene.add( cube );}
 }
 
@@ -305,14 +335,35 @@ function updateMeuble (indiceMeuble) {
   //console.log("indiceMeuble=",indiceMeuble);
   //console.log("update meuble");
   meubleRoot[indiceMeuble].position.set(0,0,0);
-  selectable=[];
+  selectableBloc=[];
   for (var i=0; i<meubles[indiceMeuble].nbBlocs; i++) {
     updateBloc(indiceMeuble,i);
-    meubleRoot[indiceMeuble].add(blocRoot[i]);
+    meubleRoot[indiceMeuble].children[0].add(blocRoot[i]); //children 0 = blocs
     //console.log("bloc added");
   }
   //scene.add(meubleRoot[indiceMeuble]);
+  //updateCube(indiceCurrentMeuble);
+
+  console.log("meubleRoot[indiceMeuble].cube=",(typeof meubleRoot[indiceMeuble].children[meubles[indiceMeuble].numBloc+1]));
+if ((typeof meubleRoot[indiceMeuble].children[meubles[indiceMeuble].numBloc+1]) != "undefined" ) 
+    {
+      meubleRoot[indiceMeuble].remove(cube);
+      console.log("selectableMeuble=",selectableMeuble);
+    }
+  //scene.remove(cube);
+  if (cubeVisible) {
+    geometry = new THREE.BoxGeometry(meubles[indiceMeuble].largeur + epsilon, meubles[indiceMeuble].hauteur + epsilon, meubles[indiceMeuble].profondeur + epsilon);
+    cube = new THREE.Mesh(geometry, materialSelectionMeuble);
+    cube.numero=indiceMeuble;
+    cube.name="cube"+indiceMeuble;
+    console.log("cube.numero = ",cube.numero);
+    //scene.add(cube);
+    cube.visible=false;
+    meubleRoot[indiceMeuble].add(cube);
+  }
+
   if (cube) meubleRoot[indiceMeuble].add(cube);
+  selectableMeuble.push(cube);
   placeMeuble(indiceMeuble);
   //console.log("All meuble apres update ", meubleRoot);
   //console.log("All meuble class apres update ", meubles);
@@ -343,7 +394,7 @@ function frameCamera () {
 function updateScene () {
   //check blocs validity
   //meubles[indiceCurrentMeuble].calculLargeur();
-  //updateCube(meubles[indiceCurrentMeuble]);
+  //updateCube(indiceCurrentMeuble);
   //console.log(meubles[indiceCurrentMeuble]);
   updateMeuble(indiceCurrentMeuble);
   //updateCamera(Meubles[indiceCurrentMeuble]);
@@ -430,6 +481,9 @@ function createNewMeuble() {
   meubleRoot[indiceCurrentMeuble] = new THREE.Object3D();
   meubleRoot[indiceCurrentMeuble].name = "meuble "+indiceCurrentMeuble;
   meubleRoot[indiceCurrentMeuble].position.set(0,0,0);
+  let blocs = new THREE.Object3D();
+  blocs.name="blocs";
+  meubleRoot[indiceCurrentMeuble].add(blocs);
   if (indiceCurrentMeuble>0) {
     let positionY=meubles[indiceCurrentMeuble-1].y+meubles[indiceCurrentMeuble-1].hauteur;
     meubles[indiceCurrentMeuble].y=positionY;
@@ -481,10 +535,10 @@ function initializeBloc(indiceMeuble, numBloc) {
   blocRoot[numBloc].add(plancheBas,plancheHaut,plancheDroite,plancheGauche);
   //boîte de sélection
   geometry = new THREE.BoxGeometry( meuble.bloc[numBloc].largeur+epsilon, meuble.hauteur+epsilon, meuble.profondeur+epsilon );
-  boite[numBloc] = new THREE.Mesh( geometry, materialSelection );
+  boite[numBloc] = new THREE.Mesh( geometry, materialSelectionBloc );
   boite[numBloc].name = "BoiteSelectionBloc"+numBloc;
   blocRoot[numBloc].add(boite[numBloc]);
-  selectable.push(boite[numBloc]);
+  selectableBloc.push(boite[numBloc]);
   boite[numBloc].visible=false;
   boite[numBloc].numero=numBloc;
   //console.log("num boite =",numBloc);
@@ -659,9 +713,25 @@ function rebuildInterfaceMeuble() {
   meubleDiv.append(meubleSliders);
 }
 
+function changeCurrentMeubleFromClick(num) {
+  let indicePreviousMeuble = indiceCurrentMeuble;
+  indiceCurrentMeuble = num;
+  if (meubleRoot[indicePreviousMeuble].cube) meubleRoot[indicePreviousMeuble].cube.visible=false;
+  updateInterfaceMeuble();
+  updateInterfaceBlocs(indiceCurrentMeuble);
+  for (var j=0; j<meubleRoot[indiceCurrentMeuble].children.length-1; j++) {
+    blocRoot[j]=meubleRoot[indiceCurrentMeuble].children[j];
+    console.log("link child ",j);
+  }
+  updateMeuble(indiceCurrentMeuble);
+  selectableMeuble.push(meubles[indicePreviousMeuble].cube);
+  console.log("selectableMeuble=",selectableMeuble);
+}
+
 function changeCurrentMeubleFromPopup(event) {
   console.log(event.target.value);
   console.log("All meuble avant switch ", meubleRoot);
+  let indicePreviousMeuble = indiceCurrentMeuble;
   for (var i=0; i<meubles.length; i++) {
     if (meubles[i].name==event.target.value) {
       indiceCurrentMeuble = i;
@@ -673,6 +743,8 @@ function changeCurrentMeubleFromPopup(event) {
         console.log("link child ",j);
       }
       updateMeuble(indiceCurrentMeuble);
+      selectableMeuble.push(meubles[indicePreviousMeuble].cube);
+      console.log("selectableMeuble=",selectableMeuble);
     }
   }
   console.log("All meuble après switch ", meubleRoot);
