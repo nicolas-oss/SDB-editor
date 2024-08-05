@@ -332,10 +332,18 @@ function placeMeuble (indiceMeuble) {
 }
 
 function updateMeuble (indiceMeuble) {
-  //console.log("indiceMeuble=",indiceMeuble);
-  //console.log("update meuble");
-  meubleRoot[indiceMeuble].position.set(0,0,0);
+  //meubleRoot[indiceMeuble].position.set(0,0,0);
+  console.log("meuble ",indiceMeuble,meubleRoot[indiceMeuble]);
   selectableBloc=[];
+  console.log("qté avant=",meubleRoot[indiceMeuble].children[0].children.length);
+  /*for (var i=0; i<meubleRoot[indiceMeuble].children[0].children.length+1; i++) {
+    let temp=meubleRoot[indiceMeuble].children[0].children[0];
+    meubleRoot[indiceMeuble].children[0].remove(temp);
+    console.log("temp=",temp);
+    scene.remove(temp);
+  }*/
+    meubleRoot[indiceMeuble].children[0].children=[];
+  console.log("qté après=",meubleRoot[indiceMeuble].children[0].children.length);
   for (var i=0; i<meubles[indiceMeuble].nbBlocs; i++) {
     updateBloc(indiceMeuble,i);
     meubleRoot[indiceMeuble].children[0].add(blocRoot[i]); //children 0 = blocs
@@ -344,14 +352,15 @@ function updateMeuble (indiceMeuble) {
   //scene.add(meubleRoot[indiceMeuble]);
   //updateCube(indiceCurrentMeuble);
 
-  console.log("meubleRoot[indiceMeuble].cube=",(typeof meubleRoot[indiceMeuble].children[meubles[indiceMeuble].numBloc+1]));
-if ((typeof meubleRoot[indiceMeuble].children[meubles[indiceMeuble].numBloc+1]) != "undefined" ) 
+  //console.log("meubleRoot[indiceMeuble].cube=",(typeof meubleRoot[indiceMeuble].children[meubles[indiceMeuble].numBloc+1]));
+if (meubleRoot[indiceMeuble].children[1])
     {
       meubleRoot[indiceMeuble].remove(cube);
-      console.log("selectableMeuble=",selectableMeuble);
+      delete selectableMeuble[indiceMeuble];
+      //console.log("selectableMeuble=",selectableMeuble);
     }
   //scene.remove(cube);
-  if (cubeVisible) {
+  //if (cubeVisible) {
     geometry = new THREE.BoxGeometry(meubles[indiceMeuble].largeur + epsilon, meubles[indiceMeuble].hauteur + epsilon, meubles[indiceMeuble].profondeur + epsilon);
     cube = new THREE.Mesh(geometry, materialSelectionMeuble);
     cube.numero=indiceMeuble;
@@ -360,10 +369,10 @@ if ((typeof meubleRoot[indiceMeuble].children[meubles[indiceMeuble].numBloc+1]) 
     //scene.add(cube);
     cube.visible=false;
     meubleRoot[indiceMeuble].add(cube);
-  }
+  //}
 
-  if (cube) meubleRoot[indiceMeuble].add(cube);
-  selectableMeuble.push(cube);
+  meubleRoot[indiceMeuble].add(cube);
+  selectableMeuble[indiceMeuble]=cube;
   placeMeuble(indiceMeuble);
   //console.log("All meuble apres update ", meubleRoot);
   //console.log("All meuble class apres update ", meubles);
@@ -489,6 +498,8 @@ function createNewMeuble() {
     meubles[indiceCurrentMeuble].y=positionY;
   }
   updateMeuble(indiceCurrentMeuble);
+  //updateInterfaceMeuble();
+  //updateInterfaceBlocs(indiceCurrentMeuble);
   scene.add(meubleRoot[indiceCurrentMeuble]);
   frameCamera();
   //console.log("All meuble apres new meuble ", meubleRoot);
@@ -505,7 +516,7 @@ function initializeMeuble(indiceMeuble) {
 
 function destroyBloc(indiceMeuble, numBloc) {
   //console.log("destroy bloc ",numBloc," meuble ",indiceMeuble);
-    meubleRoot[indiceMeuble].remove(blocRoot[numBloc]);
+    meubleRoot[indiceMeuble].children[0].remove(blocRoot[numBloc]);
     blocRoot[numBloc]=undefined;
     scene.remove( blocRoot[numBloc] );
 }
@@ -637,7 +648,7 @@ function initializeBloc(indiceMeuble, numBloc) {
 }
 
 function updateBloc (indiceMeuble, numBloc) {
-  destroyBloc(indiceMeuble, numBloc);
+  //destroyBloc(indiceMeuble, numBloc);
   initializeBloc(indiceMeuble, numBloc);
 }
 
@@ -713,48 +724,47 @@ function rebuildInterfaceMeuble() {
   meubleDiv.append(meubleSliders);
 }
 
+function changeCurrentMeuble(num) {
+
+}
+
 function changeCurrentMeubleFromClick(num) {
   let indicePreviousMeuble = indiceCurrentMeuble;
   indiceCurrentMeuble = num;
   if (meubleRoot[indicePreviousMeuble].cube) meubleRoot[indicePreviousMeuble].cube.visible=false;
   updateInterfaceMeuble();
+  indiceCurrentBloc=0;
   updateInterfaceBlocs(indiceCurrentMeuble);
-  for (var j=0; j<meubleRoot[indiceCurrentMeuble].children.length-1; j++) {
+  /*for (var j=0; j<meubleRoot[indiceCurrentMeuble].children.length-1; j++) {
     blocRoot[j]=meubleRoot[indiceCurrentMeuble].children[j];
     console.log("link child ",j);
-  }
+  }*/
+  
   updateMeuble(indiceCurrentMeuble);
-  selectableMeuble.push(meubles[indicePreviousMeuble].cube);
-  console.log("selectableMeuble=",selectableMeuble);
+  //selectableMeuble.push(meubles[indicePreviousMeuble].cube);
+  //console.log("selectableMeuble=",selectableMeuble);
 }
 
 function changeCurrentMeubleFromPopup(event) {
   console.log(event.target.value);
-  console.log("All meuble avant switch ", meubleRoot);
+  //console.log("All meuble avant switch ", meubleRoot);
   let indicePreviousMeuble = indiceCurrentMeuble;
   for (var i=0; i<meubles.length; i++) {
     if (meubles[i].name==event.target.value) {
-      indiceCurrentMeuble = i;
-      updateInterfaceMeuble();
-      updateInterfaceBlocs(indiceCurrentMeuble);
-      console.log("indiceCurrentMeuble=",indiceCurrentMeuble);
-      for (var j=0; j<meubleRoot[indiceCurrentMeuble].children.length; j++) {
-        blocRoot[j]=meubleRoot[indiceCurrentMeuble].children[j];
-        console.log("link child ",j);
+      changeCurrentMeubleFromClick(i);
       }
-      updateMeuble(indiceCurrentMeuble);
-      selectableMeuble.push(meubles[indicePreviousMeuble].cube);
-      console.log("selectableMeuble=",selectableMeuble);
+      //updateMeuble(indiceCurrentMeuble);
+      //selectableMeuble.push(meubles[indicePreviousMeuble].cube);
+      //console.log("selectableMeuble=",selectableMeuble);
     }
   }
-  console.log("All meuble après switch ", meubleRoot);
-}
+  //console.log("All meuble après switch ", meubleRoot);
 
 function createInterfaceMeuble(indiceMeuble) {
   //console.log("indice create",indiceMeuble);
   let meuble = meubles[indiceMeuble];
   listMeublesPopup.addEventListener("change",function eventListMeublesPopup(event) {changeCurrentMeubleFromPopup(event)},false);
-  buttonNewMeuble.addEventListener("click",function eventButtonNewMeuble() {createNewMeuble(); updateInterfaceMeuble()},false);
+  buttonNewMeuble.addEventListener("click",function eventButtonNewMeuble() {createNewMeuble(); updateInterfaceMeuble(); indiceCurrentBloc=0; updateInterfaceBlocs(indiceCurrentMeuble)},false);
 
   listMeublesName = document.createElement("input");
   listMeublesName.type=("text");
