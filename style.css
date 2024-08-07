@@ -152,7 +152,7 @@ button:focus-visible {
 
 #meuble, #blocs, #aspect {
   padding: 12px;
-  padding-top: 0px;
+  padding-top: 12px;
 }
 
 #blocs {
@@ -177,4 +177,8 @@ button:focus-visible {
 
 .buttonOn {
   background-color : red;
+}
+
+select option[value="value"] {
+  display: none;
 }
