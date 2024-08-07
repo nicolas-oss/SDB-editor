@@ -28,7 +28,7 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  /*overflow: hidden;*/
+  overflow: hidden;
 }
 
 h1 {
@@ -135,19 +135,22 @@ button:focus-visible {
   to {background-color: rgb(255, 255, 255);}
 }
 
-#interface {
+#interface, #aspect {
   align-self: flex-start;
   min-width: 220px;
   height: 100vh;
-  background-color: #d1ffd1;
   /*margin : 12px;*/
+}
+
+#interface {
+  background-color: #d1ffd1;
 }
 
 #enteteMeuble {
   align-self: flex-start;
 }
 
-#meuble, #blocs {
+#meuble, #blocs, #aspect {
   padding: 12px;
   padding-top: 0px;
 }
