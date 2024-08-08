@@ -2,9 +2,11 @@ import './style.css'
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import * as CameraUtils from 'three/addons/utils/CameraUtils.js';
 import { ScreenNode } from 'three/src/nodes/display/BlendModeNode.js';
 import { mx_bilerp_0 } from 'three/src/nodes/materialx/lib/mx_noise.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
 class blocClass {
   constructor () {
@@ -318,7 +320,7 @@ function animate() {
   let distL = ((boundingBoxWidth/2)/Math.tan(0.0174533*(focale/2)));
   let distH = ((boundingBoxHeight/2)/Math.tan((focaleV/2)));
   let dist = Math.max(distL,distH);
-  camera.translateZ((dist-(controls.getDistance(cameraTarget)))/100);
+  //camera.translateZ((dist-(controls.getDistance(cameraTarget)))/100);
   camera.updateMatrixWorld();
   renderer.render( scene, camera );
   
@@ -398,6 +400,7 @@ function updateCamera () {
 }
 
 function frameCamera () {
+  //return;
   boundingBoxCenter = getBoundingBoxCenter();
   controls.target = boundingBoxCenter;
   cameraTarget.position.set(boundingBoxCenter);
@@ -492,26 +495,82 @@ const poigneesFileList = new Map;
 poigneesFileList.set("Poignee type 1","src/furniture_handle_1.glb");
 poigneesFileList.set("Poignee type 2","src/furniture_handle_2.glb");
 poigneesFileList.set("Poignee type 3","src/furniture_handle_3.glb");
+poigneesFileList.set("Poignee type 4","static/poignees.obj");
+
+var poigneeRoot;
+var poigneeTemp;
+var poigneeGroup=new THREE.Group();
 
 function changePoignee(name) {
   console.log(name);
-  console.log(poigneesFileList.get(name));
+  //console.log(poigneesFileList.get(name));
+
   const loader = new GLTFLoader();
-  loader.load(poigneesFileList.get(name), function (gltf) {
+  poigneeGroup=new THREE.Group(); // revoir init
+  //loader.load(poigneesFileList.get(name), function (gltf) {
+    loader.load("src/scene (8).gltf", function (gltf) {
     //scene.add(gltf.scene);
     //gltf.asset;
-    console.log(gltf.scene.children[0].children[0]);
-    console.log("poignee=",poignee);
-    poignee = gltf.scene.children[0].children[0];
-    //initializelistePoignee();
-    let listPoignees = document.getElementById("listPoignees");
-    console.log(listPoignees);
+    //console.log("gltf.scene.getObjectByName( 'poignee' )=",gltf.scene.getObjectByName( 'poignee' ));
+    //console.log(gltf.scene.children[0].children[0]);
+
+    //gltf.scene.getObjectByName( 'poignee' );
+      let poigneeRoot = gltf.scene.getObjectByName( 'poignee' );
+      scene.add(poigneeRoot);
+      console.log("poigneRoot = ",poigneeRoot);
+    //if (gltf.scene.children[0].children.length > 0) {
+      for (var i = poigneeRoot.children.length; i > 0; i--) {
+        poigneeGroup.add(poigneeRoot.children[i - 1]);
+      }
+    //}
+    //else {poigneeGroup.add(gltf.scene.children[0]); console.log("added")}
+    //poigneeGroup.add(gltf.scene.getObjectByName( 'poignee' ));
+  
+    console.log ("poigneeGroup=",poigneeGroup);
+
+    //let listPoignees = document.getElementById("listPoignees");
+    scene.add(poigneeGroup);
+    poigneeGroup.scale.set( 100, 100, 100 );
     updateMeuble(indiceCurrentMeuble);
     listPoigneesName.value=name;
     refreshListPoigneesPopup();
-    //listPoigneesPopup.reset();
-  })
+  });
+
+ // const loader = new THREE.ObjectLoader();
+
+/*loader.load(
+	// resource URL
+	"src/poignee.json",
+
+	// onLoad callback
+	// Here the loaded data is assumed to be an object
+	function ( obj ) {
+		// Add the loaded object to the scene
+		scene.add( obj );
+    poigneeGroup=new THREE.Group(); // revoir init
+
+    poigneeGroup.add(obj);
+    scene.add(poigneeGroup);
+    console.log ("poigneeGroup=",poigneeGroup);
+
+    let listPoignees = document.getElementById("listPoignees");
+    updateMeuble(indiceCurrentMeuble);
+    listPoigneesName.value=name;
+    refreshListPoigneesPopup();
+	},
+
+	// onProgress callback
+	function ( xhr ) {
+		console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+	},
+
+	// onError callback
+	function ( err ) {
+		console.error( 'An error happened' );
+	}
+);*/
 }
+
 
 function refreshListPoigneesPopup() {
   listPoigneesPopup.remove();
@@ -538,6 +597,7 @@ function initializeListePoignees() {
 function initializePoignees() {
   geometry = new THREE.SphereGeometry(taillePoignees,12,8);
   poignee = new THREE.Mesh( geometry, materialPoignees );
+  poigneeGroup.add(poignee);
 }
 
 function recomputeMeublesId() {
@@ -626,10 +686,12 @@ function initializeBloc(indiceMeuble, numBloc) {
   if (meuble.bloc[numBloc].type == "Portes") {
     if (meuble.bloc[numBloc].nombrePortes == "1") {
       geometry = new THREE.BoxGeometry(meuble.bloc[numBloc].largeur - 0.25 * epaisseur, meuble.hauteur-0.25*epaisseur, epaisseur);
+
       etagere[0] = new THREE.Mesh(geometry, materialTiroirs);
       etagere[0].name = "porte 0";
       //poignee
-      let poigneeB = poignee.clone(false);
+      let poigneeB = poigneeGroup.clone(true);
+      poigneeB.rotateZ(Math.PI/2);  // a soumettre à option
       poigneeB.name="poignee";
       etagere[0].add(poigneeB);
       let deltaX=meuble.bloc[numBloc].largeur/2 - 5*taillePoignees;
@@ -645,7 +707,8 @@ function initializeBloc(indiceMeuble, numBloc) {
       etagere[0] = new THREE.Mesh(geometry, materialTiroirs);
       etagere[0].name = "porte 0";
       //poignee gauche
-      let poigneeB = poignee.clone(false);
+      let poigneeB = poigneeGroup.clone(true);
+      poigneeB.rotateZ(Math.PI/2);  // a soumettre à option
       poigneeB.name="poignee";
       etagere[0].add(poigneeB);
       let deltaX=meuble.bloc[numBloc].largeur/4 - 5*taillePoignees;
@@ -658,7 +721,8 @@ function initializeBloc(indiceMeuble, numBloc) {
       etagere[1] = new THREE.Mesh(geometry, materialTiroirs);
       etagere[1].name = "porte 1";
       //poignee droite
-      let poigneeC = poignee.clone(false);
+      let poigneeC = poigneeGroup.clone(true);
+      poigneeC.rotateZ(Math.PI/2);  // a soumettre à option
       etagere[1].add(poigneeC);
       deltaX*=-1
       poigneeC.position.set(deltaX,0,epaisseur+taillePoignees);
@@ -688,11 +752,12 @@ function initializeBloc(indiceMeuble, numBloc) {
       let xl = meuble.bloc[numBloc].largeur - 0.25 * epaisseur;
       let yl = (meuble.hauteur - epaisseur)/(meuble.bloc[numBloc].etageres+1);//-epaisseur/4;
       let zl = epaisseur;
-      geometry = new THREE.BoxGeometry(xl, yl, zl);
+      //geometry = new THREE.BoxGeometry(xl, yl, zl);
+      geometry = RoundEdgedBox(xl,yl,zl,1,3,3,2);
       etagere[i] = new THREE.Mesh(geometry, materialTiroirs);
       etagere[i].name = "tiroir "+i;
       //poignees
-      let poigneeB = poignee.clone(false);
+      let poigneeB = poigneeGroup.clone(true);
       poigneeB.name="poignee";
       etagere[i].add(poigneeB);
       poigneeB.position.set(0,0,epaisseur+taillePoignees);
@@ -717,6 +782,119 @@ function initializeBloc(indiceMeuble, numBloc) {
 function updateBloc (indiceMeuble, numBloc) {
   initializeBloc(indiceMeuble, numBloc);
 }
+
+function RoundEdgedBox(width, height, depth, radius, widthSegments, heightSegments, depthSegments, smoothness) {
+
+  width = width || 1;
+  height = height || 1;
+  depth = depth || 1;
+  radius = radius || (Math.min(Math.min(width, height), depth) * .25);
+  widthSegments = Math.floor(widthSegments) || 1;
+  heightSegments = Math.floor(heightSegments) || 1;
+  depthSegments = Math.floor(depthSegments) || 1;
+  smoothness = Math.max(3, Math.floor(smoothness) || 3);
+
+  let halfWidth = width * .5 - radius;
+  let halfHeight = height * .5 - radius;
+  let halfDepth = depth * .5 - radius;
+
+  var geometry = new THREE.BufferGeometry();
+
+  // corners - 4 eighths of a sphere
+  var corner1 = new THREE.SphereGeometry(radius, smoothness, smoothness, 0, Math.PI * .5, 0, Math.PI * .5);
+  corner1.translate(-halfWidth, halfHeight, halfDepth);
+  var corner2 = new THREE.SphereGeometry(radius, smoothness, smoothness, Math.PI * .5, Math.PI * .5, 0, Math.PI * .5);
+  corner2.translate(halfWidth, halfHeight, halfDepth);
+  var corner3 = new THREE.SphereGeometry(radius, smoothness, smoothness, 0, Math.PI * .5, Math.PI * .5, Math.PI * .5);
+  corner3.translate(-halfWidth, -halfHeight, halfDepth);
+  var corner4 = new THREE.SphereGeometry(radius, smoothness, smoothness, Math.PI * .5, Math.PI * .5, Math.PI * .5, Math.PI * .5);
+  corner4.translate(halfWidth, -halfHeight, halfDepth);
+  
+  let geometries = [];
+  let corners = [];
+  corners.push(corner1,corner2,corner3,corner4);
+  
+  let cornerMerged = BufferGeometryUtils.mergeGeometries(corners);
+  geometries.push(cornerMerged);
+
+  // edges - 2 fourths for each dimension
+  // width
+  var edge = new THREE.CylinderGeometry(radius, radius, width - radius * 2, smoothness, widthSegments, true, 0, Math.PI * .5);
+  edge.rotateZ(Math.PI * .5);
+  edge.translate(0, halfHeight, halfDepth);
+  var edge2 = new THREE.CylinderGeometry(radius, radius, width - radius * 2, smoothness, widthSegments, true, Math.PI * 1.5, Math.PI * .5);
+  edge2.rotateZ(Math.PI * .5);
+  edge2.translate(0, -halfHeight, halfDepth);
+
+  // height
+  var edge3 = new THREE.CylinderGeometry(radius, radius, height - radius * 2, smoothness, heightSegments, true, 0, Math.PI * .5);
+  edge3.translate(halfWidth, 0, halfDepth);
+  var edge4 = new THREE.CylinderGeometry(radius, radius, height - radius * 2, smoothness, heightSegments, true, Math.PI * 1.5, Math.PI * .5);
+  edge4.translate(-halfWidth, 0, halfDepth);
+
+  // depth
+  var edge5 = new THREE.CylinderGeometry(radius, radius, depth - radius * 2, smoothness, depthSegments, true, 0, Math.PI * .5);
+  edge5.rotateX(-Math.PI * .5);
+  edge5.translate(halfWidth, halfHeight, 0);
+  var edge6 = new THREE.CylinderGeometry(radius, radius, depth - radius * 2, smoothness, depthSegments, true, Math.PI * .5, Math.PI * .5);
+  edge6.rotateX(-Math.PI * .5);
+  edge6.translate(halfWidth, -halfHeight, 0);
+
+  let edges = [];
+  edges.push(edge,edge2,edge3,edge4);
+  
+  let edgeMerged = BufferGeometryUtils.mergeGeometries(edges);
+  geometries.push(edgeMerged);
+
+  // sides
+  // front
+  var side = new THREE.PlaneGeometry(width - radius * 2, height - radius * 2, widthSegments, heightSegments);
+  side.translate(0, 0, depth * .5);
+
+  // right
+  var side2 = new THREE.PlaneGeometry(depth - radius * 2, height - radius * 2, depthSegments, heightSegments);
+  side2.rotateY(Math.PI * .5);
+  side2.translate(width * .5, 0, 0);
+
+  let sides = [];
+  sides.push(side,side2);
+  
+  let sideMerged = BufferGeometryUtils.mergeGeometries(sides);
+  geometries.push(sideMerged);
+
+  // duplicate and flip
+  let frontBack=[];
+  var secondHalf = geometry.clone();
+  secondHalf.rotateY(Math.PI);
+  frontBack.push(geometry,secondHalf);
+  let allmostFinished = BufferGeometryUtils.mergeGeometries(geometries);
+  geometries.push(allmostFinished);
+
+  // top
+  var top = new THREE.PlaneGeometry(width - radius * 2, depth - radius * 2, widthSegments, depthSegments);
+  top.rotateX(-Math.PI * .5);
+  top.translate(0, height * .5, 0);
+
+  // bottom
+  var bottom = new THREE.PlaneGeometry(width - radius * 2, depth - radius * 2, widthSegments, depthSegments);
+  bottom.rotateX(Math.PI * .5);
+  bottom.translate(0, -height * .5, 0);
+
+  let topBottom=[];
+  topBottom.push(top,bottom);
+  let topBottomMerged = BufferGeometryUtils.mergeGeometries(geometries);
+
+  //geometries=[];
+  geometries.push(topBottomMerged);
+
+  geometry = BufferGeometryUtils.mergeGeometries(geometries);
+
+  geometry=BufferGeometryUtils.mergeVertices(geometry);
+
+  return geometry;
+}
+
+// Interface
 
 function createSlider(objet,key,nom,value,type,min,max) {  
       let divParam = document.createElement("div");
@@ -858,7 +1036,7 @@ function changeCurrentMeubleFromPopup(num) {
 
 function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   let meuble = meubles[indiceMeuble];
-  listMeublesPopup.addEventListener("change",function eventListMeublesPopup(event) {changeCurrentMeubleFromPopup(event.target.value)},false);
+  listMeublesPopup.addEventListener("change",function eventListMeublesPopup(event) {console.log(event); changeCurrentMeubleFromPopup(event.target.value)},false);
   buttonNewMeuble.addEventListener("click",function eventButtonNewMeuble() {createNewMeuble(); updateInterfaceMeuble(); indiceCurrentBloc=0; updateInterfaceBlocs(indiceCurrentMeuble)},false);
   if (meubles.length>1) {
     buttonDeleteMeuble.addEventListener("click",function eventButtonDeleteMeuble() {
