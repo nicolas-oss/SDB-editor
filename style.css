@@ -186,3 +186,11 @@ button:focus-visible {
 select {
   width : 100%;
 }
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
