@@ -8,6 +8,13 @@ import { ScreenNode } from 'three/src/nodes/display/BlendModeNode.js';
 import { mx_bilerp_0 } from 'three/src/nodes/materialx/lib/mx_noise.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
+class configurationClass {
+  constructor () {
+    this.style = "style 1";
+
+  }
+}
+
 class blocClass {
   constructor () {
     this.largeur = 40;
@@ -130,8 +137,6 @@ controls.minDistance = 0.1;
 controls.maxDistance = 1000;
 controls.maxPolarAngle = Math.PI / 2;
 
-//raycast sur les objets 3d lors d'un changement de souris ou de camera
-
 function getfocaleV(focale,width,height) {
   if ((height/width)>1) return focale
   else return (2*(height/2)/((width/2)/Math.tan(0.0174533*(focale/2))));
@@ -160,12 +165,6 @@ function onPointerMove( event ) {
   let y = event.clientY - canvasSize.top;
   pointer.x = ( x / canvasSize.width ) * 2 - 1;
   pointer.y = - ( y / window.innerHeight ) * 2 + 1;
-}
-
-function onCanvasClick () {
-  console.log("click");
-  if (raycastedBloc>-1) changeCurrentBlocFromClick(raycastedBloc);
-  if (raycastedMeuble>-1) changeCurrentMeubleFromClick(raycastedMeuble);
 }
 
 //Materials
@@ -262,6 +261,13 @@ function checkRaycast() {
   }
 }
 
+//raycast sur les objets 3d lors d'un changement de souris ou de camera
+function onCanvasClick () {
+  console.log("click");
+  if (raycastedBloc>-1) changeCurrentBlocFromClick(raycastedBloc);
+  if (raycastedMeuble>-1) changeCurrentMeubleFromClick(raycastedMeuble);
+}
+
 function listenToRaycast() {
   controls.addEventListener('change', checkRaycast);
   canvas.addEventListener('mouseout', clearRaycast);
@@ -338,7 +344,8 @@ function updateCube (indiceMeuble) {
   if (cube) meubleRoot[indiceMeuble].remove(cube);
   scene.remove(cube);
   let delta = 0.1*indiceMeuble;
-  if (cubeVisible) {geometry = new THREE.BoxGeometry( meubles[indiceMeuble].largeur+delta, meubles[indiceMeuble].hauteur+delta, meubles[indiceMeuble].profondeur+delta );
+  //if (cubeVisible) {geometry = new THREE.BoxGeometry( meubles[indiceMeuble].largeur+delta, meubles[indiceMeuble].hauteur+delta, meubles[indiceMeuble].profondeur+delta );
+  if (cubeVisible) {geometry = RoundEdgedBox( meubles[indiceMeuble].largeur+delta, meubles[indiceMeuble].hauteur+delta, meubles[indiceMeuble].profondeur+delta , 1 , 2,2,2,2);
   cube = new THREE.Mesh( geometry, materialSelectionMeuble );
   scene.add( cube );}
 }
@@ -375,7 +382,8 @@ if (meubleRoot[indiceMeuble].children[1])                  //children 1 = cubes 
       delete selectableMeuble[indiceMeuble];
     }
     let delta = 0.1*indiceMeuble;
-    geometry = new THREE.BoxGeometry(meubles[indiceMeuble].largeur + epsilon + delta, meubles[indiceMeuble].hauteur + epsilon + delta, meubles[indiceMeuble].profondeur + epsilon + delta);
+    //geometry = new THREE.BoxGeometry(meubles[indiceMeuble].largeur + epsilon + delta, meubles[indiceMeuble].hauteur + epsilon + delta, meubles[indiceMeuble].profondeur + epsilon + delta);
+    geometry = RoundEdgedBox( meubles[indiceMeuble].largeur+delta+ epsilon, meubles[indiceMeuble].hauteur+delta+ epsilon, meubles[indiceMeuble].profondeur+delta+ epsilon , 3 , 2,2,2,2)
     cube = new THREE.Mesh(geometry, materialSelectionMeuble);
     cube.numero=indiceMeuble;
     cube.name="cube"+indiceMeuble;
@@ -493,9 +501,10 @@ function initializeInterface() {
 
 const poigneesFileList = new Map;
 poigneesFileList.set("Poignee type 1","src/furniture_handle_1.glb");
-poigneesFileList.set("Poignee type 2","src/furniture_handle_2.glb");
-poigneesFileList.set("Poignee type 3","src/furniture_handle_3.glb");
-poigneesFileList.set("Poignee type 4","static/poignees.obj");
+poigneesFileList.set("Tulip Country","src/furniture_handle_2.glb");
+poigneesFileList.set("Poignee type 3","src/furniture_handle_3.gltf");
+poigneesFileList.set("Tulip Virella","src/furniture_handle_4.glb");
+poigneesFileList.set("Square","src/furniture_handle_6.glb");
 
 var poigneeRoot;
 var poigneeTemp;
@@ -508,7 +517,7 @@ function changePoignee(name) {
   const loader = new GLTFLoader();
   poigneeGroup=new THREE.Group(); // revoir init
   //loader.load(poigneesFileList.get(name), function (gltf) {
-    loader.load("src/scene (8).gltf", function (gltf) {
+    loader.load(poigneesFileList.get(name), function (gltf) {
     //scene.add(gltf.scene);
     //gltf.asset;
     //console.log("gltf.scene.getObjectByName( 'poignee' )=",gltf.scene.getObjectByName( 'poignee' ));
@@ -674,13 +683,15 @@ function initializeBloc(indiceMeuble, numBloc) {
   plancheGauche.position.set(meuble.bloc[numBloc].largeur/2 - epaisseur/2,0,0);
   blocRoot[numBloc].add(plancheBas,plancheHaut,plancheDroite,plancheGauche);
   //boîte de sélection
-  geometry = new THREE.BoxGeometry( meuble.bloc[numBloc].largeur+epsilon, meuble.hauteur+epsilon, meuble.profondeur+epsilon );
+  //geometry = new THREE.BoxGeometry( meuble.bloc[numBloc].largeur+epsilon, meuble.hauteur+epsilon, meuble.profondeur+epsilon );
+  geometry = RoundEdgedBox(meuble.bloc[numBloc].largeur+epsilon, meuble.hauteur+epsilon, meuble.profondeur+epsilon,2,1,1,1,1);
   boite[numBloc] = new THREE.Mesh( geometry, materialSelectionBloc );
   boite[numBloc].name = "BoiteSelectionBloc"+numBloc;
   blocRoot[numBloc].add(boite[numBloc]);
   selectableBloc.push(boite[numBloc]);
   boite[numBloc].visible=false;
   boite[numBloc].numero=numBloc;
+  //boite[numBloc].translateZ(10);
  
   //portes
   if (meuble.bloc[numBloc].type == "Portes") {
@@ -691,13 +702,14 @@ function initializeBloc(indiceMeuble, numBloc) {
       etagere[0].name = "porte 0";
       //poignee
       let poigneeB = poigneeGroup.clone(true);
-      poigneeB.rotateZ(Math.PI/2);  // a soumettre à option
+      
       poigneeB.name="poignee";
       etagere[0].add(poigneeB);
-      let deltaX=meuble.bloc[numBloc].largeur/2 - 5*taillePoignees;
+      let deltaX=meuble.bloc[numBloc].largeur/2 - 4*taillePoignees;
       if (deltaX<0) deltaX=0;
-      if (meuble.bloc[numBloc].ouverturePorte=="droite") {deltaX*=-1}
-      poigneeB.position.set(deltaX,0,epaisseur+taillePoignees);
+      if (meuble.bloc[numBloc].ouverturePorte=="droite") {deltaX*=-1; poigneeB.rotateZ(Math.PI/2);}
+      else poigneeB.rotateZ(-Math.PI/2);  // a soumettre à option
+      poigneeB.position.set(deltaX,0,epaisseur);
       etagere[0].position.set(0,0,meuble.profondeur/2);
       blocRoot[numBloc].add(etagere[0]);
     }
@@ -708,12 +720,12 @@ function initializeBloc(indiceMeuble, numBloc) {
       etagere[0].name = "porte 0";
       //poignee gauche
       let poigneeB = poigneeGroup.clone(true);
-      poigneeB.rotateZ(Math.PI/2);  // a soumettre à option
+      poigneeB.rotateZ(-Math.PI/2);  // a soumettre à option
       poigneeB.name="poignee";
       etagere[0].add(poigneeB);
-      let deltaX=meuble.bloc[numBloc].largeur/4 - 5*taillePoignees;
-      if (5*taillePoignees>meuble.bloc[numBloc].largeur/4) deltaX=meuble.bloc[numBloc].largeur/2;
-      poigneeB.position.set(deltaX,0,epaisseur+taillePoignees);
+      let deltaX=meuble.bloc[numBloc].largeur/4 - 4*taillePoignees;
+      if (4*taillePoignees>meuble.bloc[numBloc].largeur/4) deltaX=0;
+      poigneeB.position.set(deltaX,0,epaisseur);
       etagere[0].position.set(-meuble.bloc[numBloc].largeur/4,0,meuble.profondeur/2);
       blocRoot[numBloc].add(etagere[0]);
 
@@ -725,7 +737,7 @@ function initializeBloc(indiceMeuble, numBloc) {
       poigneeC.rotateZ(Math.PI/2);  // a soumettre à option
       etagere[1].add(poigneeC);
       deltaX*=-1
-      poigneeC.position.set(deltaX,0,epaisseur+taillePoignees);
+      poigneeC.position.set(deltaX,0,epaisseur);
       poigneeC.name="poignee";
       etagere[1].position.set(meuble.bloc[numBloc].largeur/4,0,meuble.profondeur/2);
       blocRoot[numBloc].add(etagere[1]);
@@ -760,7 +772,7 @@ function initializeBloc(indiceMeuble, numBloc) {
       let poigneeB = poigneeGroup.clone(true);
       poigneeB.name="poignee";
       etagere[i].add(poigneeB);
-      poigneeB.position.set(0,0,epaisseur+taillePoignees);
+      poigneeB.position.set(0,0,epaisseur);//epaisseur+taillePoignees);
       var positionY = step * (i - meuble.bloc[numBloc].etageres / 2);
       var positionZ = meuble.profondeur/2;
       etagere[i].position.set(0, positionY, positionZ);
@@ -841,7 +853,7 @@ function RoundEdgedBox(width, height, depth, radius, widthSegments, heightSegmen
   edge6.translate(halfWidth, -halfHeight, 0);
 
   let edges = [];
-  edges.push(edge,edge2,edge3,edge4);
+  edges.push(edge,edge2,edge3,edge4,edge5,edge6);
   
   let edgeMerged = BufferGeometryUtils.mergeGeometries(edges);
   geometries.push(edgeMerged);
@@ -863,12 +875,15 @@ function RoundEdgedBox(width, height, depth, radius, widthSegments, heightSegmen
   geometries.push(sideMerged);
 
   // duplicate and flip
-  let frontBack=[];
+  geometry = BufferGeometryUtils.mergeGeometries(geometries);
   var secondHalf = geometry.clone();
   secondHalf.rotateY(Math.PI);
-  frontBack.push(geometry,secondHalf);
-  let allmostFinished = BufferGeometryUtils.mergeGeometries(geometries);
-  geometries.push(allmostFinished);
+  //secondHalf.translate(0,0,depth);
+  geometries=[];
+
+  geometries.push(geometry,secondHalf);
+  geometry = BufferGeometryUtils.mergeGeometries(geometries);
+  geometries=[];
 
   // top
   var top = new THREE.PlaneGeometry(width - radius * 2, depth - radius * 2, widthSegments, depthSegments);
@@ -882,10 +897,10 @@ function RoundEdgedBox(width, height, depth, radius, widthSegments, heightSegmen
 
   let topBottom=[];
   topBottom.push(top,bottom);
-  let topBottomMerged = BufferGeometryUtils.mergeGeometries(geometries);
+  let topBottomMerged = BufferGeometryUtils.mergeGeometries(topBottom);
 
   //geometries=[];
-  geometries.push(topBottomMerged);
+  geometries.push(topBottomMerged,geometry);
 
   geometry = BufferGeometryUtils.mergeGeometries(geometries);
 
@@ -913,6 +928,8 @@ function createSlider(objet,key,nom,value,type,min,max) {
       let b = document.createElement("input");
       b.type="number";
       b.value=value;
+      b.min=min;
+      b.max=max;
       b.classList.add("inputValue");
       divParam.append(b);
       s.addEventListener("input", function () {b.value = s.value; objet[key]=+s.value; }, false);

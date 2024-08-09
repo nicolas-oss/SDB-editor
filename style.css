@@ -179,6 +179,10 @@ button:focus-visible {
   background-color : red;
 }
 
-select option[value="value"] {
+/*select option[value="value"] {
   display: none;
+}*/
+
+select {
+  width : 100%;
 }
