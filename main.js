@@ -485,6 +485,7 @@ var listPoigneesName;
 var meubleSliders;
 var blocsSliders;
 var large;
+var elh;
 var styleMenu;
 var checkboxVertical;
 var divSwitchVertical;
@@ -1022,10 +1023,6 @@ function rebuildInterfaceMeuble() { // Rebuild HTML structure
   buttonDeleteMeuble.id="buttonDeleteMeuble";
   buttonDeleteMeuble.value="Supprimer";
   meubleDiv.append(buttonDeleteMeuble);
-  /*switchVertical=document.createElement("input");
-  switchVertical.type="switch";
-  switchVertical.id="switchVertical";
-  meubleDiv.append(switchVertical);*/
   buttonDeleteMeuble.after(divSwitchVertical);
   meubleSliders=document.createElement("div");
   meubleSliders.id="meubleSliders";
@@ -1033,15 +1030,10 @@ function rebuildInterfaceMeuble() { // Rebuild HTML structure
 }
 
 function changeCurrentMeuble(num) {
-  //console.log("new current meuble = ",num);
-  //console.log(meubles);
   let indicePreviousMeuble = indiceCurrentMeuble;
   indiceCurrentMeuble = num;
   if (meubleRoot[indicePreviousMeuble].cube) meubleRoot[indicePreviousMeuble].cube.visible=false;
   if (meubles[indiceCurrentMeuble].disposition=="vertical") {console.log("checked"); checkboxVertical.checked=true;} else {checkboxVertical.checked=false;}
-  //console.log(meubles[indiceCurrentMeuble].disposition);
-  //checkboxVertical.checked="false";
-  //console.log(checkboxVertical);
   updateInterfaceMeuble();
   updateInterfaceBlocs(indiceCurrentMeuble);
   updateSelectableBlocs(indiceCurrentMeuble);
@@ -1055,7 +1047,6 @@ function changeCurrentMeubleFromClick(num) {
 }
 
 function onMaterialAnimationFinish (num) {
-  //console.log("stop ",num);
   clipActionMaterial.stop();
   clipActionMaterial.reset();
   selectableMeuble[num].material = materialSelectionMeuble;
@@ -1083,18 +1074,10 @@ function startMaterialAnimationMeuble(num) {
 }
   
 function changeCurrentMeubleFromPopup(num) {
-  //console.log(num);
-  //console.log(event.target.key);
-  //console.log(id);
-  let indicePreviousMeuble = indiceCurrentMeuble;
-  //for (var i=0; i<meubles.length; i++) {
-    //if (meubles[i].name==event.target.value) {
-      startMaterialAnimationMeuble(num);
-      changeCurrentMeuble(num);
-      checkRaycast();
-      //}
-   // }
-  }
+  startMaterialAnimationMeuble(num);
+  changeCurrentMeuble(num);
+  checkRaycast();
+}
 
 function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   let meuble = meubles[indiceMeuble];
@@ -1118,22 +1101,15 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   listMeublesName = document.createElement("input");
   listMeublesName.type=("text");
   listMeublesName.id=("listMeublesName");
-  //listMeublesName.value=meuble.name;
   listMeublesName.value=meuble.name;
   meubleDiv.insertBefore(listMeublesName,listMeublesPopup);
   for (var i=0;i<meubles.length;i++) {
     let o = document.createElement("option");
     o.value = i;
     o.innerHTML = meubles[i].name;
-    //o.value = meubles[i].name;
-    //o.key = i;
     listMeublesHTML.append(o);
   }
-  //console.log("meuble=",meuble);
-  //console.log("indicecurrentmeuble=",indiceCurrentMeuble);
-  //console.log("indicemeuble=",indiceMeuble);
-  //console.log("meubles = ",meubles);
-  let elh=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
+  elh=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
   elh.childNodes[1].addEventListener("input",function eventElhInput() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateScene();frameCamera();},false);
   elh.childNodes[2].addEventListener("change",function eventElhChange() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateScene();frameCamera();},false);
   meubleSliders.append(elh);
@@ -1159,18 +1135,19 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   meubleSliders.append(elY);
   let cr = document.createElement("p");
   meubleDiv.append(cr);
-  //let switchVertical = document.createElement("input")
   if (meubles[indiceMeuble].disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
   console.log(meubles[indiceMeuble].disposition);
   console.log(checkboxVertical);
-  //document.getElementById("checkboxVertical").checked=false;
-  //console.log(document.getElementById("checkboxVertical"));
-
 }
 
 function updateInterfaceLargeur(indiceMeuble) {
   large.childNodes[1].value = meubles[indiceMeuble].largeur;
   large.childNodes[2].value = meubles[indiceMeuble].largeur;
+}
+
+function updateInterfaceHauteur(indiceMeuble) {
+  elh.childNodes[1].value = meubles[indiceMeuble].hauteur;
+  elh.childNodes[2].value = meubles[indiceMeuble].hauteur;
 }
 
 function changeCurrentBlocFromClick(num) {
@@ -1184,6 +1161,7 @@ function onChangeBlocsQuantity(indiceMeuble) {
   meubles[indiceMeuble].calculTaille();
   updateInterfaceBlocs(indiceMeuble);
   updateInterfaceLargeur(indiceMeuble);
+  updateInterfaceHauteur(indiceMeuble);
   updateScene();
   frameCamera();
 }
@@ -1271,8 +1249,20 @@ function createSlidersBlocs(indiceMeuble,numBloc) {
   let meuble=meubles[indiceMeuble];
   let slideLargeurBloc = createSlider(meuble.bloc[numBloc],"taille","Taille du bloc",meuble.bloc[numBloc].taille,0,10,200);
   blocsSliders.append(slideLargeurBloc);
-  slideLargeurBloc.childNodes[1].addEventListener("input",function (){meuble.calculTaille(); updateInterfaceLargeur(indiceMeuble); updateScene();frameCamera();},false);
-  slideLargeurBloc.childNodes[2].addEventListener("change",function (){meuble.calculTaille(); updateInterfaceLargeur(indiceMeuble); updateScene();frameCamera();},false);
+  slideLargeurBloc.childNodes[1].addEventListener("input",function (){
+    meuble.calculTaille(); 
+    updateInterfaceLargeur(indiceMeuble); 
+    updateInterfaceHauteur(indiceMeuble); 
+    updateScene();
+    frameCamera();}
+    ,false);
+  slideLargeurBloc.childNodes[2].addEventListener("change",function (){
+    meuble.calculTaille();
+    updateInterfaceLargeur(indiceMeuble);
+    updateInterfaceHauteur(indiceMeuble); 
+    updateScene();
+    frameCamera();}
+    ,false);
   let sliderEtageres = createSlider(meuble.bloc[numBloc],"etageres","Nombre d'étagères",meuble.bloc[numBloc].etageres,0,0,maxEtageres);
   sliderEtageres.childNodes[1].addEventListener("input",function () {updateScene();frameCamera();},false);
   sliderEtageres.childNodes[2].addEventListener("change",function () {updateScene();frameCamera();},false);
