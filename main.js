@@ -7,6 +7,7 @@ import * as CameraUtils from 'three/addons/utils/CameraUtils.js';
 import { ScreenNode } from 'three/src/nodes/display/BlendModeNode.js';
 import { mx_bilerp_0 } from 'three/src/nodes/materialx/lib/mx_noise.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+import { DragControls } from 'three/addons/controls/DragControls.js';
 
 class configurationClass {
   constructor () {
@@ -130,6 +131,8 @@ pointer.x=-1;
 pointer.y=-1;
 const radius = 5;
 
+
+
 const scene = new THREE.Scene();
 var canvas = document.getElementById("canvas");
 var canvasSize = canvas.getBoundingClientRect();
@@ -147,6 +150,7 @@ raycaster = new THREE.Raycaster();
 canvas.addEventListener( 'mousemove', onPointerMove );
 window.addEventListener( 'resize', onWindowResize );
 canvas.addEventListener('click',onCanvasClick);
+canvas.addEventListener('dragstart',onCanvasDrag,false);
 
 const renderer = new THREE.WebGLRenderer({antialias : true});
 //renderer.setPixelRatio(2);
@@ -163,6 +167,64 @@ controls.screenSpacePanning = false;
 controls.minDistance = 0.1;
 controls.maxDistance = 1000;
 controls.maxPolarAngle = Math.PI / 2;
+
+
+//drag
+var dragCont;
+function initDrag() {
+  dragCont = new DragControls(selectableBloc, camera, renderer.domElement);
+  dragCont.rotateSpeed = 2;
+  //dragCont.addEventListener( 'drag', render );
+  dragCont.addEventListener('dragstart', function (event) {
+    controls.enabled=false;
+    console.log("meubleRoot[indiceCurrentMeuble]=",meubleRoot[indiceCurrentMeuble]);
+    event.object.material.emissive.set(0xaaaaaa);
+    let num=event.object.numero;
+    let pos=meubleRoot[indiceCurrentMeuble].children[0].children[num].position;
+    //let object = event.object;
+    //let localPos = new THREE.Vector3();
+    //localPos.copy(object.position);
+    //object.localToWorld(localPos);
+    //object.parent.worldToLocal(localPos);
+    console.log("Pos = ",pos);
+    //localPos = event.object.position.worldToLocal(0,0,0);
+    event.object.startPosition = pos;
+  },{once : true});
+
+  dragCont.addEventListener('dragend', function (event) {
+    console.log("blocs moved=",event.object.numero);
+    console.log("start pos=",event.object.startPosition);
+    console.log("final pos=",event.object.position);
+    controls.enabled=true;
+    event.object.material.emissive.set(0x000000);
+    
+    var obj1=event.object;
+    /*var posObj1=new THREE.Vector3();
+    obj1.getWorldPosition(posObj1);
+    var obj2;
+    var posObj2=new THREE.Vector3();
+    var d;*/
+    var num=event.object.numero;
+    /*for (var i=0; i<selectableBloc.length; i++) { //calcul de la distance entre la position finale de la boite et les positions originales de toutes les boites
+      obj2=meubleRoot[indiceCurrentMeuble].children[0].children[i];
+      obj2.getWorldPosition(posObj2);
+      d=posObj2.distanceTo(posObj1);
+      //if (i!=num) {d=posObj2.distanceTo(obj1.startPosition)} else {d=obj1.startPosition.distanceTo(obj1.position);}
+      console.log("i=",i," d=",d);
+    }*/
+    obj1.position.set(0,0,0);
+    //console.log("raycastedBloc=",raycastedBloc);
+    if ((raycastedBloc==-1) || (raycastedBloc==num)) {console.log("nothing happens")}
+      else {
+        console.log("swap ",num," et ",raycastedBloc);
+        let bloc=meubles[indiceCurrentMeuble].bloc;
+        [bloc[num],bloc[raycastedBloc]]=[bloc[raycastedBloc],bloc[num]];
+        updateMeuble(indiceCurrentMeuble);
+      }
+      controls.enabled=true;
+      console.log("drag finished");
+  });
+}
 
 function getfocaleV(focale,width,height) {
   if ((height/width)>1) return focale
@@ -290,9 +352,14 @@ function checkRaycast() {
 
 //raycast sur les objets 3d lors d'un changement de souris ou de camera
 function onCanvasClick () {
-  //console.log("click");
+  console.log("click");
   if (raycastedBloc>-1) changeCurrentBlocFromClick(raycastedBloc);
   if (raycastedMeuble>-1) changeCurrentMeubleFromClick(raycastedMeuble);
+}
+
+function onCanvasDrag () {
+  console.log("drag");
+  if (raycastedBloc>-1) console.log("pointer=",pointer);
 }
 
 function listenToRaycast() {
@@ -370,6 +437,8 @@ function animate() {
 function updateCube (indiceMeuble) {
   if (cube) meubleRoot[indiceMeuble].remove(cube);
   scene.remove(cube);
+  geometry.dispose();
+  material.dispose();
   let delta = 0.1*indiceMeuble;
   //if (cubeVisible) {geometry = new THREE.BoxGeometry( meubles[indiceMeuble].largeur+delta, meubles[indiceMeuble].hauteur+delta, meubles[indiceMeuble].profondeur+delta );
   if (cubeVisible) {geometry = RoundEdgedBox( meubles[indiceMeuble].largeur+delta, meubles[indiceMeuble].hauteur+delta, meubles[indiceMeuble].profondeur+delta , 1 , 2,2,2,2);
@@ -405,6 +474,7 @@ function updateSelectableBlocs(indiceMeuble) {
       }
     }
   }
+  dragCont.setObjects(selectableBloc);
 }
 
 function updateMeuble (indiceMeuble) {
@@ -417,6 +487,8 @@ function updateMeuble (indiceMeuble) {
 if (meubleRoot[indiceMeuble].children[1])                  //children 1 = cubes de selection
     {
       meubleRoot[indiceMeuble].remove(cube);
+      geometry.dispose();
+      material.dispose();
       delete selectableMeuble[indiceMeuble];
     }
     let delta = 0.1*indiceMeuble;
@@ -432,6 +504,8 @@ if (meubleRoot[indiceMeuble].children[1])                  //children 1 = cubes 
   meubleRoot[indiceMeuble].add(cube);
   selectableMeuble[indiceMeuble]=cube;
   placeMeuble(indiceMeuble);
+  console.log("dragCont=",dragCont);
+  dragCont.setObjects ( selectableBloc );
 }
 
 function changeBlocsQuantity (indiceMeuble) {
@@ -518,6 +592,7 @@ function initializeScene() {
     initializeListePoignees();
     initializeRaycast();
     initializePoignees();
+    initDrag();
     createNewMeuble();
     createInterfaceMeuble(indiceCurrentMeuble);
     updateInterfaceBlocs(indiceCurrentMeuble);
@@ -624,6 +699,8 @@ function deleteMeuble(num) {
   meubles.splice(num,1);
   //console.log("meubles = ",meubles);
   scene.remove(meubleRoot[num]);
+  geometry.dispose();
+  material.dispose();
   selectableMeuble.splice(num,1);
   meubleRoot.splice(num,1);
   geometry.dispose();
@@ -663,6 +740,8 @@ function destroyBloc(indiceMeuble, numBloc) {
     material.dispose();
     blocRoot[numBloc]=undefined;
     scene.remove( blocRoot[numBloc] );
+    geometry.dispose();
+    material.dispose();
 }
 
 function getElementBase (x,y,z,styleParam) {
@@ -1415,5 +1494,11 @@ function destroyButtonsForOuverturePortes () {
   divOuverturePortes=undefined;
   //console.log("removed ?");
 }
+
+/*function clean(obj) {
+  obj.remove();
+  geometry.dispose();
+  material.dispose();
+}*/
 
 window.addEventListener("DOMContentLoaded", initializeScene);
