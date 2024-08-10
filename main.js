@@ -121,6 +121,7 @@ var selectableBloc=[];  //liste des boites selectionnables par raycast
 var selectableMeuble=[];
 var raycastedBloc=-1;
 var raycastedMeuble=-1;
+var rayCastEnabled=true;
 
 //raycaster
 let raycaster;
@@ -130,8 +131,6 @@ const pointer = new THREE.Vector2();
 pointer.x=-1;
 pointer.y=-1;
 const radius = 5;
-
-
 
 const scene = new THREE.Scene();
 var canvas = document.getElementById("canvas");
@@ -168,50 +167,22 @@ controls.minDistance = 0.1;
 controls.maxDistance = 1000;
 controls.maxPolarAngle = Math.PI / 2;
 
-
 //drag
-var dragCont;
+var dragBlocControls;
+var dragMeubleControls;
 function initDrag() {
-  dragCont = new DragControls(selectableBloc, camera, renderer.domElement);
-  dragCont.rotateSpeed = 2;
-  //dragCont.addEventListener( 'drag', render );
-  dragCont.addEventListener('dragstart', function (event) {
+  dragBlocControls = new DragControls(selectableBloc, camera, renderer.domElement);
+  dragBlocControls.addEventListener('dragstart', function (event) {
     controls.enabled=false;
-    console.log("meubleRoot[indiceCurrentMeuble]=",meubleRoot[indiceCurrentMeuble]);
+    dragMeubleControls.enabled=false;
     event.object.material.emissive.set(0xaaaaaa);
-    let num=event.object.numero;
-    let pos=meubleRoot[indiceCurrentMeuble].children[0].children[num].position;
-    //let object = event.object;
-    //let localPos = new THREE.Vector3();
-    //localPos.copy(object.position);
-    //object.localToWorld(localPos);
-    //object.parent.worldToLocal(localPos);
-    console.log("Pos = ",pos);
-    //localPos = event.object.position.worldToLocal(0,0,0);
-    event.object.startPosition = pos;
-  },{once : true});
-
-  dragCont.addEventListener('dragend', function (event) {
-    console.log("blocs moved=",event.object.numero);
-    console.log("start pos=",event.object.startPosition);
-    console.log("final pos=",event.object.position);
+  });
+  dragBlocControls.addEventListener('dragend', function (event) {
     controls.enabled=true;
+    dragMeubleControls.enabled=true;
     event.object.material.emissive.set(0x000000);
-    
     var obj1=event.object;
-    /*var posObj1=new THREE.Vector3();
-    obj1.getWorldPosition(posObj1);
-    var obj2;
-    var posObj2=new THREE.Vector3();
-    var d;*/
     var num=event.object.numero;
-    /*for (var i=0; i<selectableBloc.length; i++) { //calcul de la distance entre la position finale de la boite et les positions originales de toutes les boites
-      obj2=meubleRoot[indiceCurrentMeuble].children[0].children[i];
-      obj2.getWorldPosition(posObj2);
-      d=posObj2.distanceTo(posObj1);
-      //if (i!=num) {d=posObj2.distanceTo(obj1.startPosition)} else {d=obj1.startPosition.distanceTo(obj1.position);}
-      console.log("i=",i," d=",d);
-    }*/
     obj1.position.set(0,0,0);
     //console.log("raycastedBloc=",raycastedBloc);
     if ((raycastedBloc==-1) || (raycastedBloc==num)) {console.log("nothing happens")}
@@ -221,10 +192,51 @@ function initDrag() {
         [bloc[num],bloc[raycastedBloc]]=[bloc[raycastedBloc],bloc[num]];
         updateMeuble(indiceCurrentMeuble);
       }
-      controls.enabled=true;
       console.log("drag finished");
   });
+
+  dragMeubleControls=new DragControls(selectableMeuble, camera, renderer.domElement);
+  dragMeubleControls.addEventListener('dragstart', function (event) {
+    controls.enabled=false;
+    rayCastEnabled=false;
+    dragBlocControls.enabled=false;
+    event.object.material.emissive.set(0xaaaaaa);
+  });
+  dragMeubleControls.addEventListener('drag', function (event) {
+    var obj1=event.object;
+    var pos=obj1.position;
+    obj1.position.set(pos.x,0,0);
+    var pos=obj1.position;
+    var num=event.object.numero;
+    meubles[num].x=pos.x;
+    obj1.position.set(0,0,0);
+    placeMeuble(num);
+    frameCamera();
+  });
+  dragMeubleControls.addEventListener('dragend', function (event) {
+    controls.enabled=true;
+    dragBlocControls.enabled=true;
+    rayCastEnabled=true;
+    event.object.material.emissive.set(0x000000);
+    /*var obj1=event.object;
+    var pos=obj1.position;
+    var num=event.object.numero;
+    meubles[num].x=pos.x;
+    obj1.position.set(0,0,0);
+    placeMeuble(num);
+    /*if ((raycastedBloc==-1) || (raycastedBloc==num)) {console.log("nothing happens")}
+      else {
+        console.log("swap ",num," et ",raycastedBloc);
+        let bloc=meubles[indiceCurrentMeuble].bloc;
+        [bloc[num],bloc[raycastedBloc]]=[bloc[raycastedBloc],bloc[num]];
+        updateMeuble(indiceCurrentMeuble);
+      }
+    console.log("drag finished");
+    frameCamera();*/
+  });
 }
+
+
 
 function getfocaleV(focale,width,height) {
   if ((height/width)>1) return focale
@@ -317,6 +329,7 @@ const ambientLight = new THREE.AmbientLight( 0x404020,2 ); // soft white light
 scene.add( ambientLight );
 
 function checkRaycast() {
+  if (!rayCastEnabled) return;
   raycaster.setFromCamera(pointer, camera, 0, 1000);
   //check intersect with blocs
   const intersects = raycaster.intersectObjects(selectableBloc, true);
@@ -474,7 +487,8 @@ function updateSelectableBlocs(indiceMeuble) {
       }
     }
   }
-  dragCont.setObjects(selectableBloc);
+  //let dragableObjects=selectableBloc.concat(selectableMeuble);
+  dragBlocControls.setObjects(selectableBloc);
 }
 
 function updateMeuble (indiceMeuble) {
@@ -504,8 +518,9 @@ if (meubleRoot[indiceMeuble].children[1])                  //children 1 = cubes 
   meubleRoot[indiceMeuble].add(cube);
   selectableMeuble[indiceMeuble]=cube;
   placeMeuble(indiceMeuble);
-  console.log("dragCont=",dragCont);
-  dragCont.setObjects ( selectableBloc );
+  console.log("dragBlocControls=",dragBlocControls);
+  //let dragableObjects=selectableBloc.concat(selectableMeuble);
+  dragBlocControls.setObjects(selectableBloc);
 }
 
 function changeBlocsQuantity (indiceMeuble) {
