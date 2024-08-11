@@ -122,6 +122,7 @@ var selectableMeuble=[];
 var raycastedBloc=-1;
 var raycastedMeuble=-1;
 var rayCastEnabled=true;
+var origine = new THREE.Object3D();
 
 //raycaster
 let raycaster;
@@ -201,38 +202,65 @@ function initDrag() {
     rayCastEnabled=false;
     dragBlocControls.enabled=false;
     event.object.material.emissive.set(0xaaaaaa);
-  });
-  dragMeubleControls.addEventListener('drag', function (event) {
     var obj1=event.object;
-    var pos=obj1.position;
-    obj1.position.set(pos.x,0,0);
-    var pos=obj1.position;
-    var num=event.object.numero;
-    meubles[num].x=pos.x;
-    obj1.position.set(0,0,0);
-    placeMeuble(num);
-    frameCamera();
+    var num=obj1.numero;
+    var posInitiale = new THREE.Vector3;
+    posInitiale = [...obj1.position];
+    obj1.posInitiale = posInitiale;
+    let blocRoot=meubleRoot[num].children[0];
+    const parent=blocRoot.parent;
+    console.log(blocRoot);
+    parent.remove(blocRoot);
+    obj1.attach(blocRoot); //on détache pour éviter les references circulaires dans les calculs de coordonnées
+    blocRoot.position.set(0,0,0);
+    //obj1.position.set(posInitiale.x,posInitiale.y,posInitiale.z);
+    console.log(blocRoot);
+    console.log("obj1=",obj1);
+    console.log("scene=",scene);
+    //console.log("xinitial=",xinitial);
+    console.log("obj1.position=",obj1.position);
+    console.log("obj1.positionInitiale=",obj1.posInitiale);
   });
+
+  dragMeubleControls.addEventListener('drag', function (event) { 
+    var obj1=event.object;
+    var num=obj1.numero;
+    //console.log("meuble numero = ",num);
+    console.log("initpos=",obj1.posInitiale);
+    var pos=obj1.position;
+    console.log("pos = ",pos);
+    obj1.position.set(pos.x,0,0);
+    //meubleRoot[num].position.set(pos.x,obj1.posInitiale.y,obj1.posInitiale.z);
+    var worldPos = new THREE.Vector3();
+    var posMeuble = new THREE.Vector3();
+    var pos = new THREE.Vector3();
+    worldPos = obj1.position;
+    //console.log("obj1 pos=",worldPos);
+  });
+
   dragMeubleControls.addEventListener('dragend', function (event) {
     controls.enabled=true;
     dragBlocControls.enabled=true;
     rayCastEnabled=true;
     event.object.material.emissive.set(0x000000);
-    /*var obj1=event.object;
-    var pos=obj1.position;
+    var obj1=event.object;
     var num=event.object.numero;
-    meubles[num].x=pos.x;
+    //meubleRoot[num].position.set(obj1.position);
+    meubles[num].x+=obj1.position.x;
+    let blocRoot=obj1.children[0];
+    console.log("blocRoot=",blocRoot);
+    let parent=obj1.parent
+    parent.remove(obj1);
+    meubleRoot[num].attach(blocRoot); // on rattache une fois fini
+    parent.attach(obj1);
+    blocRoot.position.set(0,0,0);
     obj1.position.set(0,0,0);
+    
+    console.log(meubleRoot[num]);
     placeMeuble(num);
-    /*if ((raycastedBloc==-1) || (raycastedBloc==num)) {console.log("nothing happens")}
-      else {
-        console.log("swap ",num," et ",raycastedBloc);
-        let bloc=meubles[indiceCurrentMeuble].bloc;
-        [bloc[num],bloc[raycastedBloc]]=[bloc[raycastedBloc],bloc[num]];
-        updateMeuble(indiceCurrentMeuble);
-      }
-    console.log("drag finished");
-    frameCamera();*/
+    //updateMeuble(num);
+    console.log("xfinal=",meubles[num].x);
+    //placeMeuble(num);
   });
 }
 
@@ -331,6 +359,7 @@ scene.add( ambientLight );
 function checkRaycast() {
   if (!rayCastEnabled) return;
   raycaster.setFromCamera(pointer, camera, 0, 1000);
+  console.log("raycasting");
   //check intersect with blocs
   const intersects = raycaster.intersectObjects(selectableBloc, true);
   if (intersects.length > 0) {
@@ -660,13 +689,13 @@ function changePoignee(name) {
   poigneeGroup = new THREE.Group(); // revoir init
   loader.load(poigneesFileList.get(name), function (gltf) {
     let poigneeRoot = gltf.scene.getObjectByName('poignee');
-    scene.add(poigneeRoot);
+    //scene.add(poigneeRoot);
     //console.log("poigneRoot = ", poigneeRoot);
     for (var i = poigneeRoot.children.length; i > 0; i--) {
       poigneeGroup.add(poigneeRoot.children[i - 1]);
     }
     //console.log("poigneeGroup=", poigneeGroup);
-    scene.add(poigneeGroup);
+    //scene.add(poigneeGroup);
     poigneeGroup.scale.set(100, 100, 100);
     updateMeuble(indiceCurrentMeuble);
     listPoigneesName.value = name;
@@ -1131,6 +1160,9 @@ function changeCurrentMeuble(num) {
   updateInterfaceMeuble();
   updateInterfaceBlocs(indiceCurrentMeuble);
   updateSelectableBlocs(indiceCurrentMeuble);
+  console.log("meuble changed");
+  console.log("meubles[num].x=",meubles[num].x);
+  console.log("meubleRoot[num].position=",meubleRoot[num].position);
 }
 
 function changeCurrentMeubleFromClick(num) {
