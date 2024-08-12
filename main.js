@@ -90,6 +90,10 @@ class meubleClass {
   getMaxY () {
     return (this.y+this.hauteur);
   }
+
+  getMinY () {
+    return (this.y);
+  }
 }
 
 var style="flat";
@@ -172,6 +176,10 @@ controls.maxPolarAngle = Math.PI / 2;
 var dragBlocControls;
 var dragMeubleControls;
 function initDrag() {
+  var wA,hA;
+  //var wA,wB,hA,hB;
+  var aX,aY,bX,bY;
+  //drag blocs
   dragBlocControls = new DragControls(selectableBloc, camera, renderer.domElement);
   dragBlocControls.addEventListener('dragstart', function (event) {
     controls.enabled=false;
@@ -196,6 +204,7 @@ function initDrag() {
       console.log("drag finished");
   });
 
+  //drag meubles
   dragMeubleControls=new DragControls(selectableMeuble, camera, renderer.domElement);
   dragMeubleControls.addEventListener('dragstart', function (event) {
     controls.enabled=false;
@@ -204,6 +213,9 @@ function initDrag() {
     event.object.material.emissive.set(0xaaaaaa);
     var obj1=event.object;
     var num=obj1.numero;
+    changeCurrentMeubleFromClick(num);
+    obj1.xMeubleInit=meubles[num].x;
+    obj1.yMeubleInit=meubles[num].y;
     var posInitiale = new THREE.Vector3;
     posInitiale = [...obj1.position];
     obj1.posInitiale = posInitiale;
@@ -220,6 +232,8 @@ function initDrag() {
     //console.log("xinitial=",xinitial);
     console.log("obj1.position=",obj1.position);
     console.log("obj1.positionInitiale=",obj1.posInitiale);
+    wA=(meubles[num].getMaxX()-meubles[num].getMinX());
+    hA=(meubles[num].getMaxY()-meubles[num].getMinY());
   });
 
   dragMeubleControls.addEventListener('drag', function (event) { 
@@ -227,16 +241,97 @@ function initDrag() {
     var num=obj1.numero;
     //console.log("meuble numero = ",num);
     console.log("initpos=",obj1.posInitiale);
+    let wpos = new THREE.Vector3();
     var pos=obj1.position;
+    obj1.localToWorld(wpos);
     console.log("pos = ",pos);
-    obj1.position.set(pos.x,0,0);
+    aX=wpos.x;
+    aY=wpos.y;
+
+
+    adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos);
+
+    /*while (adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos)) {
+      console.log("adjusting");
+      pos=obj1.position;
+      obj1.localToWorld(wpos);
+      aX=wpos.x;
+      aY=wpos.y;
+    }*/
+
+    /*for (var i = 0; i < meubles.length; i++) {
+      if (i != num) {
+        bX=meubles[i].x;
+        bY=meubles[i].y+meubles[i].hauteur/2;
+        console.log("ax,ay,bx,by=",aX,aY,bX,bY);
+        wB=(meubles[i].getMaxX()-meubles[i].getMinX());
+        hB=(meubles[i].getMaxY()-meubles[i].getMinY());
+        let deltaX=(aX+ wA/2) - (bX + wB/2);
+        let deltaY=(aY + hA/2) - (bY + hB/2);
+        let intersect = (Math.abs(deltaX) * 2 < (wA + wB)) && (Math.abs(deltaY) * 2 < (hA + hB));
+        console.log("intersect=",intersect);
+        if (intersect) {
+            if (aX > bX) { var decalX = (deltaX - 0.5 * (wA + wB)) }
+            else { var decalX = (deltaX + 0.5 * (wA + wB)) }
+            if (aY > bY) { var decalY = (deltaY - 0.5 * (hA + hB)) } 
+            else { var decalY= (deltaY + 0.5 * (hA + hB)) }
+          if ((Math.abs(decalX)>Math.abs(decalY)) && (obj1.yMeubleInit+pos.y>0)) {pos.y-=decalY;aY=pos.y;} 
+          else {pos.x-=decalX;aX=pos.x;}
+        }
+        pos.y=(obj1.yMeubleInit+pos.y<0) ? pos.y=-obj1.yMeubleInit : pos.y;
+        console.log("pos.y=",pos.y);
+      }
+      }
+    obj1.position.set(pos.x,pos.y,0);*/
+
+    meubles[num].x=obj1.xMeubleInit+obj1.position.x;
+    meubles[num].y=obj1.yMeubleInit+obj1.position.y;
+    console.log("pos.y=",pos.y);
+    //meubles[num].y=(meubles[num].y<meubles[num].hauteur/2) ? meubles[num].hauteur/2 : meubles[num].y;
+    updateInterfaceX(num);
+    updateInterfaceY(num);
     //meubleRoot[num].position.set(pos.x,obj1.posInitiale.y,obj1.posInitiale.z);
     var worldPos = new THREE.Vector3();
     var posMeuble = new THREE.Vector3();
     var pos = new THREE.Vector3();
     worldPos = obj1.position;
     //console.log("obj1 pos=",worldPos);
+    //frameCamera();
   });
+
+  function adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos) {
+    
+    var wB,hB;
+    var bX,bY;
+    for (var i = 0; i < meubles.length; i++) {
+      if (i != num) {
+        bX=meubles[i].x;
+        bY=meubles[i].y+meubles[i].hauteur/2;
+        console.log("ax,ay,bx,by=",aX,aY,bX,bY);
+        wB=(meubles[i].getMaxX()-meubles[i].getMinX());
+        hB=(meubles[i].getMaxY()-meubles[i].getMinY());
+        let deltaX=(aX+ wA/2) - (bX + wB/2);
+        let deltaY=(aY + hA/2) - (bY + hB/2);
+        var intersect = (Math.abs(deltaX) * 2 < (wA + wB)) && (Math.abs(deltaY) * 2 < (hA + hB));
+        console.log("intersect=",intersect);
+        if (intersect) {
+            if (aX > bX) { var decalX = (deltaX - 0.5 * (wA + wB)) }
+            else { var decalX = (deltaX + 0.5 * (wA + wB)) }
+            if (aY > bY) { var decalY = (deltaY - 0.5 * (hA + hB)) } 
+            else { var decalY= (deltaY + 0.5 * (hA + hB)) }
+          if ((Math.abs(decalX)>Math.abs(decalY)) && (obj1.yMeubleInit+pos.y>0)) {pos.y-=decalY;aY=pos.y;} 
+          else {pos.x-=decalX;aX=pos.x;}
+        }
+        //else return (intersect);
+        let newY=obj1.yMeubleInit+pos.y;
+        pos.y=(newY<0) ? -obj1.yMeubleInit : newY;
+        console.log("pos.y=",pos.y);
+      }
+      }
+      //return (pos.x,pos.y);
+      obj1.position.set(pos.x,pos.y,0);
+      return intersect;
+    }
 
   dragMeubleControls.addEventListener('dragend', function (event) {
     controls.enabled=true;
@@ -245,8 +340,6 @@ function initDrag() {
     event.object.material.emissive.set(0x000000);
     var obj1=event.object;
     var num=event.object.numero;
-    //meubleRoot[num].position.set(obj1.position);
-    meubles[num].x+=obj1.position.x;
     let blocRoot=obj1.children[0];
     console.log("blocRoot=",blocRoot);
     let parent=obj1.parent
@@ -261,10 +354,11 @@ function initDrag() {
     //updateMeuble(num);
     console.log("xfinal=",meubles[num].x);
     //placeMeuble(num);
+    frameCamera();
   });
 }
 
-
+//add refresh sliders x y when dragging
 
 function getfocaleV(focale,width,height) {
   if ((height/width)>1) return focale
@@ -359,7 +453,7 @@ scene.add( ambientLight );
 function checkRaycast() {
   if (!rayCastEnabled) return;
   raycaster.setFromCamera(pointer, camera, 0, 1000);
-  console.log("raycasting");
+  //console.log("raycasting");
   //check intersect with blocs
   const intersects = raycaster.intersectObjects(selectableBloc, true);
   if (intersects.length > 0) {
@@ -420,7 +514,7 @@ function clearRaycast() {
   if (IntersectedMeuble!=null) {IntersectedMeuble.visible = false; IntersectedMeuble = null;}
 }
 
-function getBoundingBoxCenter () {
+function getGlobalBoundingBoxCenter () {
   let l = meubles.length;
   let center = new THREE.Vector3();
   if (l==1) {
@@ -463,6 +557,10 @@ function animate() {
   let distH = ((boundingBoxHeight/2)/Math.tan((focaleV/2)));
   let dist = Math.max(distL,distH);
   //camera.translateZ((dist-(controls.getDistance(cameraTarget)))/100);
+  //let target=cameraTarget;
+  controls.target.x-=((controls.target.x-(boundingBoxCenter.x))/100);
+  controls.target.y-=((controls.target.y-(boundingBoxCenter.y))/100);
+  controls.target.z-=((controls.target.z-(boundingBoxCenter.z))/100);
   camera.updateMatrixWorld();
   renderer.render( scene, camera );
   
@@ -566,8 +664,8 @@ function updateCamera () {
 
 function frameCamera () {
   //return;
-  boundingBoxCenter = getBoundingBoxCenter();
-  controls.target = boundingBoxCenter;
+  boundingBoxCenter = getGlobalBoundingBoxCenter();
+  //controls.target = boundingBoxCenter;
   cameraTarget.position.set(boundingBoxCenter);
   //console.log("boudingbox = ",boundingBoxCenter);
   //console.log("bB width, Height = ",boundingBoxWidth,boundingBoxHeight);
@@ -604,6 +702,8 @@ var meubleSliders;
 var blocsSliders;
 var large;
 var elh;
+var elX;
+var elY;
 var styleMenu;
 var checkboxVertical;
 var divSwitchVertical;
@@ -1251,11 +1351,11 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   elnbb.childNodes[1].addEventListener("input",function eventElnbbInput() {onChangeBlocsQuantity(indiceMeuble)},false);
   elnbb.childNodes[2].addEventListener("change",function eventElnbbChange() {onChangeBlocsQuantity(indiceMeuble)},false);
   meubleSliders.append(elnbb);
-  let elX = createSlider(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
+  elX = createSlider(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
   elX.childNodes[1].addEventListener("input",function eventElxInput() {placeMeuble(indiceMeuble);frameCamera()},false);
   elX.childNodes[2].addEventListener("change",function eventElyChange() {placeMeuble(indiceMeuble);frameCamera()},false);
   meubleSliders.append(elX);
-  let elY = createSlider(meuble,"y","Placement vertical",meuble.y,0,0,300);
+  elY = createSlider(meuble,"y","Placement vertical",meuble.y,0,0,300);
   elY.childNodes[1].addEventListener("input",function eventElyInput() {placeMeuble(indiceMeuble);frameCamera()},false);
   elY.childNodes[2].addEventListener("change",function eventElyChange() {placeMeuble(indiceMeuble);frameCamera()},false);
   meubleSliders.append(elY);
@@ -1274,6 +1374,16 @@ function updateInterfaceLargeur(indiceMeuble) {
 function updateInterfaceHauteur(indiceMeuble) {
   elh.childNodes[1].value = meubles[indiceMeuble].hauteur;
   elh.childNodes[2].value = meubles[indiceMeuble].hauteur;
+}
+
+function updateInterfaceX(indiceMeuble) {
+  elX.childNodes[1].value = meubles[indiceMeuble].x;
+  elX.childNodes[2].value = meubles[indiceMeuble].x;
+}
+
+function updateInterfaceY(indiceMeuble) {
+  elY.childNodes[1].value = meubles[indiceMeuble].y;
+  elY.childNodes[2].value = meubles[indiceMeuble].y;
 }
 
 function changeCurrentBlocFromClick(num) {
