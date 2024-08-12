@@ -196,12 +196,12 @@ function initDrag() {
     //console.log("raycastedBloc=",raycastedBloc);
     if ((raycastedBloc==-1) || (raycastedBloc==num)) {console.log("nothing happens")}
       else {
-        console.log("swap ",num," et ",raycastedBloc);
+        //console.log("swap ",num," et ",raycastedBloc);
         let bloc=meubles[indiceCurrentMeuble].bloc;
         [bloc[num],bloc[raycastedBloc]]=[bloc[raycastedBloc],bloc[num]];
         updateMeuble(indiceCurrentMeuble);
       }
-      console.log("drag finished");
+      //console.log("drag finished");
   });
 
   //drag meubles
@@ -221,72 +221,53 @@ function initDrag() {
     obj1.posInitiale = posInitiale;
     let blocRoot=meubleRoot[num].children[0];
     const parent=blocRoot.parent;
-    console.log(blocRoot);
+    //console.log(blocRoot);
     parent.remove(blocRoot);
     obj1.attach(blocRoot); //on détache pour éviter les references circulaires dans les calculs de coordonnées
     blocRoot.position.set(0,0,0);
     //obj1.position.set(posInitiale.x,posInitiale.y,posInitiale.z);
-    console.log(blocRoot);
-    console.log("obj1=",obj1);
-    console.log("scene=",scene);
+    //console.log(blocRoot);
+    //console.log("obj1=",obj1);
+    //console.log("scene=",scene);
     //console.log("xinitial=",xinitial);
-    console.log("obj1.position=",obj1.position);
-    console.log("obj1.positionInitiale=",obj1.posInitiale);
-    wA=(meubles[num].getMaxX()-meubles[num].getMinX());
-    hA=(meubles[num].getMaxY()-meubles[num].getMinY());
+    //console.log("obj1.position=",obj1.position);
+    //console.log("obj1.positionInitiale=",obj1.posInitiale);
+    wA=meubles[num].largeur;//(meubles[num].getMaxX()-meubles[num].getMinX());
+    hA=meubles[num].hauteur;//(meubles[num].getMaxY()-meubles[num].getMinY());
   });
 
   dragMeubleControls.addEventListener('drag', function (event) { 
     var obj1=event.object;
     var num=obj1.numero;
     //console.log("meuble numero = ",num);
-    console.log("initpos=",obj1.posInitiale);
+    //console.log("initpos=",obj1.posInitiale);
     let wpos = new THREE.Vector3();
     var pos=obj1.position;
     obj1.localToWorld(wpos);
-    console.log("pos = ",pos);
+    //console.log("pos = ",pos);
     aX=wpos.x;
     aY=wpos.y;
 
+    console.log ("world x,y = ",aX,aY);
 
-    adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos);
+    adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos,0);
 
-    /*while (adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos)) {
+    /*if (adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos)) {
       console.log("adjusting");
       pos=obj1.position;
       obj1.localToWorld(wpos);
       aX=wpos.x;
       aY=wpos.y;
+      //meubles[num].x=obj1.xMeubleInit+obj1.position.x;
+      //meubles[num].y=obj1.yMeubleInit+obj1.position.y;
+      //obj1.xMeubleInit+=meubles[num].x
+      //obj1.yMeubleInit=meubles[num].y;
+      adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos);
     }*/
-
-    /*for (var i = 0; i < meubles.length; i++) {
-      if (i != num) {
-        bX=meubles[i].x;
-        bY=meubles[i].y+meubles[i].hauteur/2;
-        console.log("ax,ay,bx,by=",aX,aY,bX,bY);
-        wB=(meubles[i].getMaxX()-meubles[i].getMinX());
-        hB=(meubles[i].getMaxY()-meubles[i].getMinY());
-        let deltaX=(aX+ wA/2) - (bX + wB/2);
-        let deltaY=(aY + hA/2) - (bY + hB/2);
-        let intersect = (Math.abs(deltaX) * 2 < (wA + wB)) && (Math.abs(deltaY) * 2 < (hA + hB));
-        console.log("intersect=",intersect);
-        if (intersect) {
-            if (aX > bX) { var decalX = (deltaX - 0.5 * (wA + wB)) }
-            else { var decalX = (deltaX + 0.5 * (wA + wB)) }
-            if (aY > bY) { var decalY = (deltaY - 0.5 * (hA + hB)) } 
-            else { var decalY= (deltaY + 0.5 * (hA + hB)) }
-          if ((Math.abs(decalX)>Math.abs(decalY)) && (obj1.yMeubleInit+pos.y>0)) {pos.y-=decalY;aY=pos.y;} 
-          else {pos.x-=decalX;aX=pos.x;}
-        }
-        pos.y=(obj1.yMeubleInit+pos.y<0) ? pos.y=-obj1.yMeubleInit : pos.y;
-        console.log("pos.y=",pos.y);
-      }
-      }
-    obj1.position.set(pos.x,pos.y,0);*/
 
     meubles[num].x=obj1.xMeubleInit+obj1.position.x;
     meubles[num].y=obj1.yMeubleInit+obj1.position.y;
-    console.log("pos.y=",pos.y);
+    //console.log("pos.y=",pos.y);
     //meubles[num].y=(meubles[num].y<meubles[num].hauteur/2) ? meubles[num].hauteur/2 : meubles[num].y;
     updateInterfaceX(num);
     updateInterfaceY(num);
@@ -299,39 +280,43 @@ function initDrag() {
     //frameCamera();
   });
 
-  function adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos) {
-    
-    var wB,hB;
-    var bX,bY;
+  function adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos,count) {
+    if (count>meubles.length) {return}
+    var wB, hB;
+    var bX, bY;
     for (var i = 0; i < meubles.length; i++) {
       if (i != num) {
-        bX=meubles[i].x;
-        bY=meubles[i].y+meubles[i].hauteur/2;
-        console.log("ax,ay,bx,by=",aX,aY,bX,bY);
-        wB=(meubles[i].getMaxX()-meubles[i].getMinX());
-        hB=(meubles[i].getMaxY()-meubles[i].getMinY());
-        let deltaX=(aX+ wA/2) - (bX + wB/2);
-        let deltaY=(aY + hA/2) - (bY + hB/2);
-        var intersect = (Math.abs(deltaX) * 2 < (wA + wB)) && (Math.abs(deltaY) * 2 < (hA + hB));
-        console.log("intersect=",intersect);
+        bX = meubles[i].x;
+        bY = meubles[i].y + meubles[i].hauteur / 2;
+        console.log("ax,ay,bx,by=", aX, aY, bX, bY);
+        wB = meubles[i].largeur;//(meubles[i].getMaxX() - meubles[i].getMinX());
+        hB = meubles[i].hauteur;//(meubles[i].getMaxY() - meubles[i].getMinY());
+        //let deltaX = (aX - hB/2 ) - (bX + wB / 2);
+        //let deltaY = (aY + hA / 2) - (bY + hB / 2);
+        var intersect = (Math.abs(aX-bX)*2<(wA+wB)) && (Math.abs(aY-bY)*2<(hA+hB));
+        console.log("intersect=", intersect);
         if (intersect) {
-            if (aX > bX) { var decalX = (deltaX - 0.5 * (wA + wB)) }
-            else { var decalX = (deltaX + 0.5 * (wA + wB)) }
-            if (aY > bY) { var decalY = (deltaY - 0.5 * (hA + hB)) } 
-            else { var decalY= (deltaY + 0.5 * (hA + hB)) }
-          if ((Math.abs(decalX)>Math.abs(decalY)) && (obj1.yMeubleInit+pos.y>0)) {pos.y-=decalY;aY=pos.y;} 
-          else {pos.x-=decalX;aX=pos.x;}
+          let deltaX = Math.abs(aX - bX )*2 - (wA + wB);
+          //let deltaY = Math.abs(aY - bY )*2 - (hA + hB);
+          if (aX > bX) { var decalX = (aX-wA/2) - (bX+wB/2) }
+          else { var decalX = (aX+wA/2)-(bX-wB/2)}
+          if (aY > bY) { var decalY = (aY-hA/2) - (bY+hB/2) }
+          else { var decalY = (aY+hA/2)-(bY-hB/2)}
+          if ((Math.abs(decalX) > Math.abs(decalY)) && (obj1.yMeubleInit + pos.y > 0)) { pos.y -= decalY; aY -= decalY; }
+          else { pos.x -= decalX; aX -= decalX; }
         }
-        //else return (intersect);
-        let newY=obj1.yMeubleInit+pos.y;
-        pos.y=(newY<0) ? -obj1.yMeubleInit : newY;
-        console.log("pos.y=",pos.y);
+        //else {return}
+        let newY = obj1.yMeubleInit + pos.y;
+        console.log("newY=", newY);
+        //pos.y=(newY<0) ? -obj1.yMeubleInit : newY;
+        if (aY < meubles[num].hauteur / 2) { pos.y += (meubles[num].hauteur / 2 - aY); aY=meubles[num].hauteur / 2 }
+        console.log("pos.y=", pos.y);
       }
-      }
-      //return (pos.x,pos.y);
-      obj1.position.set(pos.x,pos.y,0);
-      return intersect;
     }
+    //return (pos.x,pos.y);
+    obj1.position.set(pos.x, pos.y, 0);
+    if (intersect) adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos,count+1);
+  }
 
   dragMeubleControls.addEventListener('dragend', function (event) {
     controls.enabled=true;
