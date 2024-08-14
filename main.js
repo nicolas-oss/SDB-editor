@@ -344,56 +344,89 @@ function initDrag() {
   });
 }
 
-function getMaxAllowedWidth(num) {
-  var bW, bH;
-  var bX, bY;
-  //var aX = meubles[num].x;
+function getLimitTranslationX(num) {
+  var bY;
   var aY = meubles[num].y + meubles[num].hauteur / 2;
-  //var aH = meubles[num].hauteur;
+  var minXGlobal=-10e34;
+  var maxXGlobal=+10e34;
+  var minX=-10e34;
+  var maxX=10e34;
+  for (var i = 0; i < meubles.length; i++) {
+    if (i != num) {
+      bY = meubles[i].y + meubles[i].hauteur / 2;
+      var intersectY = (Math.abs(aY - bY) * 2 < (meubles[num].hauteur + meubles[i].hauteur));
+      if (intersectY) {
+          if (meubles[num].x > meubles[i].x) {
+            minX = (meubles[i].x + meubles[i].largeur / 2) + (meubles[num].largeur / 2);
+          }
+          if (meubles[num].x < meubles[i].x) {
+            maxX = (meubles[i].x - meubles[i].largeur / 2) - (meubles[num].largeur / 2);
+          }
+          console.log("minX,maxX=",minX,maxX);
+          minXGlobal=Math.max(minX,minXGlobal);
+          maxXGlobal=Math.min(maxX,maxXGlobal);
+          console.log("minX,maxX=",minX,maxX);
+      }
+    }
+  }
+  return [minXGlobal,maxXGlobal];
+}
+
+function getLimitTranslationY(num) {
+  var minYGlobal=0;
+  var maxYGlobal=10e34;
+  var minY=0;
+  var maxY=10e34;
+  for (var i = 0; i < meubles.length; i++) {
+    if (i != num) {
+      var intersectX = (Math.abs(meubles[num].x - meubles[i].x) * 2 < (meubles[num].largeur + meubles[i].largeur));
+      if (intersectX) {
+          if (meubles[num].y > meubles[i].y) {
+            minY = (meubles[i].y + meubles[i].hauteur);
+          }
+          if (meubles[num].y < meubles[i].y) {
+            maxY = meubles[i].y-meubles[num].hauteur;
+          }
+          minYGlobal=Math.max(minY,minYGlobal);
+          maxYGlobal=Math.min(maxY,maxYGlobal);
+      }
+    }
+  }
+  return [minYGlobal,maxYGlobal];
+}
+
+function getMaxAllowedWidth(num) {
+  var bY;
+  var aY = meubles[num].y + meubles[num].hauteur / 2;
   var deltaX;
   var maxWidth = 10e34;
   for (var i = 0; i < meubles.length; i++) {
     if (i != num) {
-      //bX = meubles[i].x;
       bY = meubles[i].y + meubles[i].hauteur / 2;
-      //bW = meubles[i].largeur;
-      //bH = meubles[i].hauteur;
-      var intersectY = (Math.abs(aY - bY) * 2 < (meubles[num].hauteur + meubles[i].hauteur)); //(Math.abs(aX-bX)*2<(wA+bW))
+      var intersectY = (Math.abs(aY - bY) * 2 < (meubles[num].hauteur + meubles[i].hauteur));
       if (intersectY) {
         if (meubles[num].x > meubles[i].x) {
           deltaX = (meubles[num].x) - (meubles[i].x + meubles[i].largeur / 2);
         }
         else {
           deltaX = (meubles[i].x - meubles[i].largeur / 2) - (meubles[num].x);
-          //console.log("à gauche ");
         }
-        //console.log("deltaX=", deltaX);
         maxWidth = Math.min(maxWidth, deltaX);
       }
-      //console.log("maxWidth=", maxWidth);
     }
   }
   return 2 * maxWidth;
 }
 
 function getMaxAllowedHeight(num) {
-  //var bW, bH;
-  //var bY;
-  //var aY = meubles[num].y + meubles[num].hauteur / 2;
-  var deltaY;
+  var deltaY=10e34;
   var maxHeight = 10e34;
   for (var i = 0; i < meubles.length; i++) {
     if (i != num) {
-      //bY = meubles[i].y + meubles[i].hauteur / 2;
-      //var intersectY = (Math.abs(aY - bY) * 2 < (meubles[num].hauteur + meubles[i].hauteur)); //(Math.abs(aX-bX)*2<(wA+bW))
-      var intersectX = (Math.abs(meubles[num].x - meubles[i].x) * 2 < (meubles[num].largeur + meubles[i].largeur)); //(Math.abs(aX-bX)*2<(wA+bW))
-
+      var intersectX = (Math.abs(meubles[num].x - meubles[i].x) * 2 < (meubles[num].largeur + meubles[i].largeur));
       if (intersectX) {
-        /*if (aY > bY) {
-          deltaY = (aY) - (bY + meubles[i].hauteur / 2);
-        }*/
         if (meubles[num].y < meubles[i].y) {
-          deltaY = meubles[i].y-meubles[num].y;//(bY - meubles[i].hauteur / 2) - (aY);
+          deltaY = meubles[i].y-meubles[num].y;
         }
         maxHeight = Math.min(maxHeight, deltaY);
       }
@@ -593,7 +626,7 @@ function animate() {
   let distL = ((boundingBoxWidth/2)/Math.tan(0.0174533*(focale/2)));
   let distH = ((boundingBoxHeight/2)/Math.tan((focaleV/2)));
   let dist = Math.max(distL,distH);
-  //camera.translateZ((dist-(controls.getDistance(cameraTarget)))/100);
+  camera.translateZ((dist-(controls.getDistance(cameraTarget)))/100);
   //let target=cameraTarget;
   controls.target.x-=((controls.target.x-(boundingBoxCenter.x))/100);
   controls.target.y-=((controls.target.y-(boundingBoxCenter.y))/100);
@@ -637,7 +670,6 @@ function updateMeuble (indiceMeuble) {
   var cubeTemp=meubleRoot[indiceMeuble].getObjectByName("cube"+indiceMeuble);
 if (cubeTemp)                  //children 1 = cubes de selection
     {
-      console.log("delete cube");
       meubleRoot[indiceMeuble].remove(cubeTemp);
       geometry.dispose();
       material.dispose();
@@ -645,9 +677,6 @@ if (cubeTemp)                  //children 1 = cubes de selection
     }
     let delta = 0.1*indiceMeuble;
     //geometry = new THREE.BoxGeometry(meubles[indiceMeuble].largeur + epsilon + delta, meubles[indiceMeuble].hauteur + epsilon + delta, meubles[indiceMeuble].profondeur + epsilon + delta);
-    console.log(meubles[indiceMeuble].largeur+delta+ epsilon);
-    console.log("delta=",delta);
-    console.log("epsilon=",epsilon);
     geometry = RoundEdgedBox( meubles[indiceMeuble].largeur+delta+ epsilon, meubles[indiceMeuble].hauteur+delta+ epsilon, meubles[indiceMeuble].profondeur+delta+ epsilon , 3 , 2,2,2,2)
     cube = new THREE.Mesh(geometry, materialSelectionMeuble);
     cube.numero=indiceMeuble;
@@ -704,8 +733,8 @@ var meubleSliders;
 var blocsSliders;
 var large,largeS,largeB;
 var elh,hautS,hautB;
-var elX;
-var elY;
+var elX,elXS,elXB;
+var elY,elYS,elYB;
 var styleMenu;
 var checkboxVertical;
 var divSwitchVertical;
@@ -1387,20 +1416,79 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
     updateInterfaceLargeur(indiceMeuble);
     frameCamera();
   }
-
   
   let elnbb = createSlider(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
   elnbb.childNodes[1].addEventListener("input",function eventElnbbInput() {onChangeBlocsQuantity(indiceMeuble)},false);
   elnbb.childNodes[2].addEventListener("change",function eventElnbbChange() {onChangeBlocsQuantity(indiceMeuble)},false);
   meubleSliders.append(elnbb);
-  elX = createSlider(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
-  elX.childNodes[1].addEventListener("input",function eventElxInput() {placeMeuble(indiceMeuble);frameCamera()},false);
-  elX.childNodes[2].addEventListener("change",function eventElyChange() {placeMeuble(indiceMeuble);frameCamera()},false);
+
+  let retour = createSliderWithoutListener(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
+  elX=retour[0];
+  elXS=retour[1];
+  elXB=retour[2];
+  elXS.addEventListener("input",function () {eventElxInputSlider(indiceMeuble)},false);
+  elXB.addEventListener("change",function () {eventElxInputBox(indiceMeuble)},false);
   meubleSliders.append(elX);
-  elY = createSlider(meuble,"y","Placement vertical",meuble.y,0,0,300);
-  elY.childNodes[1].addEventListener("input",function eventElyInput() {placeMeuble(indiceMeuble);frameCamera()},false);
-  elY.childNodes[2].addEventListener("change",function eventElyChange() {placeMeuble(indiceMeuble);frameCamera()},false);
+
+  function eventElxInputSlider(indiceMeuble) {
+    var x=+elXS.value; //forçage de type
+    eventElxInput(indiceMeuble,x);
+  }
+
+  function eventElxInputBox(indiceMeuble) {
+    var x=+elXB.value; //forçage de type
+    eventElxInput(indiceMeuble,x);
+  }
+
+  function eventElxInput(indiceMeuble,x) {
+    var translateX = getLimitTranslationX(indiceMeuble);
+    console.log("translateX=",translateX);
+    x = (x<translateX[0]) ? translateX[0] : x;
+    x = (x>translateX[1]) ? translateX[1] : x;
+    meubles[indiceMeuble].x = x;
+    computeBlocsSize(indiceMeuble);
+    updateInterfaceBlocs(indiceMeuble);
+    updateMeuble(indiceCurrentMeuble);
+    placeMeuble(indiceMeuble);
+    elXS.value = meubles[indiceMeuble].x;
+    elXB.value = elXS.value;
+    frameCamera();
+  }
+
+  retour = createSliderWithoutListener(meuble,"y","Placement vertical",meuble.y,0,0,300);
+  elY=retour[0];
+  elYS=retour[1];
+  elYB=retour[2];
+  elYS.addEventListener("input",function () {eventElyInputSlider(indiceMeuble)},false);
+  elYB.addEventListener("change",function () {eventElyInputBox(indiceMeuble)},false);
   meubleSliders.append(elY);
+
+  function eventElyInputSlider(indiceMeuble) {
+    var y=+elYS.value; //forçage de type
+    eventElyInput(indiceMeuble,y);
+  }
+
+  function eventElyInputBox(indiceMeuble) {
+    var y=+elYB.value; //forçage de type
+    eventElyInput(indiceMeuble,y);
+  }
+
+  function eventElyInput(indiceMeuble,y) {
+    var translateY = getLimitTranslationY(indiceMeuble);
+    console.log("translateY=",translateY);
+    y = (y<translateY[0]) ? translateY[0] : y;
+    y = (y>translateY[1]) ? translateY[1] : y;
+    meubles[indiceMeuble].y = y;
+    computeBlocsSize(indiceMeuble);
+    updateInterfaceBlocs(indiceMeuble);
+    updateMeuble(indiceCurrentMeuble);
+    placeMeuble(indiceMeuble);
+    elYS.value = meubles[indiceMeuble].y;
+    elYB.value = elYS.value;
+    frameCamera();
+  }
+
+
   let cr = document.createElement("p");
   meubleDiv.append(cr);
   if (meubles[indiceMeuble].disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
