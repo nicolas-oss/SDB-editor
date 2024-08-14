@@ -216,22 +216,18 @@ function initDrag() {
     changeCurrentMeubleFromClick(num);
     obj1.xMeubleInit=meubles[num].x;
     obj1.yMeubleInit=meubles[num].y;
+    obj1.xOk=obj1.xMeubleInit;
+    obj1.yOk=obj1.yMeubleInit;
+    obj1.zOk=obj1.position.z;
     var posInitiale = new THREE.Vector3;
     posInitiale = [...obj1.position];
     obj1.posInitiale = posInitiale;
     let blocRoot=meubleRoot[num].children[0];
-    const parent=blocRoot.parent;
-    //console.log(blocRoot);
-    parent.remove(blocRoot);
+    //const parent=blocRoot.parent;
+    //parent.remove(blocRoot);
     obj1.attach(blocRoot); //on détache pour éviter les references circulaires dans les calculs de coordonnées
+    //if (meubles[num].disposition=="horizontal") {blocRoot.position.set(0,0,0)} else {blocRoot.position.set(0,-meubles[num].hauteur/2,0)}
     blocRoot.position.set(0,0,0);
-    //obj1.position.set(posInitiale.x,posInitiale.y,posInitiale.z);
-    //console.log(blocRoot);
-    //console.log("obj1=",obj1);
-    //console.log("scene=",scene);
-    //console.log("xinitial=",xinitial);
-    //console.log("obj1.position=",obj1.position);
-    //console.log("obj1.positionInitiale=",obj1.posInitiale);
     wA=meubles[num].largeur;//(meubles[num].getMaxX()-meubles[num].getMinX());
     hA=meubles[num].hauteur;//(meubles[num].getMaxY()-meubles[num].getMinY());
   });
@@ -239,65 +235,75 @@ function initDrag() {
   dragMeubleControls.addEventListener('drag', function (event) { 
     var obj1=event.object;
     var num=obj1.numero;
-    //console.log("meuble numero = ",num);
-    //console.log("initpos=",obj1.posInitiale);
     let wpos = new THREE.Vector3();
     var pos=obj1.position;
     obj1.localToWorld(wpos);
-    //console.log("pos = ",pos);
     aX=wpos.x;
     aY=wpos.y;
 
-    console.log ("world x,y = ",aX,aY);
+    //console.log ("world x,y = ",aX,aY);
 
     adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos,0);
 
-    /*if (adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos)) {
-      console.log("adjusting");
-      pos=obj1.position;
-      obj1.localToWorld(wpos);
-      aX=wpos.x;
-      aY=wpos.y;
-      //meubles[num].x=obj1.xMeubleInit+obj1.position.x;
-      //meubles[num].y=obj1.yMeubleInit+obj1.position.y;
-      //obj1.xMeubleInit+=meubles[num].x
-      //obj1.yMeubleInit=meubles[num].y;
-      adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos);
-    }*/
-
     meubles[num].x=obj1.xMeubleInit+obj1.position.x;
     meubles[num].y=obj1.yMeubleInit+obj1.position.y;
-    //console.log("pos.y=",pos.y);
-    //meubles[num].y=(meubles[num].y<meubles[num].hauteur/2) ? meubles[num].hauteur/2 : meubles[num].y;
     updateInterfaceX(num);
     updateInterfaceY(num);
-    //meubleRoot[num].position.set(pos.x,obj1.posInitiale.y,obj1.posInitiale.z);
     var worldPos = new THREE.Vector3();
     var posMeuble = new THREE.Vector3();
     var pos = new THREE.Vector3();
     worldPos = obj1.position;
-    //console.log("obj1 pos=",worldPos);
     //frameCamera();
   });
 
+  function intersectWithOneOfAll(obj,num,aaX,aaY,wwA,hhA) {
+    //var worldPos = new THREE.Vector3();
+    //var posMeuble = new THREE.Vector3();
+    var pos = new THREE.Vector3();
+    obj.localToWorld(pos);
+    aaX=pos.x;
+    aaY=pos.y;
+    var intersectB = false;
+    console.log("nb meubles=",meubles.length);
+    for (var i = 0; i < meubles.length; i++) {
+      //console.log(i);
+      if (i != num) {
+        var bbX = meubles[i].x;
+        var bbY = meubles[i].y + meubles[i].hauteur / 2;
+        var wwB = meubles[i].largeur;
+        var hhB = meubles[i].hauteur;
+        console.log("i=",i," aaX,aaY,bbX,bbY=",aaX,aaY,bbX,bbY); 
+        if ((Math.abs(aaX-bbX)*2<(wwA+wwB)) && (Math.abs(aaY-bbY)*2<(hhA+hhB))) intersectB=true;
+        if (intersectB) {console.log("intersect with ",i," num=",num)}
+         }
+  
+} return intersectB;
+  }
+  
   function adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos,count) {
-    if (count>meubles.length) {return}
+    pos.z=obj1.zOk;
+    if (count>meubles.length) {
+      /*pos.x=obj1.xOk;
+      pos.y=obj1.yOk;
+      pos.z=obj1.zOk;*/
+      return
+    }
     var wB, hB;
     var bX, bY;
+    var replace=false;
+   
+    if (aY < meubles[num].hauteur / 2) { pos.y += (meubles[num].hauteur / 2 - aY); aY=meubles[num].hauteur / 2; replace=true }
+    var newX=pos.x;
+    var newY=pos.y;
     for (var i = 0; i < meubles.length; i++) {
       if (i != num) {
         bX = meubles[i].x;
         bY = meubles[i].y + meubles[i].hauteur / 2;
-        console.log("ax,ay,bx,by=", aX, aY, bX, bY);
-        wB = meubles[i].largeur;//(meubles[i].getMaxX() - meubles[i].getMinX());
-        hB = meubles[i].hauteur;//(meubles[i].getMaxY() - meubles[i].getMinY());
-        //let deltaX = (aX - hB/2 ) - (bX + wB / 2);
-        //let deltaY = (aY + hA / 2) - (bY + hB / 2);
+        wB = meubles[i].largeur;
+        hB = meubles[i].hauteur;
         var intersect = (Math.abs(aX-bX)*2<(wA+wB)) && (Math.abs(aY-bY)*2<(hA+hB));
-        console.log("intersect=", intersect);
         if (intersect) {
-          let deltaX = Math.abs(aX - bX )*2 - (wA + wB);
-          //let deltaY = Math.abs(aY - bY )*2 - (hA + hB);
+          //let deltaX = Math.abs(aX - bX )*2 - (wA + wB);
           if (aX > bX) { var decalX = (aX-wA/2) - (bX+wB/2) }
           else { var decalX = (aX+wA/2)-(bX-wB/2)}
           if (aY > bY) { var decalY = (aY-hA/2) - (bY+hB/2) }
@@ -305,17 +311,12 @@ function initDrag() {
           if ((Math.abs(decalX) > Math.abs(decalY)) && (obj1.yMeubleInit + pos.y > 0)) { pos.y -= decalY; aY -= decalY; }
           else { pos.x -= decalX; aX -= decalX; }
         }
-        //else {return}
-        let newY = obj1.yMeubleInit + pos.y;
-        console.log("newY=", newY);
-        //pos.y=(newY<0) ? -obj1.yMeubleInit : newY;
-        if (aY < meubles[num].hauteur / 2) { pos.y += (meubles[num].hauteur / 2 - aY); aY=meubles[num].hauteur / 2 }
-        console.log("pos.y=", pos.y);
+        if (aY < meubles[num].hauteur / 2) { pos.y += (meubles[num].hauteur / 2 - aY); aY=meubles[num].hauteur / 2; replace=true }
       }
     }
-    //return (pos.x,pos.y);
-    obj1.position.set(pos.x, pos.y, 0);
-    if (intersect) adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos,count+1);
+    if (intersectWithOneOfAll(obj1,num,pos.x,pos.y,wA,hA)==false) {console.log("pos ok");  obj1.xOk=pos.x; obj1.yOk=pos.y; console.log("xOk,yOk=",obj1.xOk,obj1.yOk)} else {pos.x=obj1.xOk; pos.y=obj1.yOk;}
+    //if (intersect || replace) {adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos,count+1)}
+      //else {pos.x=obj1.xOk; pos.y=obj1.yOk; pos.z=obj1.zOk}
   }
 
   dragMeubleControls.addEventListener('dragend', function (event) {
@@ -326,25 +327,63 @@ function initDrag() {
     var obj1=event.object;
     var num=event.object.numero;
     let blocRoot=obj1.children[0];
-    console.log("blocRoot=",blocRoot);
+    //console.log("blocRoot=",blocRoot);
     let parent=obj1.parent
-    parent.remove(obj1);
+    //parent.remove(obj1);
     meubleRoot[num].attach(blocRoot); // on rattache une fois fini
     parent.attach(obj1);
+    //blocRoot.position.set(0,0,0);
+    //if (meubles[num].disposition=="horizontal") {blocRoot.position.set(0,0,0)} else {blocRoot.position.set(0,-meubles[num].hauteur/2,0)}
     blocRoot.position.set(0,0,0);
     obj1.position.set(0,0,0);
     
-    console.log(meubleRoot[num]);
+    //console.log(meubleRoot[num]);
     placeMeuble(num);
-    //updateMeuble(num);
-    console.log("xfinal=",meubles[num].x);
-    //placeMeuble(num);
+    //console.log("xfinal=",meubles[num].x);
     frameCamera();
   });
 }
 
-//add refresh sliders x y when dragging
+function getMaxAllowedWidth(num) {
+  var bW, bH;
+  var bX, bY;
+  var aX=meubles[num].x;
+  var aY=meubles[num].y + meubles[num].hauteur / 2;
+  //var wA = meubles[num].largeur;
+  var aH = meubles[num].hauteur;
+  //var excesWidth=-1;
+  var deltaX;
+  var maxWidth=10e34;
+  for (var i = 0; i < meubles.length; i++) {
+    if (i != num) {
+      //console.log("meuble ",i);
+      bX = meubles[i].x;
+      bY = meubles[i].y + meubles[i].hauteur / 2;
+      //console.log("ax,ay,bx,by=", aX, aY, bX, bY);
+      bW = meubles[i].largeur;
+      bH = meubles[i].hauteur;
+      var intersectY = (Math.abs(aY-bY)*2<(aH+bH)); //(Math.abs(aX-bX)*2<(wA+bW))
+      //console.log("aX,aY,bX,bY,bW,bH,intersectY =", aX,aY,bX,bY,bW,bH,intersectY);
+      if (intersectY) {
+        if (aX>bX) {
+          deltaX = (aX) - (bX+bW/2);
+        }
+        if (bX>aX) {
+          deltaX = (bX - bW/2 ) - (aX);
+          console.log("à gauche ");
+        }
+        console.log("deltaX=",deltaX);
+        maxWidth = Math.min(maxWidth,deltaX);
+      }
+      console.log("maxWidth=",maxWidth);
+    }
+    
+  }
+  //maxWidth = (maxWidth=10e34) ? -1 : maxWidth; 
+  return 2*maxWidth;
+}
 
+//add refresh sliders x y when dragging
 function getfocaleV(focale,width,height) {
   if ((height/width)>1) return focale
   else return (2*(height/2)/((width/2)/Math.tan(0.0174533*(focale/2))));
@@ -362,8 +401,6 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
   focaleV=getfocaleV(focale,width,height);
-  //ok
-  //console.log("focaleV deg = ",focaleV/0.0174533);
 }
 
 //calcul de la position du pointeur da la souris dans le canvas THREE
@@ -438,7 +475,6 @@ scene.add( ambientLight );
 function checkRaycast() {
   if (!rayCastEnabled) return;
   raycaster.setFromCamera(pointer, camera, 0, 1000);
-  //console.log("raycasting");
   //check intersect with blocs
   const intersects = raycaster.intersectObjects(selectableBloc, true);
   if (intersects.length > 0) {
@@ -473,13 +509,13 @@ function checkRaycast() {
 
 //raycast sur les objets 3d lors d'un changement de souris ou de camera
 function onCanvasClick () {
-  console.log("click");
+  //console.log("click");
   if (raycastedBloc>-1) changeCurrentBlocFromClick(raycastedBloc);
   if (raycastedMeuble>-1) changeCurrentMeubleFromClick(raycastedMeuble);
 }
 
 function onCanvasDrag () {
-  console.log("drag");
+  //console.log("drag");
   if (raycastedBloc>-1) console.log("pointer=",pointer);
 }
 
@@ -572,65 +608,68 @@ function updateCube (indiceMeuble) {
 }
 
 function placeMeuble (indiceMeuble) {
-  if (meubles[indiceMeuble].disposition=="horizontal") {
+  //if (meubles[indiceMeuble].disposition=="horizontal") {
     meubleRoot[indiceMeuble].position.set(
       meubles[indiceMeuble].x,
       meubles[indiceMeuble].hauteur/2+meubles[indiceMeuble].y,
       meubles[indiceMeuble].profondeur/2);
-    }
-  else {
+  //  }
+  /*else {
     meubleRoot[indiceMeuble].position.set(
       meubles[indiceMeuble].x,
       meubles[indiceMeuble].y,
       meubles[indiceMeuble].profondeur/2);
-  }
+  }*/
 }
 
 function updateSelectableBlocs(indiceMeuble) {
   selectableBloc = [];
+  let root = meubleRoot[indiceMeuble].children[0];
   for (var i = 0; i < meubles[indiceMeuble].nbBlocs; i++) {
-    let root = meubleRoot[indiceMeuble].children[0].children[i];
-    //console.log(root);
-    for (var j = 0; j < root.children.length; j++) {
-      //console.log(j);
-      if (root.children[j].name == ("BoiteSelectionBloc" + i)) {
-        selectableBloc.push(root.children[j]);
+    var oneSelectableBloc=root.getObjectByName("BoiteSelectionBloc" + i);
+    console.log(oneSelectableBloc.name);
+        if (oneSelectableBloc) selectableBloc.push(oneSelectableBloc);
         //console.log(root.children[j]);
       }
+      dragBlocControls.setObjects(selectableBloc);
     }
-  }
-  //let dragableObjects=selectableBloc.concat(selectableMeuble);
-  dragBlocControls.setObjects(selectableBloc);
-}
+
 
 function updateMeuble (indiceMeuble) {
+  console.log(meubles[indiceMeuble].largeur);
   selectableBloc=[];
   meubleRoot[indiceMeuble].children[0].children=[];
   for (var i=0; i<meubles[indiceMeuble].nbBlocs; i++) {
     updateBloc(indiceMeuble,i);
-    meubleRoot[indiceMeuble].children[0].add(blocRoot[i]); //children 0 = blocs
+    meubleRoot[indiceMeuble].children[0].add(blocRoot[i]);
+    //if (meubles[indiceMeuble].disposition=="vertical") {blocRoot[i].translateY(-meubles[indiceMeuble].hauteur/(meubles[indiceMeuble].nbBlocs))} //children 0 = blocs
   }
-if (meubleRoot[indiceMeuble].children[1])                  //children 1 = cubes de selection
+  var cubeTemp=meubleRoot[indiceMeuble].getObjectByName("cube"+indiceMeuble);
+if (cubeTemp)                  //children 1 = cubes de selection
     {
-      meubleRoot[indiceMeuble].remove(cube);
+      console.log("delete cube");
+      meubleRoot[indiceMeuble].remove(cubeTemp);
       geometry.dispose();
       material.dispose();
       delete selectableMeuble[indiceMeuble];
     }
     let delta = 0.1*indiceMeuble;
     //geometry = new THREE.BoxGeometry(meubles[indiceMeuble].largeur + epsilon + delta, meubles[indiceMeuble].hauteur + epsilon + delta, meubles[indiceMeuble].profondeur + epsilon + delta);
+    console.log(meubles[indiceMeuble].largeur+delta+ epsilon);
+    console.log("delta=",delta);
+    console.log("epsilon=",epsilon);
     geometry = RoundEdgedBox( meubles[indiceMeuble].largeur+delta+ epsilon, meubles[indiceMeuble].hauteur+delta+ epsilon, meubles[indiceMeuble].profondeur+delta+ epsilon , 3 , 2,2,2,2)
     cube = new THREE.Mesh(geometry, materialSelectionMeuble);
     cube.numero=indiceMeuble;
     cube.name="cube"+indiceMeuble;
     //console.log("cube.numero = ",cube.numero);
     cube.visible=false;
-    if (meubles[indiceMeuble].disposition=="vertical") cube.translateY(meubles[indiceMeuble].hauteur/2);
+    //if (meubles[indiceMeuble].disposition=="vertical") cube.translateY(meubles[indiceMeuble].hauteur/2);
     //meubleRoot[indiceMeuble].add(cube);
   meubleRoot[indiceMeuble].add(cube);
   selectableMeuble[indiceMeuble]=cube;
   placeMeuble(indiceMeuble);
-  console.log("dragBlocControls=",dragBlocControls);
+  //console.log("dragBlocControls=",dragBlocControls);
   //let dragableObjects=selectableBloc.concat(selectableMeuble);
   dragBlocControls.setObjects(selectableBloc);
 }
@@ -661,7 +700,10 @@ function updateScene () {
   //meubles[indiceCurrentMeuble].calculLargeur();
   //updateCube(indiceCurrentMeuble);
   //console.log(meubles[indiceCurrentMeuble]);
-  updateMeuble(indiceCurrentMeuble);
+  for (var i=0; i<meubles.length; i++) {
+    updateMeuble(i);
+  }
+  //updateMeuble(indiceCurrentMeuble);
   //updateCamera(Meubles[indiceCurrentMeuble]);
 }
 
@@ -685,7 +727,7 @@ var listPoigneesPopup;
 var listPoigneesName;
 var meubleSliders;
 var blocsSliders;
-var large;
+var large,largeS,largeB;
 var elh;
 var elX;
 var elY;
@@ -782,7 +824,7 @@ function changePoignee(name) {
     //console.log("poigneeGroup=", poigneeGroup);
     //scene.add(poigneeGroup);
     poigneeGroup.scale.set(100, 100, 100);
-    updateMeuble(indiceCurrentMeuble);
+    updateScene();
     listPoigneesName.value = name;
     refreshListPoigneesPopup();
   });
@@ -848,9 +890,14 @@ function createNewMeuble() {
   let blocs = new THREE.Object3D();
   blocs.name="blocs";
   meubleRoot[indiceCurrentMeuble].add(blocs);
+  var minX = 0;
   if (indiceCurrentMeuble>0) {
-    let positionY=meubles[indiceCurrentMeuble-1].y+meubles[indiceCurrentMeuble-1].hauteur;
-    meubles[indiceCurrentMeuble].y=positionY;
+    for (var i=0; i<meubles.length; i++) {
+      let currentMinX = meubles[i].x+meubles[i].largeur/2+ meubles[indiceCurrentMeuble].largeur/2;
+      minX= Math.max(currentMinX,minX)
+    }
+    //let positionY=meubles[indiceCurrentMeuble-1].y+meubles[indiceCurrentMeuble-1].hauteur;
+    meubles[indiceCurrentMeuble].x=minX;
   }
   updateMeuble(indiceCurrentMeuble);
   scene.add(meubleRoot[indiceCurrentMeuble]);
@@ -1012,24 +1059,20 @@ function initializeBloc(indiceMeuble, numBloc) {
   //positionnement bloc dans meuble
   if (meuble.disposition=="horizontal") {
     var blocPosition = -meuble.largeur / 2;
+  }
+  else {var blocPosition = -meuble.hauteur / 2 ;}
     if (numBloc > 0) {
       for (var i = 0; i < numBloc; i++) {
         blocPosition += meuble.bloc[i].taille;
       }
     }
     blocPosition += meuble.bloc[numBloc].taille / 2;
-    blocRoot[numBloc].position.set(blocPosition, 0, 0);
-  }
-  else {
-    var blocPosition = meuble.bloc[numBloc].taille / 2 ;
-    if (numBloc > 0) {for (var i = 1; i < numBloc+1; i++) {
-        blocPosition += meuble.bloc[i-1].taille;
-      }
+    if (meuble.disposition=="horizontal") { 
+      blocRoot[numBloc].position.set(blocPosition, 0, 0)
+    } 
+    else {
+      blocRoot[numBloc].position.set(0, blocPosition, 0);
     }
-    //console.log("bloc pos Y = ",blocPosition);
-    //blocPosition += meuble.bloc[numBloc].hauteur / 2;
-    blocRoot[numBloc].position.set(0, blocPosition, 0);
-  }
 }
 
 function updateBloc (indiceMeuble, numBloc) {
@@ -1168,8 +1211,21 @@ function RoundEdgedBox(width, height, depth, radius, widthSegments, heightSegmen
 
 // Interface
 
-function createSlider(objet,key,nom,value,type,min,max) {  
-      let divParam = document.createElement("div");
+function createSlider(objet,key,nom,value,type,min,max) {
+  let retour = createSliderWithoutListener(objet,key,nom,value,type,min,max);
+      let divParam = retour[0];
+      //console.log(divParam);
+      let s=retour[1];
+      //console.log(s);
+      let b=retour[2];
+      //let b=document.getElementById("b."+nom);
+      s.addEventListener("input", function () {b.value = s.value; objet[key]=+s.value; }, false);
+      b.addEventListener("change", function () {s.value = b.value; objet[key]=+s.value; }, false);
+      return(divParam);
+}
+
+function createSliderWithoutListener(objet,key,nom,value,type,min,max) {
+  let divParam = document.createElement("div");
       let divParamName = document.createElement("div");
       let l = document.createElement("label");
       l.innerHTML = nom;
@@ -1177,6 +1233,7 @@ function createSlider(objet,key,nom,value,type,min,max) {
       divParam.append(divParamName);
       let s = document.createElement("input");
       s.type="range";
+      s.name="s."+nom;
       s.value=value;
       s.min=min;
       s.max=max;
@@ -1184,14 +1241,14 @@ function createSlider(objet,key,nom,value,type,min,max) {
       divParam.append(s);
       let b = document.createElement("input");
       b.type="number";
+      b.name="b."+nom;;
       b.value=value;
       b.min=min;
       b.max=max;
       b.classList.add("inputValue");
       divParam.append(b);
-      s.addEventListener("input", function () {b.value = s.value; objet[key]=+s.value; }, false);
-      b.addEventListener("change", function () {s.value = b.value; objet[key]=+s.value; }, false);
-      return(divParam);
+      //console.log("done");
+      return([divParam,s,b]);
 }
 
 function updateInterfaceMeuble() {
@@ -1321,16 +1378,57 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
     listMeublesHTML.append(o);
   }
   elh=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
-  elh.childNodes[1].addEventListener("input",function eventElhInput() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateScene();frameCamera();},false);
-  elh.childNodes[2].addEventListener("change",function eventElhChange() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateScene();frameCamera();},false);
+  elh.childNodes[1].addEventListener("input",function eventElhInput() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateMeuble(indiceCurrentMeuble);frameCamera();},false);
+  elh.childNodes[2].addEventListener("change",function eventElhChange() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateMeuble(indiceCurrentMeuble);frameCamera();},false);
   meubleSliders.append(elh);
   let elp=createSlider(meuble,"profondeur","Profondeur",meuble.profondeur,0,10,250);
-  elp.childNodes[1].addEventListener("input",function eventElpInput() {updateScene();frameCamera();},false);
-  elp.childNodes[2].addEventListener("change",function eventElpChange() {updateScene();frameCamera();},false);
+  elp.childNodes[1].addEventListener("input",function eventElpInput() {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
+  elp.childNodes[2].addEventListener("change",function eventElpChange() {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
   meubleSliders.append(elp);
+
   large=createSlider(meuble,"largeur","Largeur",meuble.largeur,0,10,500);
-  large.childNodes[1].addEventListener("input",function eventLargeInput() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateScene();frameCamera();},false);
-  large.childNodes[2].addEventListener("change",function eventLargeChange() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateScene();frameCamera();},false);
+  large.childNodes[1].addEventListener("input",function eventLargeInput() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateMeuble(indiceCurrentMeuble);frameCamera();},false);
+  large.childNodes[2].addEventListener("change",function eventLargeChange() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateMeuble(indiceCurrentMeuble);frameCamera();},false);
+  meubleSliders.append(large);
+
+  /*var retour=createSliderWithoutListener(meuble,"largeur","Largeur",meuble.largeur,0,10,500);
+  large=retour[0];//createSlider(meuble,"largeur","Largeur",meuble.largeur,0,10,500);
+  largeS=retour[1];
+  largeB=retour[2];
+  //console.log("largeB")
+  //s.addEventListener("input", function () {b.value = s.value; objet[key]=+s.value; }, false);
+  //b.addEventListener("change", function () {s.value = b.value; objet[key]=+s.value; }, false);*/
+  largeS=large.childNodes[1];
+  largeB=large.childNodes[2];
+  largeS.addEventListener("input",function() {eventLargeInput(indiceMeuble)},false);
+  largeB.addEventListener("change",function() {eventLargeInput(indiceMeuble)},false);
+
+  function eventLargeInput(indiceMeuble) {
+    var largeur=+largeS.value; //forçage de type
+    var maxWidth = getMaxAllowedWidth(indiceMeuble);
+    meubles[indiceMeuble].largeur = (largeur<maxWidth) ? largeur : maxWidth;
+    computeBlocsSize(indiceMeuble);
+    updateInterfaceBlocs(indiceMeuble);
+    updateMeuble(indiceCurrentMeuble);
+    updateInterfaceLargeur(indiceMeuble);
+    frameCamera();
+  }
+
+  /*large.childNodes[2].addEventListener("change",function eventLargeChange() {
+    var largeur=largeB.value;
+    console.log("largeur=",largeur);
+    var maxWidth = getMaxAllowedWidth(indiceMeuble);
+    console.log("maxWidth=",maxWidth);
+    meubles[indiceMeuble].largeur = (largeB.value<maxWidth) ? largeB.value : maxWidth;
+    console.log("meubles[indiceMeuble].largeur=",meubles[indiceMeuble].largeur);
+    largeS.value=meubles[indiceMeuble].largeur;
+    updateInterfaceLargeur(indiceMeuble);
+    computeBlocsSize(indiceMeuble);
+    updateInterfaceBlocs(indiceMeuble);
+    updateMeuble(indiceCurrentMeuble);
+    frameCamera();
+  },false);*/
+
   meubleSliders.append(large);
   let elnbb = createSlider(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
   elnbb.childNodes[1].addEventListener("input",function eventElnbbInput() {onChangeBlocsQuantity(indiceMeuble)},false);
@@ -1347,8 +1445,8 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   let cr = document.createElement("p");
   meubleDiv.append(cr);
   if (meubles[indiceMeuble].disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
-  console.log(meubles[indiceMeuble].disposition);
-  console.log(checkboxVertical);
+  //console.log(meubles[indiceMeuble].disposition);
+  //console.log(checkboxVertical);
 }
 
 function updateInterfaceLargeur(indiceMeuble) {
@@ -1474,19 +1572,19 @@ function createSlidersBlocs(indiceMeuble,numBloc) {
     meuble.calculTaille(); 
     updateInterfaceLargeur(indiceMeuble); 
     updateInterfaceHauteur(indiceMeuble); 
-    updateScene();
+    updateMeuble(indiceMeuble);
     frameCamera();}
     ,false);
   slideLargeurBloc.childNodes[2].addEventListener("change",function (){
     meuble.calculTaille();
     updateInterfaceLargeur(indiceMeuble);
     updateInterfaceHauteur(indiceMeuble); 
-    updateScene();
+    updateMeuble(indiceMeuble);
     frameCamera();}
     ,false);
   let sliderEtageres = createSlider(meuble.bloc[numBloc],"etageres","Nombre d'étagères",meuble.bloc[numBloc].etageres,0,0,maxEtageres);
-  sliderEtageres.childNodes[1].addEventListener("input",function () {updateScene();frameCamera();},false);
-  sliderEtageres.childNodes[2].addEventListener("change",function () {updateScene();frameCamera();},false);
+  sliderEtageres.childNodes[1].addEventListener("input",function () {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
+  sliderEtageres.childNodes[2].addEventListener("change",function () {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
   blocsSliders.append(sliderEtageres);
   
   // buttons
@@ -1610,7 +1708,7 @@ function onClickNombrePortesButton (buttonSource,buttonB,indiceMeuble,numBloc) {
     meubles[indiceMeuble].bloc[numBloc].nombrePortes = "1";
     createButtonsForOuverturePortes(indiceMeuble,numBloc);
   }
-  updateScene();
+  updateMeuble(indiceCurrentMeuble);
   frameCamera();
 }
 
@@ -1621,7 +1719,7 @@ function onClickOuverturePorteButton (buttonSource,buttonB,indiceMeuble,numBloc)
   buttonB.classList.add("buttonOff");
   if (meubles[indiceMeuble].bloc[numBloc].ouverturePorte  == "gauche") {meubles[indiceMeuble].bloc[numBloc].ouverturePorte = "droite"}
   else {meubles[indiceMeuble].bloc[numBloc].ouverturePorte = "gauche"}
-  updateScene();
+  updateMeuble(indiceCurrentMeuble);
   frameCamera();
 }
 
