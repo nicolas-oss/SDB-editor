@@ -25,7 +25,7 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  /*place-items: center;*/
   min-width: 320px;
   min-height: 100vh;
   overflow: hidden;
@@ -138,8 +138,13 @@ button:focus-visible {
 #interface, #aspect {
   align-self: flex-start;
   min-width: 220px;
+  width:220px;
   height: 100vh;
   /*margin : 12px;*/
+}
+
+#aspect {
+  background-color: #d1d1ff;
 }
 
 #interface {
@@ -170,7 +175,10 @@ button:focus-visible {
 
 #canvas {
   max-height: fit-content;
-  width : 90%;
+  max-width : 100%;
+  min-width: 75%;
+  /*max-width:90%;
+  width:auto;*/
   height : 100%;
   background-color: #ffffff;
 }
@@ -179,12 +187,25 @@ button:focus-visible {
   background-color : red;
 }
 
+input[type=button] {
+ width:44%;
+ padding:2px;
+ margin : 3px;
+}
+
+.boutons {
+  display: flex;
+  flex-wrap: wrap;
+}
+
 /*select option[value="value"] {
   display: none;
 }*/
 
 select {
-  width : 100%;
+  width : 91%;
+  padding : 3px;
+  margin : 3px;
 }
 
 .slider.round {

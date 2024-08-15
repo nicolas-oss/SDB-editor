@@ -20,12 +20,17 @@
     <div id="interface">
       <div id="meuble">
         <p>Meuble</p>
+        <!--<input type="text" id="listMeublesName">
         <input type="text" list="listMeubles" id="listMeublesPopup" class="popup">
-        <!--<select id="selectlistMeuble"></select>!-->
         <datalist id="listMeubles">
-        </datalist>
-        <input type="button" id="buttonNewMeuble" value="Nouveau">
-        <input type="button" id="buttonDeleteMeuble" value="Supprimer">
+          </datalist>-->
+        <select id="selectListMeubles">
+        </select>
+        <div id="buttonsMeubles" class="boutons">
+          <input type="button" id="buttonNewMeuble" value="Nouveau">
+          <input type="button" id="buttonDupliquerMeuble" value="Dupliquer">
+          <input type="button" id="buttonDeleteMeuble" value="Supprimer">
+        </div>
         <div id="divSwitchVertical">
           <label class="switch">
             <input type="checkbox" id="checkboxVertical" checked="false">
@@ -37,10 +42,41 @@
     </div>
       <div id="blocs">
         <p>Blocs</p>
-        <input type="text" list="listBlocs" id="listBlocsPopup" class="popup">
-        <datalist id="listBlocs">
-        </datalist>
+        <!--<input type="text" id="listBlocsName">
+        <input type="text" list="listBlocs" id="listBlocsPopup" class="popup"><datalist id="listBlocs">
+        </datalist>-->
+        <select id="selectListBlocs">
+        </select>
         <div id="blocsSliders"></div>
+        <div id="buttonsBlocs" class="boutons">
+          <input type="button" id="buttonPorte" value="Portes">
+          <input type="button" id="buttonTiroirs" value="Tiroirs">
+          <input type="button" id="buttonEtageres" value="Étagères">
+          <input type="button" id="buttonPlein" value="Panneau">
+        </div>
+        <div id="divPortes">
+          <div id="nbPortes">
+            Nombre de portes
+          </br>
+          <div class="boutons">
+            <input type="button" id="buttonUnePorte" value="1">
+            <input type="button" id="buttonDeuxPortes" value="2">
+          </div>
+        </div>
+          <div id="sensOuverture">
+            Sens d'ouverture
+          </br>
+          <div class="boutons">
+            <input type="button" id="buttonOuverturePorteGauche" value="Gauche">
+            <input type="button" id="buttonOuverturePorteDroite" value="Droite">
+          </div>
+        </div>
+        </div>
+        <div id="divEtageres">
+          <input type="checkbox" id="checkBoxEtageresVerticales">
+          Étagères verticales
+        </div>
+        <div id="buttonsEtageres"></div>
       </div>
     </div>
     <div id="canvas"></div>
