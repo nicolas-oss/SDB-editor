@@ -715,10 +715,11 @@ function updateScene () {
 var body;
 var interfaceDiv;
 var meubleDiv;
-var divPortes;
 var divNombrePortes;
 var divOuverturePortes;
+var divEtageres;
 var buttonNewMeuble;
+var buttonDupliquerMeuble;
 var buttonDeleteMeuble;
 var listMeublesHTML;
 var listMeublesPopup;
@@ -727,6 +728,11 @@ var blocsDiv;
 var listBlocs;
 var listBlocsPopup;
 var listBlocsName;
+var buttonPorte,buttonEtageres,buttonTiroirs,buttonPlein;
+var buttonDeuxPortes,buttonUnePorte,buttonOuverturePorteDroite,buttonOuverturePorteGauche;
+var nbPortes,sensOuverture;
+var buttonEtageresVerticales;
+var divPortes,divEtageres;
 var listPoigneesPopup;
 var listPoigneesName;
 var meubleSliders;
@@ -775,32 +781,139 @@ function initializeScene() {
     renderer.setAnimationLoop( animate );
 }
 
-function initializeInterface() {
+function getHTMLElements () {
   body=document.getElementById("body");
   interfaceDiv = document.getElementById("interface");
   meubleDiv = document.getElementById("meuble");
   buttonNewMeuble = document.getElementById("buttonNewMeuble");
+  buttonDupliquerMeuble = document.getElementById("buttonDupliquerMeuble");
   buttonDeleteMeuble = document.getElementById("buttonDeleteMeuble");
+  listMeublesName = document.getElementById("listMeublesName");
   listMeublesHTML = document.getElementById("listMeubles");
   listMeublesPopup = document.getElementById("listMeublesPopup");
   blocsDiv = document.getElementById("blocs");
   listBlocs = document.getElementById("listBlocs");
   listBlocsPopup = document.getElementById("listBlocsPopup");
+  listBlocsName = document.getElementById("listBlocsName");
+  buttonPorte = document.getElementById("buttonPorte");
+  buttonTiroirs = document.getElementById("buttonTiroirs");
+  buttonEtageres = document.getElementById("buttonEtageres");
+  buttonPlein = document.getElementById("buttonPlein");
+  divPortes = document.getElementById("divPortes");
+  divEtageres = document.getElementById("divEtageres");
+  buttonUnePorte = document.getElementById("buttonUnePorte");
+  buttonDeuxPortes = document.getElementById("buttonDeuxPortes");
+  buttonOuverturePorteDroite = document.getElementById("buttonOuverturePorteDroite");
+  buttonOuverturePorteGauche = document.getElementById("buttonOuverturePorteGauche");
+  nbPortes = document.getElementById("nbPortes");
+  sensOuverture = document.getElementById("sensOuverture");
   meubleSliders = document.getElementById("meubleSliders");
   blocsSliders = document.getElementById("blocsSliders");
   listPoigneesPopup = document.getElementById("listPoigneesPopup");
   listPoigneesName = document.getElementById("listPoigneesName");
   styleMenu = document.getElementById("style");
-  styleMenu.addEventListener("change",function changeStyle(event) {style = event.target.value; updateScene(); console.log(style)},true);
   divSwitchVertical = document.getElementById("divSwitchVertical");
   checkboxVertical = document.getElementById("checkboxVertical");
+}
+
+function initializeInterface() {
+  getHTMLElements();
+
+  // listeners
+  // buttons blocs
+  buttonPorte.addEventListener("click", function () { 
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].type="Portes";
+    console.log("indiceCurrentBloc=",indiceCurrentBloc);
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  }, false);
+  buttonTiroirs.addEventListener("click", function () { 
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].type="Tiroirs"; 
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  }, false);  
+  buttonEtageres.addEventListener("click", function () { 
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].type="Etageres"; 
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  }, false); 
+  buttonPlein.addEventListener("click", function () { 
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].type="Panneau"; 
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  }, false);
+  buttonUnePorte.addEventListener("click", function () {
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].nombrePortes="1";
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+    }, false);
+  buttonDeuxPortes.addEventListener("click", function () {
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].nombrePortes="2";
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  }, false);
+  buttonOuverturePorteGauche.addEventListener("click", function () {
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].ouverturePorte="gauche";
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  }, false);
+  buttonOuverturePorteDroite.addEventListener("click", function () {
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].ouverturePorte="droite";
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  }, false);
+
+
+  styleMenu.addEventListener("change", function changeStyle(event) { 
+    style = event.target.value;
+    updateScene(); 
+    console.log(style) 
+  }, true);
+
   checkboxVertical.addEventListener("click", function switchVertical() {
     console.log("checkbox clicked");
-    if (meubles[indiceCurrentMeuble].disposition=="vertical") meubles[indiceCurrentMeuble].disposition="horizontal";
-    else meubles[indiceCurrentMeuble].disposition="vertical";
+    if (meubles[indiceCurrentMeuble].disposition == "vertical") meubles[indiceCurrentMeuble].disposition = "horizontal";
+    else meubles[indiceCurrentMeuble].disposition = "vertical";
     computeBlocsSize(indiceCurrentMeuble);
     updateMeuble(indiceCurrentMeuble);
-    frameCamera()} , true);
+    frameCamera()
+  }, true);
+
+  listMeublesPopup.addEventListener("change", function eventListMeublesPopup(event) { 
+    console.log(event); 
+    changeCurrentMeubleFromPopup(event.target.value) 
+  }, false);
+
+  listBlocsPopup.addEventListener("change",function changeCurrentBlocFromPopup() { 
+    startMaterialAnimationBloc(listBlocsPopup.value.slice(-1)-1);
+    indiceCurrentBloc=+listBlocsPopup.value.slice(-1)-1;
+    console.log("indiceCurrentBloc=",indiceCurrentBloc);
+    updateInterfaceBlocs(indiceCurrentMeuble);
+  },false);
+
+  buttonNewMeuble.addEventListener("click", function eventButtonNewMeuble() {
+    createNewMeuble();
+    updateInterfaceMeuble();
+    indiceCurrentBloc = 0;
+    updateInterfaceBlocs(indiceCurrentMeuble)
+  }, false);
+
+  buttonDupliquerMeuble.addEventListener("click", function eventButtonDupliquerMeuble() {
+    duplicateMeuble(indiceCurrentMeuble);
+    updateInterfaceMeuble();
+    indiceCurrentBloc = 0;
+    updateInterfaceBlocs(indiceCurrentMeuble)
+  }, false);
+
+  buttonDeleteMeuble.addEventListener("click", function eventButtonDeleteMeuble() {
+    deleteMeuble(indiceCurrentMeuble);
+    recomputeMeublesId();
+    updateInterfaceMeuble();
+    indiceCurrentBloc = 0;
+    updateInterfaceBlocs(indiceCurrentMeuble);
+    updateSelectableBlocs(indiceCurrentMeuble);
+    frameCamera();
+  }, false);
 }
 
 const poigneesFileList = new Map;
@@ -882,6 +995,18 @@ function deleteMeuble(num) {
   if (meubles.length < (indiceCurrentMeuble+1)) indiceCurrentMeuble-=1;
 }
 
+function placeNewMeuble(num) {
+  var minX = -10e34;
+  if (num>0) {
+    for (var i=0; i<num; i++) {
+      let currentMinX = meubles[i].x+meubles[i].largeur/2+ meubles[num].largeur/2;
+      minX= Math.max(currentMinX,minX)
+    }
+    meubles[num].x=minX;
+    meubles[num].y=0;
+  }
+}
+
 function createNewMeuble() {
   indiceCurrentMeuble=meubles.length;
   meubles[indiceCurrentMeuble] = new meubleClass(indiceCurrentMeuble);
@@ -891,23 +1016,51 @@ function createNewMeuble() {
   let blocs = new THREE.Object3D();
   blocs.name="blocs";
   meubleRoot[indiceCurrentMeuble].add(blocs);
-  var minX = -10e34;
-  console.log('icm=',indiceCurrentMeuble);
-  console.log('meubles[icm]',meubles[indiceCurrentMeuble]);
-  if (indiceCurrentMeuble>0) {
-    console.log("largeur meuble 0=",meubles[0].largeur/2+meubles[0].x+ meubles[1].largeur/2)
-
-    for (var i=0; i<indiceCurrentMeuble; i++) {
-      let currentMinX = meubles[i].x+meubles[i].largeur/2+ meubles[indiceCurrentMeuble].largeur/2;
-      console.log("i=",i);
-      console.log("minX,cmx =",minX,currentMinX);
-      minX= Math.max(currentMinX,minX)
-    }
-    //let positionY=meubles[indiceCurrentMeuble-1].y+meubles[indiceCurrentMeuble-1].hauteur;
-    meubles[indiceCurrentMeuble].x=minX;
-  }
+  placeNewMeuble(indiceCurrentMeuble);
   updateMeuble(indiceCurrentMeuble);
   scene.add(meubleRoot[indiceCurrentMeuble]);
+  //updateScene();
+  frameCamera();
+}
+
+function duplicatePropertiesValues(fromObj,toObj) {
+  Object.keys(fromObj,toObj).forEach(key => {
+    if (typeof toObj[key]=="object") {
+      duplicatePropertiesValues(fromObj[key],toObj[key]);
+    }
+    else {toObj[key]=fromObj[key]}
+    console.log(typeof toObj[key]);
+  });
+}
+
+function duplicateMeuble(num) {
+  var indiceNewMeuble=meubles.length;
+
+  meubles[indiceNewMeuble] = new meubleClass(indiceNewMeuble);
+  for (var i=0; i<meubles[num]; i++) {
+    meubles[indiceNewMeuble].blocs[i]=new blocClass();
+  }
+  duplicatePropertiesValues(meubles[num],meubles[indiceNewMeuble])
+
+  meubles[indiceNewMeuble].numero = indiceNewMeuble;
+  meubles[indiceNewMeuble].name = "Meuble "+(indiceNewMeuble+1);
+
+  meubleRoot[indiceNewMeuble] = new THREE.Object3D();
+  scene.add(meubleRoot[indiceNewMeuble]);
+  meubleRoot[indiceNewMeuble].name = "meuble "+indiceNewMeuble;
+  meubleRoot[indiceNewMeuble].position.set(0,0,0);
+  let blocs = new THREE.Object3D();
+  blocs.name="blocs";
+  meubleRoot[indiceNewMeuble].add(blocs);
+  
+  indiceCurrentMeuble = indiceNewMeuble;
+  
+  updateMeuble(indiceNewMeuble);
+  placeNewMeuble(indiceNewMeuble);
+  scene.add(meubleRoot[indiceNewMeuble]);
+  
+  changeCurrentMeuble(indiceNewMeuble);
+  updateScene();
   frameCamera();
 }
 
@@ -1249,29 +1402,39 @@ function updateInterfaceMeuble() {
   clearInterfaceMeuble();
   rebuildInterfaceMeuble();                   // Rebuild HTML structure
   createInterfaceMeuble(indiceCurrentMeuble); // Rebuild HTML content
+
+  if (meubles.length>1) {
+    buttonDeleteMeuble.disabled = false;
+  }
+  else {
+    buttonDeleteMeuble.disabled = true;
+  }
 }
 
 function clearInterfaceMeuble() {
-  listMeublesName.remove();
-  listMeublesPopup.remove();
+  //listMeublesName.remove();
+  //listMeublesPopup.remove();
   listMeublesHTML.remove();
-  buttonNewMeuble.remove();
-  buttonDeleteMeuble.remove();
-  if (listMeublesName) {listMeublesName.remove();}
-  meubleSliders.remove();
+  //buttonNewMeuble.remove();
+  //buttonDeleteMeuble.remove();
+  //if (listMeublesName) {listMeublesName.remove();}
+  //meubleSliders.remove();
+  meubleSliders.innerHTML="";
+  listMeublesHTML.innerHTML="";
+  listMeublesName.classList.remove("animationMeublesName");
 }
 
 function rebuildInterfaceMeuble() { // Rebuild HTML structure
-  listMeublesPopup = document.createElement("input");
+  /*listMeublesPopup = document.createElement("input");
   listMeublesPopup.type = "text";
   listMeublesPopup.setAttribute("list","listMeubles");
   listMeublesPopup.id = "listMeublesPopup";
   listMeublesPopup.classList.add("popup");
-  meubleDiv.append(listMeublesPopup);
+  meubleDiv.append(listMeublesPopup);*/
   listMeublesHTML = document.createElement("datalist");
   listMeublesHTML.id = "listMeubles";
   meubleDiv.append(listMeublesHTML);
-  buttonNewMeuble=document.createElement("input");
+  /*buttonNewMeuble=document.createElement("input");
   buttonNewMeuble.type="button";
   buttonNewMeuble.id="buttonNewMeuble";
   buttonNewMeuble.value="Nouveau";
@@ -1281,10 +1444,10 @@ function rebuildInterfaceMeuble() { // Rebuild HTML structure
   buttonDeleteMeuble.id="buttonDeleteMeuble";
   buttonDeleteMeuble.value="Supprimer";
   meubleDiv.append(buttonDeleteMeuble);
-  buttonDeleteMeuble.after(divSwitchVertical);
-  meubleSliders=document.createElement("div");
+  buttonDeleteMeuble.after(divSwitchVertical);*/
+  /*meubleSliders=document.createElement("div");
   meubleSliders.id="meubleSliders";
-  meubleDiv.append(meubleSliders);
+  meubleDiv.append(meubleSliders);*/
 }
 
 function changeCurrentMeuble(num) {
@@ -1302,9 +1465,11 @@ function changeCurrentMeuble(num) {
 
 function changeCurrentMeubleFromClick(num) {
   changeCurrentMeuble(num);
+  listMeublesName.classList.remove("animationMeublesName");
+  listMeublesName.offsetWidth; //pour temporisation
   listMeublesName.classList.add("animationMeublesName");
   checkRaycast();
-  checkRaycast();
+  //checkRaycast();
 }
 
 function onMaterialAnimationFinish (num) {
@@ -1342,9 +1507,9 @@ function changeCurrentMeubleFromPopup(num) {
 
 function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   let meuble = meubles[indiceMeuble];
-  listMeublesPopup.addEventListener("change",function eventListMeublesPopup(event) {console.log(event); changeCurrentMeubleFromPopup(event.target.value)},false);
-  buttonNewMeuble.addEventListener("click",function eventButtonNewMeuble() {createNewMeuble(); updateInterfaceMeuble(); indiceCurrentBloc=0; updateInterfaceBlocs(indiceCurrentMeuble)},false);
-  if (meubles.length>1) {
+  //listMeublesPopup.addEventListener("change",function eventListMeublesPopup(event) {console.log(event); changeCurrentMeubleFromPopup(event.target.value)},false);
+  //buttonNewMeuble.addEventListener("click",function eventButtonNewMeuble() {createNewMeuble(); updateInterfaceMeuble(); indiceCurrentBloc=0; updateInterfaceBlocs(indiceCurrentMeuble)},false);
+  /*if (meubles.length>1) {
     buttonDeleteMeuble.addEventListener("click",function eventButtonDeleteMeuble() {
       deleteMeuble(indiceMeuble);
       recomputeMeublesId();
@@ -1358,21 +1523,21 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   }
   else {
     buttonDeleteMeuble.disabled = true;
-  }
-  listMeublesName = document.createElement("input");
+  }*/
+  /*listMeublesName = document.createElement("input");
   listMeublesName.type=("text");
-  listMeublesName.id=("listMeublesName");
+  listMeublesName.id=("listMeublesName");*/
+  //console.log(listMeublesName);
   listMeublesName.value=meuble.name;
-  meubleDiv.insertBefore(listMeublesName,listMeublesPopup);
+  //meubleDiv.insertBefore(listMeublesName,listMeublesPopup);
   for (var i=0;i<meubles.length;i++) {
     let o = document.createElement("option");
     o.value = i;
     o.innerHTML = meubles[i].name;
     listMeublesHTML.append(o);
   }
+
   elh=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
-  //elh.childNodes[1].addEventListener("input",function eventElhInput() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateMeuble(indiceCurrentMeuble);frameCamera();},false);
-  //elh.childNodes[2].addEventListener("change",function eventElhChange() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateMeuble(indiceCurrentMeuble);frameCamera();},false);
   meubleSliders.append(elh);
 
   hautS=elh.childNodes[1];
@@ -1397,8 +1562,6 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
   meubleSliders.append(elp);
 
   large=createSlider(meuble,"largeur","Largeur",meuble.largeur,0,10,500);
-  //large.childNodes[1].addEventListener("input",function eventLargeInput() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateMeuble(indiceCurrentMeuble);frameCamera();},false);
-  //large.childNodes[2].addEventListener("change",function eventLargeChange() {computeBlocsSize(indiceMeuble); updateInterfaceBlocs(indiceMeuble); updateMeuble(indiceCurrentMeuble);frameCamera();},false);
   meubleSliders.append(large);
 
   largeS=large.childNodes[1];
@@ -1488,9 +1651,8 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
     frameCamera();
   }
 
-
-  let cr = document.createElement("p");
-  meubleDiv.append(cr);
+  //let cr = document.createElement("p");
+  //meubleDiv.append(cr);
   if (meubles[indiceMeuble].disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
 }
 
@@ -1531,45 +1693,65 @@ function onChangeBlocsQuantity(indiceMeuble) {
 }
 
 function rebuildInterfaceBlocs(indiceMeuble) {
-  listBlocsName = document.createElement("input");
-  listBlocsName.type=("text");
-  listBlocsName.id=("listBlocsName");
   listBlocsName.value="Bloc "+(indiceCurrentBloc+1);
-  blocsDiv.append(listBlocsName);
-  listBlocsPopup = document.createElement("input");
-  listBlocsPopup.type = "text";
-  listBlocsPopup.setAttribute("list","listBlocs");
-  listBlocsPopup.id = "listBlocsPopup";
-  listBlocsPopup.classList.add("popup");
-  blocsDiv.append(listBlocsPopup);
-  listBlocs = document.createElement("datalist");
-  listBlocs.id = "listBlocs";
   for (var i=0;i<meubles[indiceMeuble].nbBlocs;i++) {
     let o = document.createElement("option");
     o.value = "Bloc "+(i+1);
     listBlocs.append(o);
   }
-  blocsDiv.append(listBlocs);
-  blocsSliders = document.createElement("div");
-  blocsSliders.id="blocsSliders";
-  blocsDiv.append(blocsSliders);
-  listBlocsPopup.addEventListener("change",function changeCurrentBlocFromPopup() { startMaterialAnimationBloc(indiceCurrentBloc=listBlocsPopup.value.slice(-1)-1); updateInterfaceBlocs(indiceMeuble);},false);
+}
+
+function refreshInterfaceBlocs(indiceMeuble) {
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].type == "Portes") {
+    buttonPorte.className = "buttonOn";
+    divPortes.style.display = "inline";
+  }
+  else {
+    console.log("divPortes=",divPortes);
+    buttonPorte.className = "buttonOff";
+    divPortes.style.display = "none";
+  }
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].type == "Tiroirs") { buttonTiroirs.className = "buttonOn" } else { buttonTiroirs.className = "buttonOff" }
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].type == "Etageres") {
+    buttonEtageres.className = "buttonOn";
+    divEtageres.style.display = "inline";
+  }
+  else {
+    buttonEtageres.className = "buttonOff"
+    divEtageres.style.display = "none";
+  }
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].type == "Panneau") { buttonPlein.className = "buttonOn" } else { buttonPlein.className = "buttonOff" }
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].nombrePortes == "1") {
+    buttonUnePorte.className = "buttonOn";
+    if (meubles[indiceMeuble].bloc[indiceCurrentBloc].ouverturePorte == "gauche") { buttonOuverturePorteGauche.className = "buttonOn" } else { buttonOuverturePorteGauche.className = "buttonOff" }
+    if (meubles[indiceMeuble].bloc[indiceCurrentBloc].ouverturePorte == "droite") { buttonOuverturePorteDroite.className = "buttonOn" } else { buttonOuverturePorteDroite.className = "buttonOff" }
+  } else { buttonUnePorte.className = "buttonOff" }
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].nombrePortes == "2") {
+    buttonDeuxPortes.className = "buttonOn";
+    buttonOuverturePorteGauche.className = "buttonOff";
+    buttonOuverturePorteDroite.className = "buttonOff";
+  } else { buttonDeuxPortes.className = "buttonOff" }
 }
 
 function updateInterfaceBlocs(indiceMeuble) {
   clearInterfaceBlocs();
   rebuildInterfaceBlocs(indiceMeuble);
   createSlidersBlocs(indiceMeuble,indiceCurrentBloc);
+  refreshInterfaceBlocs(indiceMeuble);
 }
 
+  //if (meubles[indiceMeuble].bloc[indiceCurrentBloc].type == "Etageres") { createButtonsForEtagere(indiceMeuble, indiceCurrentBloc) } else { divEtageres.visibility="none"  }
+
 function clearInterfaceBlocs() {
-  listBlocsPopup.remove();
-  listBlocs.remove();
-  if (listBlocsName) {listBlocsName.remove();}
-  blocsSliders.remove();
-  divPortes=undefined;
-  divNombrePortes=undefined;
-  divOuverturePortes=undefined;
+  //listBlocsPopup.remove();
+  //listBlocs.remove();
+  //if (listBlocsName) {listBlocsName.remove();}
+  //blocsSliders.remove();
+  blocsSliders.innerHTML="";
+  listBlocs.innerHTML="";
+  //divPortes=undefined;
+  //divNombrePortes=undefined;
+  //divOuverturePortes=undefined;
 }
 
 function onMaterialBlocAnimationFinish (num) {
@@ -1603,7 +1785,7 @@ function onClickBlocButton (buttonSource,buttonB,buttonC,buttonD,indiceMeuble,nu
   buttonD.classList.remove("buttonOn");
   buttonD.classList.add("buttonOff");
   meubles[indiceMeuble].bloc[numBloc].type=buttonSource.value;
-  if (meubles[indiceMeuble].bloc[numBloc].type=="Portes") {createButtonsForPortes(indiceMeuble,numBloc)} else {if (divPortes) destroyButtonsForPortes()}
+  //if (meubles[indiceMeuble].bloc[numBloc].type=="Portes") {createButtonsForPortes(indiceMeuble,numBloc)} else {if (divPortes) destroyButtonsForPortes()}
   updateScene();
   frameCamera();
 }
@@ -1627,12 +1809,18 @@ function createSlidersBlocs(indiceMeuble,numBloc) {
     frameCamera();}
     ,false);
   let sliderEtageres = createSlider(meuble.bloc[numBloc],"etageres","Nombre d'étagères",meuble.bloc[numBloc].etageres,0,0,maxEtageres);
-  sliderEtageres.childNodes[1].addEventListener("input",function () {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
-  sliderEtageres.childNodes[2].addEventListener("change",function () {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
+  sliderEtageres.childNodes[1].addEventListener("input",function () {
+    updateMeuble(indiceCurrentMeuble);
+    frameCamera();
+  },false);
+  sliderEtageres.childNodes[2].addEventListener("change",function () {
+    updateMeuble(indiceCurrentMeuble);
+    frameCamera();
+  },false);
   blocsSliders.append(sliderEtageres);
   
   // buttons
-  let cr = document.createElement("p");
+  /*let cr = document.createElement("p");
   blocsSliders.append(cr);
 
   let buttonPorte = document.createElement("input");
@@ -1669,6 +1857,7 @@ function createSlidersBlocs(indiceMeuble,numBloc) {
   buttonPlein.addEventListener("click",function () {onClickBlocButton(buttonPlein,buttonPorte,buttonTiroirs,buttonEtageres,indiceMeuble,numBloc)},false);
 
   if (meuble.bloc[numBloc].type=="Portes") {createButtonsForPortes(indiceMeuble,numBloc)} else {if (divPortes) destroyButtonsForPortes()}
+  if (meuble.bloc[numBloc].type=="Etageres") {createButtonsForEtagere(indiceMeuble,numBloc)} else {if (divEtageres) destroyButtonsForEtageres()}*/
 }
 
 function createButtonsForPortes(indiceMeuble, numBloc) {
@@ -1685,11 +1874,11 @@ function createButtonsForNombrePortes(indiceMeuble, numBloc) {
   divNombrePortes = document.createElement("div");
   divPortes.append(divNombrePortes);
   
-  let crc = document.createElement("p");
-  divNombrePortes.append(crc);
+  //let crc = document.createElement("p");
+  //divNombrePortes.append(crc);
   divNombrePortes.append("Nombre de portes");
-  let crd = document.createElement("p");
-  divNombrePortes.append(crd);
+  //let crd = document.createElement("p");
+  //divNombrePortes.append(crd);
 
   let buttonUnePorte = document.createElement("input");
   buttonUnePorte.type = "button";
@@ -1774,6 +1963,13 @@ function destroyButtonsForPortes () {
 function destroyButtonsForOuverturePortes () {
   divOuverturePortes.remove();
   divOuverturePortes=undefined;
+}
+
+function createButtonsForEtageres(indiceMeuble, numBloc) {
+  if (!divEtageres) {
+    createButtonsForNombrePortes(indiceMeuble, numBloc);
+    if (meubles[indiceMeuble].bloc[numBloc].nombrePortes == "1") createButtonsForOuverturePortes(indiceMeuble, numBloc);
+  }
 }
 
 window.addEventListener("DOMContentLoaded", initializeScene);
