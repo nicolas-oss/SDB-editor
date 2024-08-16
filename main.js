@@ -739,6 +739,7 @@ var elY,elYS,elYB;
 var styleMenu;
 var checkboxVertical;
 var divSwitchVertical;
+var colorDrawer,colorMeuble,colorPoignees;
 
 function buildEnvironnement () {
   geometry = new THREE.PlaneGeometry( 1000, 1000 );
@@ -783,16 +784,8 @@ function getHTMLElements () {
   buttonNewMeuble = document.getElementById("buttonNewMeuble");
   buttonDupliquerMeuble = document.getElementById("buttonDupliquerMeuble");
   buttonDeleteMeuble = document.getElementById("buttonDeleteMeuble");
-  //listMeublesName = document.getElementById("listMeublesName");
-  //listMeublesHTML = document.getElementById("listMeubles");
-  //console.log("listMeublesHTML=",listMeublesHTML);
-
-  //listMeublesPopup = document.getElementById("listMeublesPopup");
   selectListMeubles =document.getElementById("selectListMeubles");
   blocsDiv = document.getElementById("blocs");
-  //listBlocs = document.getElementById("listBlocs");
-  //listBlocsPopup = document.getElementById("listBlocsPopup");
-  //listBlocsName = document.getElementById("listBlocsName");
   selectListBlocs=document.getElementById("selectListBlocs");
   buttonPorte = document.getElementById("buttonPorte");
   buttonTiroirs = document.getElementById("buttonTiroirs");
@@ -813,6 +806,9 @@ function getHTMLElements () {
   styleMenu = document.getElementById("style");
   divSwitchVertical = document.getElementById("divSwitchVertical");
   checkboxVertical = document.getElementById("checkboxVertical");
+  colorDrawer = document.getElementById("colorDrawer");
+  colorMeuble = document.getElementById("colorMeuble");
+  colorPoignees = document.getElementById("colorPoignees");
 }
 
 function initializeInterface() {
@@ -912,6 +908,18 @@ function initializeInterface() {
     updateInterfaceBlocs(indiceCurrentMeuble);
     updateSelectableBlocs(indiceCurrentMeuble);
     frameCamera();
+  }, false);
+
+  colorMeuble.addEventListener("change", function eventColorMeubleChange(event) {
+    material.color=new THREE.Color(event.target.value);
+  }, false);
+
+  colorDrawer.addEventListener("change", function eventColorDrawerChange(event) {
+    materialTiroirs.color=new THREE.Color(event.target.value);
+  }, false);
+
+  colorPoignees.addEventListener("change", function eventColorPoigneesChange(event) {
+    materialPoignees.color=new THREE.Color(event.target.value);
   }, false);
 }
 

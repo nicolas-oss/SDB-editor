@@ -42,7 +42,11 @@
       <div class="boutons">
         <input type="button" id="buttonPied" value="Sur pieds">
         <input type="button" id="buttonSocle" value="Sur socle">
-        <input type="button" id="buttonSuspendu" value="Fixé">
+        <input type="button" id="buttonSuspendu" value="Fixé / Posé">
+      </div>
+      <div class="boutons">
+        <input type="button" id="buttonCadre" value="Cadre">
+        <input type="button" id="buttonPlateau" value="Plateau">
       </div>
       </div>
       <div id="blocs">
@@ -96,6 +100,31 @@
       </select>
       <p>Poignees</p>
       <select id="listPoigneesSelect"></select>
+      <label for="colors">Couleur du meuble</label>
+      <input type="color" list="colorMeubleList" id="colorMeuble" />
+      <datalist id="colorMeubleList">
+        <option value="#800000"></option>
+        <option value="#8B0000"></option>
+        <option value="#A52A2A"></option>
+        <option value="#DC143C"></option>
+      </datalist>
+      <label for="colors">Couleurs des tiroirs</label>
+      <input type="color" list="colorDrawerList" id="colorDrawer" />
+      <datalist id="colorDrawerList">
+        <option value="#800000"></option>
+        <option value="#8B0000"></option>
+        <option value="#A52A2A"></option>
+        <option value="#DC143C"></option>
+      </datalist>
+
+      <label for="colors">Couleur des poignees</label>
+      <input type="color" list="colorPoigneesList" id="colorPoignees" />
+      <datalist id="colorPoigneesList">
+        <option value="#800000"></option>
+        <option value="#8B0000"></option>
+        <option value="#A52A2A"></option>
+        <option value="#DC143C"></option>
+      </datalist>
       <div id="enregistrement" class="boutons">
         <input type="button" id="charger" value="Charger">
         <input type="button" id="enregistrer" value="Enregistrer">
