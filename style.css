@@ -22,6 +22,10 @@ a:hover {
   color: #535bf2;
 }
 
+html {
+  height:100%;
+}
+
 body {
   margin: 0;
   display: flex;
@@ -41,27 +45,6 @@ h1 {
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vanilla:hover {
-  filter: drop-shadow(0 0 2em #f7df1eaa);
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }
 
 button {
@@ -96,12 +79,20 @@ button:focus-visible {
   }
 }
 
+p, label, .inputSlider {
+  margin-left: 3px;
+}
+
+p {
+  font-weight:500;
+}
+
 .inputValue {
   width: 3em;
 }
 
 .inputSlider {
-  min-width: 50px;
+  min-width: 150px;
   max-width: 200px;
 }
 
@@ -126,29 +117,47 @@ button:focus-visible {
 }
 
 @keyframes animationBloc {
-  from {background-color: rgb(0, 255, 255);}
+  from {background-color: rgb(100, 255, 255);}
   to {background-color: rgb(255, 255, 255);}
 }
 
 @keyframes animationMeuble {
-  from {background-color: rgb(0, 255, 0);}
+  from {background-color: rgb(100, 255, 100);}
   to {background-color: rgb(255, 255, 255);}
 }
 
 #interface, #aspect {
+  display:flex;
+  flex-direction:column;
   align-self: flex-start;
   min-width: 220px;
+  overflow:auto;
+  /*height: 100vh;
+  min-width: 220px;
   width:220px;
-  height: 100vh;
+  */
   /*margin : 12px;*/
 }
 
+.overflow {
+  height:100vh;
+  overflow:hidden;
+  min-width: 250px;
+  max-width:300px;
+}
+
 #aspect {
-  background-color: #d1d1ff;
+  background-color: #d1daff;
+  height:100%;
 }
 
 #interface {
   background-color: #d1ffd1;
+  overflow:auto;
+}
+
+.overflow {
+  overflow:auto;
 }
 
 #enteteMeuble {
@@ -157,7 +166,7 @@ button:focus-visible {
 
 #meuble, #blocs, #aspect {
   padding: 12px;
-  padding-top: 12px;
+  padding-top: 0px;
 }
 
 #blocs {
@@ -166,11 +175,17 @@ button:focus-visible {
   border-width : 1px;
   border-color: #888;
   background-color: #d1ffff;
-  height: 100vh;
+  height: 100%;
 }
 
 #meuble {
   background-color: #d1ffd1;
+  padding-bottom: 24px;
+}
+
+#meubleSliders {
+  padding-top: 12px;
+  padding-bottom:12px;
 }
 
 #canvas {
@@ -184,7 +199,7 @@ button:focus-visible {
 }
 
 .buttonOn {
-  background-color : red;
+  background-color : rgb(100 , 255, 255);
 }
 
 input[type=button] {

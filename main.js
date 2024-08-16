@@ -937,35 +937,26 @@ function changePoignee(name) {
     for (var i = poigneeRoot.children.length; i > 0; i--) {
       poigneeGroup.add(poigneeRoot.children[i - 1]);
     }
-    //console.log("poigneeGroup=", poigneeGroup);
-    //scene.add(poigneeGroup);
     poigneeGroup.scale.set(100, 100, 100);
     updateScene();
-    listPoigneesName.value = name;
-    refreshListPoigneesPopup();
+    //refreshListPoigneesPopup();
   });
 }
 
 function refreshListPoigneesPopup() {
-  listPoigneesPopup.remove();
-  listPoigneesPopup = document.createElement("input");
-  listPoigneesPopup.type = "text";
-  listPoigneesPopup.setAttribute("list","listPoignees");
-  listPoigneesPopup.id = "listPoigneesPopup";
-  listPoigneesPopup.classList.add("popup");
-  aspect.append(listPoigneesPopup);
-  aspect.insertBefore(listPoigneesName,listPoigneesPopup);
-  listPoigneesPopup.addEventListener("change",function eventChangePoignee(event) {changePoignee(event.target.value)},false);
+  listPoigneesPopup.id = "listPoigneesSelect";
+  listPoigneesSelect.addEventListener("change",function eventChangePoignee(event) {changePoignee(event.target.value)},false);
 }
 
 function initializeListePoignees() {
-  let listPoignees = document.getElementById("listPoignees");
+  var listPoigneesSelect = document.getElementById("listPoigneesSelect");
+  listPoigneesSelect.innerHTML="";
   for (const [key,value] of poigneesFileList) {
     let o = document.createElement("option");
-    o.value = key;
-    listPoignees.append(o);
+    o.innerHTML = key;
+    listPoigneesSelect.append(o);
   }
-  listPoigneesPopup.addEventListener("change",function eventChangePoignee(event) {changePoignee(event.target.value)},false);
+  listPoigneesSelect.addEventListener("change",function eventChangePoignee(event) {changePoignee(event.target.value)},false);
 }
 
 function initializePoignees() {
@@ -1330,7 +1321,6 @@ function RoundEdgedBox(width, height, depth, radius, widthSegments, heightSegmen
   geometryRound = BufferGeometryUtils.mergeGeometries(geometries);
   var secondHalf = geometryRound.clone();
   secondHalf.rotateY(Math.PI);
-  //secondHalf.translate(0,0,depth);
   geometries=[];
 
   geometries.push(geometryRound,secondHalf);
@@ -1399,9 +1389,7 @@ function createSliderWithoutListener(objet,key,nom,value,type,min,max) {
 
 function updateInterfaceMeuble() {
   clearInterfaceMeuble();
-  //rebuildInterfaceMeuble();                   // Rebuild HTML structure
   createInterfaceMeuble(indiceCurrentMeuble); // Rebuild HTML content
-
   if (meubles.length>1) {
     buttonDeleteMeuble.disabled = false;
   }
@@ -1414,32 +1402,6 @@ function clearInterfaceMeuble() {
   meubleSliders.innerHTML="";
   selectListMeubles.innerHTML="";
   selectListMeubles.classList.remove("animationMeublesName");
-}
-
-function rebuildInterfaceMeuble() { // Rebuild HTML structure
-  /*listMeublesPopup = document.createElement("input");
-  listMeublesPopup.type = "text";
-  listMeublesPopup.setAttribute("list","listMeubles");
-  listMeublesPopup.id = "listMeublesPopup";
-  listMeublesPopup.classList.add("popup");
-  meubleDiv.append(listMeublesPopup);*/
-  //listMeublesHTML = document.createElement("datalist");
-  //listMeublesHTML.id = "listMeubles";
-  //meubleDiv.append(listMeublesHTML);
-  /*buttonNewMeuble=document.createElement("input");
-  buttonNewMeuble.type="button";
-  buttonNewMeuble.id="buttonNewMeuble";
-  buttonNewMeuble.value="Nouveau";
-  meubleDiv.append(buttonNewMeuble);
-  buttonDeleteMeuble=document.createElement("input");
-  buttonDeleteMeuble.type="button";
-  buttonDeleteMeuble.id="buttonDeleteMeuble";
-  buttonDeleteMeuble.value="Supprimer";
-  meubleDiv.append(buttonDeleteMeuble);
-  buttonDeleteMeuble.after(divSwitchVertical);*/
-  /*meubleSliders=document.createElement("div");
-  meubleSliders.id="meubleSliders";
-  meubleDiv.append(meubleSliders);*/
 }
 
 function changeCurrentMeuble(num) {
@@ -1496,7 +1458,7 @@ function changeCurrentMeubleFromPopup(num) {
   checkRaycast();
 }
 
-function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content
+function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list meubles
   let meuble = meubles[indiceMeuble];
   console.log("selectListMeubles=",selectListMeubles);
   for (var i=0;i<meubles.length;i++) {
@@ -1695,6 +1657,7 @@ function refreshInterfaceBlocs(indiceMeuble) {
   if (meubles[indiceMeuble].bloc[indiceCurrentBloc].type == "Panneau") { buttonPlein.className = "buttonOn" } else { buttonPlein.className = "buttonOff" }
   if (meubles[indiceMeuble].bloc[indiceCurrentBloc].nombrePortes == "1") {
     buttonUnePorte.className = "buttonOn";
+    sensOuverture.style.display="inline";
     if (meubles[indiceMeuble].bloc[indiceCurrentBloc].ouverturePorte == "gauche") { buttonOuverturePorteGauche.className = "buttonOn" } else { buttonOuverturePorteGauche.className = "buttonOff" }
     if (meubles[indiceMeuble].bloc[indiceCurrentBloc].ouverturePorte == "droite") { buttonOuverturePorteDroite.className = "buttonOn" } else { buttonOuverturePorteDroite.className = "buttonOff" }
   } else { buttonUnePorte.className = "buttonOff" }
@@ -1702,6 +1665,7 @@ function refreshInterfaceBlocs(indiceMeuble) {
     buttonDeuxPortes.className = "buttonOn";
     buttonOuverturePorteGauche.className = "buttonOff";
     buttonOuverturePorteDroite.className = "buttonOff";
+    sensOuverture.style.display="none";
   } else { buttonDeuxPortes.className = "buttonOff" }
 }
 
@@ -1768,95 +1732,6 @@ function createSlidersBlocs(indiceMeuble, numBloc) {
     frameCamera();
   }, false);
   blocsSliders.append(sliderEtageres);
-}
-
-function createButtonsForNombrePortes(indiceMeuble, numBloc) {
-  divPortes = document.createElement("div");
-  blocsSliders.append(divPortes);
-
-  divNombrePortes = document.createElement("div");
-  divPortes.append(divNombrePortes);
-  
-  divNombrePortes.append("Nombre de portes");
-
-  let buttonUnePorte = document.createElement("input");
-  buttonUnePorte.type = "button";
-  buttonUnePorte.value = "1";
-  if (meubles[indiceMeuble].bloc[numBloc].nombrePortes == "1") { buttonUnePorte.className = "buttonOn" } else { buttonUnePorte.className = "buttonOff" }
-  buttonUnePorte.classList.add("button");
-  divNombrePortes.append(buttonUnePorte);
-
-  let buttonDeuxPortes = document.createElement("input");
-  buttonDeuxPortes.type = "button";
-  buttonDeuxPortes.value = "2";
-  if (meubles[indiceMeuble].bloc[numBloc].nombrePortes == "2") { buttonDeuxPortes.className = "buttonOn" } else { buttonDeuxPortes.className = "buttonOff" }
-  buttonDeuxPortes.classList.add("button");
-  divNombrePortes.append(buttonDeuxPortes);
-
-  buttonUnePorte.addEventListener("click", function () { onClickNombrePortesButton(buttonUnePorte, buttonDeuxPortes, indiceMeuble, numBloc) }, false);
-  buttonDeuxPortes.addEventListener("click", function () { onClickNombrePortesButton(buttonDeuxPortes, buttonUnePorte, indiceMeuble, numBloc) }, false);
-}
-
-function createButtonsForOuverturePortes (indiceMeuble,numBloc) {
-  let meuble = meubles[indiceMeuble];
-  divOuverturePortes = document.createElement("div");
-  divPortes.append(divOuverturePortes);
-
-  let cr = document.createElement("p");
-  divOuverturePortes.append(cr);
-  divOuverturePortes.append("Ouverture des portes");
-  let crb = document.createElement("p");
-  divOuverturePortes.append(crb);
-
-  let buttonOuverturePorteGauche = document.createElement("input");
-  buttonOuverturePorteGauche.type = "button";
-  buttonOuverturePorteGauche.value = "Gauche";
-  if (meuble.bloc[numBloc].ouverturePorte=="gauche") {buttonOuverturePorteGauche.className="buttonOn"} else {buttonOuverturePorteGauche.className="buttonOff"}
-  buttonOuverturePorteGauche.classList.add("button");
-  divOuverturePortes.append(buttonOuverturePorteGauche);
-
-  let buttonOuverturePorteDroite = document.createElement("input");
-  buttonOuverturePorteDroite.type = "button";
-  buttonOuverturePorteDroite.value = "Droite";
-  if (meuble.bloc[numBloc].ouverturePorte=="droite") {buttonOuverturePorteDroite.className="buttonOn"} else {buttonOuverturePorteDroite.className="buttonOff"}
-  buttonOuverturePorteDroite.classList.add("button");
-  divOuverturePortes.append(buttonOuverturePorteDroite);
-
-  buttonOuverturePorteGauche.addEventListener("click",function () {onClickOuverturePorteButton(buttonOuverturePorteGauche,buttonOuverturePorteDroite,indiceMeuble,numBloc)},false);
-  buttonOuverturePorteDroite.addEventListener("click",function () {onClickOuverturePorteButton(buttonOuverturePorteDroite,buttonOuverturePorteGauche,indiceMeuble,numBloc)},false);
-}
-
-function onClickNombrePortesButton (buttonSource,buttonB,indiceMeuble,numBloc) {
-  buttonSource.classList.remove("buttonOff");
-  buttonSource.classList.add("buttonOn");
-  buttonB.classList.remove("buttonOn");
-  buttonB.classList.add("buttonOff");
-  if (meubles[indiceMeuble].bloc[numBloc].nombrePortes  == "1") {
-    meubles[indiceMeuble].bloc[numBloc].nombrePortes = "2";
-    destroyButtonsForOuverturePortes();
-  }
-  else {
-    meubles[indiceMeuble].bloc[numBloc].nombrePortes = "1";
-    createButtonsForOuverturePortes(indiceMeuble,numBloc);
-  }
-  updateMeuble(indiceCurrentMeuble);
-  frameCamera();
-}
-
-function onClickOuverturePorteButton (buttonSource,buttonB,indiceMeuble,numBloc) {
-  buttonSource.classList.remove("buttonOff");
-  buttonSource.classList.add("buttonOn");
-  buttonB.classList.remove("buttonOn");
-  buttonB.classList.add("buttonOff");
-  if (meubles[indiceMeuble].bloc[numBloc].ouverturePorte  == "gauche") {meubles[indiceMeuble].bloc[numBloc].ouverturePorte = "droite"}
-  else {meubles[indiceMeuble].bloc[numBloc].ouverturePorte = "gauche"}
-  updateMeuble(indiceCurrentMeuble);
-  frameCamera();
-}
-
-function destroyButtonsForOuverturePortes () {
-  divOuverturePortes.remove();
-  divOuverturePortes=undefined;
 }
 
 window.addEventListener("DOMContentLoaded", initializeScene);

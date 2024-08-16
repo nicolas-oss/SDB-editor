@@ -17,6 +17,7 @@
   </head>
   <body id="body">
     <script type="module" src="/main.js"></script>
+    <div class="overflow">
     <div id="interface">
       <div id="meuble">
         <p>Meuble</p>
@@ -37,9 +38,13 @@
             <span class="slider round">Vertical</span>
           </label>
         </div>
-        
       <div id="meubleSliders"></div>
-    </div>
+      <div class="boutons">
+        <input type="button" id="buttonPied" value="Sur pieds">
+        <input type="button" id="buttonSocle" value="Sur socle">
+        <input type="button" id="buttonSuspendu" value="Fixé">
+      </div>
+      </div>
       <div id="blocs">
         <p>Blocs</p>
         <!--<input type="text" id="listBlocsName">
@@ -79,6 +84,7 @@
         <div id="buttonsEtageres"></div>
       </div>
     </div>
+    </div>
     <div id="canvas"></div>
     <div id="aspect">
       <p>Aspect</p>
@@ -89,11 +95,11 @@
         <option>style 3</option>
       </select>
       <p>Poignees</p>
-      <input type="text" value="Poignees" id="listPoigneesName">
-      <input type="text" list="listPoignees" id="listPoigneesPopup" class="popup">
-      <datalist id="listPoignees">
-      </datalist>
-      
+      <select id="listPoigneesSelect"></select>
+      <div id="enregistrement" class="boutons">
+        <input type="button" id="charger" value="Charger">
+        <input type="button" id="enregistrer" value="Enregistrer">
+      </div>
     </div>
   </body>
 </html>
