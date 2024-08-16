@@ -43,6 +43,7 @@ class meubleClass {
     this.calculTaille();
     this.plateau=false;  //////////////////////////////initialiser bouton et menus couleurs
     this.cadre=false;
+    this.socle=false;
     //this.calculHauteur();
   }
 
@@ -106,8 +107,11 @@ var indiceCurrentMeuble = 0;
 const epaisseur = 1;
 const epaisseurPlateau = 3;
 const debordPlateau = 2;
-const epaisseurCadre = 15;
+const epaisseurCadre = 1.5;
 const debordCadre = 0.5;
+const retraitSocle = 2;
+const hauteurSocle = 8;
+const hauteurPied = 4;
 const maxBlocs = 9;
 const maxEtageres = 20;
 const epsilon = 5;
@@ -120,6 +124,7 @@ var plancheHaut;
 var plancheGauche;
 var plancheDroite;
 var plateau;
+var socle;
 var cadre;
 var poignee;
 var geometry;
@@ -331,14 +336,28 @@ function initDrag() {
 //function getMeubleCenter
 
 function intersectY(indiceMeubleA,indiceMeubleB) {
-  var aY = meubles[indiceMeubleA].y + meubles[indiceMeubleA].hauteur / 2 + meubles[indiceMeubleA].cadre*epaisseurCadre;
-  var bY = meubles[indiceMeubleB].y + meubles[indiceMeubleB].hauteur / 2 + meubles[indiceMeubleB].cadre*epaisseurCadre;
-  var intersectY = (Math.abs(aY - bY) * 2 < (meubles[indiceMeubleA].hauteur + meubles[indiceMeubleB].hauteur + meubles[indiceMeubleB].cadre*epaisseurCadre + meubles[indiceMeubleA].cadre*epaisseurCadre));
+  var cadreA = meubles[indiceMeubleA].cadre*epaisseurCadre;
+  var cadreB = meubles[indiceMeubleB].cadre*epaisseurCadre;
+  var socleA = meubles[indiceMeubleA].socle*hauteurSocle;
+  var socleB = meubles[indiceMeubleB].socle*hauteurSocle;
+  var piedA = meubles[indiceMeubleA].pied*hauteurPied;
+  var piedB = meubles[indiceMeubleB].pied*hauteurPied;
+  var aY = meubles[indiceMeubleA].y + meubles[indiceMeubleA].hauteur / 2 + cadreA + socleA/2 + piedA/2;
+  var bY = meubles[indiceMeubleB].y + meubles[indiceMeubleB].hauteur / 2 + cadreB + socleB/2 + piedB/2;
+  var hA = meubles[indiceMeubleA].hauteur+cadreA+socleA+piedA;
+  var hB = meubles[indiceMeubleB].hauteur+cadreB+socleB+piedB;
+  var intersectY = (Math.abs(aY - bY) * 2 < (hA + hB));
   return intersectY;
 }
 
 function intersectX(indiceMeubleA,indiceMeubleB) {
-  var intersectX = (Math.abs(meubles[indiceMeubleA].x - meubles[indiceMeubleB].x - meubles[indiceMeubleB].cadre*epaisseurCadre) * 2 < (meubles[indiceMeubleA].largeur + meubles[indiceMeubleB].largeur + meubles[indiceMeubleA].cadre*epaisseurCadre + meubles[indiceMeubleB].cadre*epaisseurCadre));
+  var cadreA = meubles[indiceMeubleA].cadre*epaisseurCadre;
+  var cadreB = meubles[indiceMeubleB].cadre*epaisseurCadre;
+  var xA=meubles[indiceMeubleA].x;
+  var xB=meubles[indiceMeubleB].x;
+  var lA=meubles[indiceMeubleA].largeur;
+  var lB=meubles[indiceMeubleB].largeur;
+  var intersectX = (Math.abs(xA - xB - cadreB) * 2 < (lA + lB + cadreA + cadreB));
   return intersectX;
 }
 
@@ -374,15 +393,23 @@ function getLimitTranslationY(num) {
   var maxYGlobal=10e34;
   var minY=0;
   var maxY=10e34;
+  var hA=meubles[num].hauteur;
+  var bordSupA=Math.max(2*meubles[num].cadre*epaisseurCadre,meubles[num].plateau*epaisseurPlateau);
+  var piedA = meubles[num].pied*hauteurPied;
+  var socleA = meubles[num].socle*hauteurSocle;
   for (var i = 0; i < meubles.length; i++) {
     if (i != num) {
-      //var intersectX = (Math.abs(meubles[num].x - meubles[i].x) * 2 < (meubles[num].largeur + meubles[i].largeur));
+      var hB=meubles[i].hauteur;
+      var yB=meubles[i].y
+      var bordSupB=Math.max(2*meubles[i].cadre*epaisseurCadre,meubles[i].plateau*epaisseurPlateau);
+      var piedB = meubles[i].pied*hauteurPied;
+      var socleB = meubles[i].socle*hauteurSocle;
       if (intersectX(num,i)) {
           if (meubles[num].y > meubles[i].y) {
-            minY = (meubles[i].y + meubles[i].hauteur +Math.max(2*meubles[i].cadre*epaisseurCadre,meubles[i].plateau*epaisseurPlateau));
+            minY = (yB + hB + bordSupB + piedB + socleB);
           }
           if (meubles[num].y < meubles[i].y) {
-            maxY = meubles[i].y-meubles[num].hauteur-Math.max(2*meubles[num].cadre*epaisseurCadre,meubles[num].plateau*epaisseurPlateau);
+            maxY = yB-hA-bordSupA-piedA-socleA;
           }
           minYGlobal=Math.max(minY,minYGlobal);
           maxYGlobal=Math.min(maxY,maxYGlobal);
@@ -418,12 +445,22 @@ function getMaxAllowedWidth(num) {
 function getMaxAllowedHeight(num) {
   var deltaY=10e34;
   var maxHeight = 10e34;
+  var yA=meubles[num].y;
+  var cadreA = meubles[num].cadre*epaisseurCadre;
+  var piedA = meubles[num].pied*hauteurPied;
+  var socleA = meubles[num].socle*hauteurSocle;
   for (var i = 0; i < meubles.length; i++) {
     if (i != num) {
       //var intersectX = (Math.abs(meubles[num].x - meubles[i].x) * 2 < (meubles[num].largeur + meubles[i].largeur));
       if (intersectX(num,i)) {
+        var hB=meubles[i].hauteur;
+        var yB=meubles[i].y;
+        /*var bordSupB=Math.max(2*meubles[i].cadre*epaisseurCadre,meubles[i].plateau*epaisseurPlateau);
+        var piedB = meubles[i].pied*hauteurPied;
+        var socleB = meubles[i].socle*hauteurSocle;*/
+        var cadreB = meubles[i].cadre*epaisseurCadre;
         if (meubles[num].y < meubles[i].y) {
-          deltaY = meubles[i].y-meubles[num].y-meubles[num].cadre*epaisseurCadre-meubles[i].cadre*epaisseurCadre;
+          deltaY = yB-yA-cadreA-cadreB-socleA-piedA;
         }
         maxHeight = Math.min(maxHeight, deltaY);
       }
@@ -476,7 +513,7 @@ const materialTiroirsParams = {
 };
 
 const materialPoigneesParams = {
-  color: '#101010',
+  color: '#bbbbbb',
   refractionRatio: 0.98,
   transparent: false,
   opacity: 1
@@ -657,6 +694,7 @@ function animate() {
 function placeMeuble(indiceMeuble) {
   let y=meubles[indiceMeuble].hauteur / 2 + meubles[indiceMeuble].y;
   if (meubles[indiceMeuble].cadre) y+=epaisseurCadre;
+  if (meubles[indiceMeuble].socle) y+=hauteurSocle;
   meubleRoot[indiceMeuble].position.set(
     meubles[indiceMeuble].x,
     y,
@@ -687,6 +725,17 @@ function updateMeuble (indiceMeuble) {
     plateau.position.set(0, meubles[indiceMeuble].hauteur / 2 + epaisseurPlateau / 2, debordPlateau / 2);
     plateau.name = "plateau";
     meubleRoot[indiceMeuble].children[0].add(plateau);
+  }
+  //socle
+  if (meubles[indiceMeuble].socle) {
+    geometry = new THREE.BoxGeometry(
+      meubles[indiceMeuble].largeur,
+      hauteurSocle,
+      meubles[indiceMeuble].profondeur - retraitSocle);
+    socle = new THREE.Mesh(geometry, material);
+    socle.position.set(0, -meubles[indiceMeuble].hauteur / 2 - hauteurSocle / 2, -retraitSocle);
+    socle.name = "socle";
+    meubleRoot[indiceMeuble].children[0].add(socle);
   }
   //cadre
   if (meubles[indiceMeuble].cadre) {
@@ -775,6 +824,8 @@ var listMeublesPopup;
 var listMeublesName;
 var buttonPlateau;
 var buttonCadre;
+var buttonSocle;
+var buttonPied;
 var selectListMeubles;
 var selectListBlocs;
 var blocsDiv;
@@ -841,6 +892,8 @@ function getHTMLElements () {
   buttonDupliquerMeuble = document.getElementById("buttonDupliquerMeuble");
   buttonDeleteMeuble = document.getElementById("buttonDeleteMeuble");
   selectListMeubles =document.getElementById("selectListMeubles");
+  buttonSocle = document.getElementById("buttonSocle");
+  buttonPied = document.getElementById("buttonPied");
   buttonPlateau = document.getElementById("buttonPlateau");
   buttonCadre = document.getElementById("buttonCadre");
   blocsDiv = document.getElementById("blocs");
@@ -919,7 +972,7 @@ function initializeInterface() {
     style = event.target.value;
     updateScene(); 
     console.log(style) 
-  }, true);
+  }, false);
   checkboxVertical.addEventListener("click", function switchVertical() {
     console.log("checkbox clicked");
     if (meubles[indiceCurrentMeuble].disposition == "vertical") meubles[indiceCurrentMeuble].disposition = "horizontal";
@@ -927,7 +980,21 @@ function initializeInterface() {
     computeBlocsSize(indiceCurrentMeuble);
     updateMeuble(indiceCurrentMeuble);
     frameCamera()
-  }, true);
+  }, false);
+  buttonSocle.addEventListener("click",function() {
+    meubles[indiceCurrentMeuble].socle=!meubles[indiceCurrentMeuble].socle;
+    if (meubles[indiceCurrentMeuble].socle) meubles[indiceCurrentMeuble].pied=false;
+    updateButtonSocle(indiceCurrentMeuble);
+    updateButtonPied(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  },false);
+  buttonPied.addEventListener("click",function() {
+    meubles[indiceCurrentMeuble].pied=!meubles[indiceCurrentMeuble].pied;
+    if (meubles[indiceCurrentMeuble].pied) meubles[indiceCurrentMeuble].socle=false;
+    updateButtonPied(indiceCurrentMeuble);
+    updateButtonSocle(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  },false);
   buttonPlateau.addEventListener("click",function() {
     meubles[indiceCurrentMeuble].plateau=!meubles[indiceCurrentMeuble].plateau;
     updateButtonPlateau(indiceCurrentMeuble);
@@ -978,6 +1045,9 @@ function initializeInterface() {
   colorPoignees.addEventListener("change", function eventColorPoigneesChange(event) {
     materialPoignees.color=new THREE.Color(event.target.value);
   }, false);
+  colorMeuble.value=materialParams.color;
+  colorDrawer.value=materialTiroirsParams.color;
+  colorPoignees.value=materialPoigneesParams.color;
 }
 
 const poigneesFileList = new Map;
@@ -1647,6 +1717,8 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
   if (meubles[indiceMeuble].disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
   updateButtonPlateau(indiceMeuble);
   updateButtonCadre(indiceMeuble);
+  updateButtonSocle(indiceMeuble);
+  updateButtonPied(indiceMeuble);
 }
 
 function updateButtonPlateau(indiceMeuble) {
@@ -1655,6 +1727,14 @@ function updateButtonPlateau(indiceMeuble) {
 
 function updateButtonCadre(indiceMeuble) {
   if (meubles[indiceMeuble].cadre) {buttonCadre.className="buttonOn"} else {buttonCadre.className="buttonOff"}
+}
+
+function updateButtonSocle(indiceMeuble) {
+  if (meubles[indiceMeuble].socle) {buttonSocle.className="buttonOn"} else {buttonSocle.className="buttonOff"}
+}
+
+function updateButtonPied(indiceMeuble) {
+  if (meubles[indiceMeuble].pied) {buttonPied.className="buttonOn"} else {buttonPied.className="buttonOff"}
 }
 
 function updateInterfaceLargeur(indiceMeuble) {
