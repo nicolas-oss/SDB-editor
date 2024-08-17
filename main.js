@@ -23,6 +23,7 @@ class blocClass {
     this.type="Tiroirs";
     this.ouverturePorte="gauche";
     this.nombrePortes="1";
+    this.etageresVerticales=false;
   }
 }
 
@@ -45,6 +46,7 @@ class meubleClass {
     this.cadre=false;
     this.socle=false;
     this.pied=false;
+    this.suspendu=true;
   }
 
   calculTaille () {
@@ -120,7 +122,8 @@ const epaisseurCadre = 1.5;
 const debordCadre = 0.5;
 const retraitSocle = 2;
 const hauteurSocle = 8;
-const hauteurPied = 4;
+const hauteurPied = 6;
+const largeurPied= 4;
 const maxBlocs = 9;
 const maxEtageres = 20;
 const epsilon = 5;
@@ -134,7 +137,8 @@ var plancheGauche;
 var plancheDroite;
 var plateau;
 var socle;
-var cadre;
+var piedA,piedB,piedC,piedD;
+//var cadre;
 var poignee;
 var geometry;
 var cube;
@@ -161,10 +165,8 @@ const radius = 5;
 const scene = new THREE.Scene();
 var canvas = document.getElementById("canvas");
 var canvasSize = canvas.getBoundingClientRect();
-//console.log (canvasSize);
 const camera = new THREE.PerspectiveCamera( focale, canvasSize.width/window.innerHeight, 0.1, 1000 );
 focaleV=getfocaleV(focale,canvasSize.width,window.innerHeight);
-//console.log("focaleV deg = ",focaleV/0.0174533);
 var cameraTarget = new THREE.Object3D();
 camera.position.z = 180; //overridden by orbit
 camera.position.y = 100;
@@ -182,7 +184,7 @@ const renderer = new THREE.WebGLRenderer({antialias : true});
 renderer.setSize( canvasSize.width, window.innerHeight);
 canvas.appendChild( renderer.domElement );
 
-// controls
+// camera controls
 let controls = new OrbitControls(camera, renderer.domElement);
 controls.listenToKeyEvents(window); // optional
 //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
@@ -605,20 +607,46 @@ const wireframeMaterial = new THREE.MeshBasicMaterial( 0x00ff00 );
 wireframeMaterial.wireframe = true;
 
 //Lights
+const light = new THREE.DirectionalLight( 0xffffff, 1 );
+light.position.set( 0.5, 1, 0.5 );
+//light.castShadow = true;
+scene.add( light );
+
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+light.shadow.mapSize.width = 2048;
+light.shadow.mapSize.height = 2048;
+light.shadow.camera.near = 0.01;
+light.shadow.camera.far = 1000;
+
 const lightA = new THREE.PointLight( 0xffffff, 120, 0, 1 );
-lightA.position.set( -10, 100, 80 );
+lightA.position.set( -10, 150, 140 );
+lightA.castShadow = true;
+lightA.shadow.radius = 4;
 renderer.setClearColor( 0xAAAAAA, 1 );
 scene.add( lightA );
 const lightB = new THREE.PointLight( 0xddeeff, 80, 0, 1 );
-lightB.position.set( 80, 100, 80 );
+lightB.position.set( 160, 150, 160 );
+lightB.castShadow = true;
+lightB.shadow.radius = 4;
 renderer.setClearColor( 0xAAAAAA, 1 );
 scene.add( lightB );
 const lightC = new THREE.PointLight( 0xddeeff, 80, 0, 1 );
-lightB.position.set( -100, 100, 80 );
+lightC.position.set( -200, 150, 160 );
+//lightC.castShadow = true;
 renderer.setClearColor( 0xAAAAAA, 1 );
 scene.add( lightC );
 const ambientLight = new THREE.AmbientLight( 0x404020,2 ); // soft white light
 scene.add( ambientLight );
+/*const helperA = new THREE.CameraHelper(lightA.shadow.camera);
+scene.add(helperA);
+const helperB = new THREE.CameraHelper(lightB.shadow.camera);
+scene.add(helperB);
+const helperC = new THREE.CameraHelper(lightC.shadow.camera);
+scene.add(helperC);
+const helperD = new THREE.CameraHelper(light.shadow.camera);
+scene.add(helperD);*/
 
 function checkRaycast() {
   if (!rayCastEnabled) return;
@@ -723,7 +751,7 @@ function animate() {
   let distL = ((boundingBoxWidth/2)/Math.tan(0.0174533*(focale/2)));
   let distH = ((boundingBoxHeight/2)/Math.tan((focaleV/2)));
   let dist = Math.max(distL,distH);
-  camera.translateZ((dist-(controls.getDistance(cameraTarget)))/100);
+  //camera.translateZ((dist-(controls.getDistance(cameraTarget)))/100);
   //let target=cameraTarget;
   controls.target.x-=((controls.target.x-(boundingBoxCenter.x))/100);
   controls.target.y-=((controls.target.y-(boundingBoxCenter.y))/100);
@@ -742,6 +770,7 @@ function placeMeuble(indiceMeuble) {
   let y=meubles[indiceMeuble].hauteur / 2 + meubles[indiceMeuble].y;
   if (meubles[indiceMeuble].cadre) y+=epaisseurCadre;
   if (meubles[indiceMeuble].socle) y+=hauteurSocle;
+  if (meubles[indiceMeuble].pied) y+=hauteurPied;
   meubleRoot[indiceMeuble].position.set(
     meubles[indiceMeuble].x,
     y,
@@ -784,6 +813,42 @@ function updateMeuble (indiceMeuble) {
     socle.position.set(0, -meubles[indiceMeuble].hauteur / 2 - hauteurSocle / 2-cadre, -retraitSocle);
     socle.name = "socle";
     meubleRoot[indiceMeuble].children[0].add(socle);
+  }
+  //pieds
+  if (meubles[indiceMeuble].pied) {
+    geometry = new THREE.BoxGeometry(
+      largeurPied,
+      hauteurPied,
+      largeurPied);
+    let cadre = meubles[indiceMeuble].cadre * epaisseurCadre;
+    piedA = new THREE.Mesh(geometry, material);
+    piedA.position.set(
+      -meubles[indiceMeuble].largeur / 2+largeurPied/2,
+      -meubles[indiceMeuble].hauteur / 2 - hauteurPied / 2 - cadre,
+      meubles[indiceMeuble].profondeur / 2 - largeurPied/2);
+    piedA.name = "piedA";
+    meubleRoot[indiceMeuble].children[0].add(piedA);
+    piedB = new THREE.Mesh(geometry, material);
+    piedB.position.set(
+      meubles[indiceMeuble].largeur/2-largeurPied/2,
+      -meubles[indiceMeuble].hauteur / 2 - hauteurPied / 2 - cadre,
+      meubles[indiceMeuble].profondeur / 2 - largeurPied/2);
+    piedB.name = "piedB";
+    meubleRoot[indiceMeuble].children[0].add(piedB);
+    piedC = new THREE.Mesh(geometry, material);
+    piedC.position.set(
+      meubles[indiceMeuble].largeur/2-largeurPied/2,
+      -meubles[indiceMeuble].hauteur / 2 - hauteurPied / 2 - cadre,
+      -meubles[indiceMeuble].profondeur / 2 + largeurPied/2);
+    piedC.name = "piedC";
+    meubleRoot[indiceMeuble].children[0].add(piedC);
+    piedD = new THREE.Mesh(geometry, material);
+    piedD.position.set(
+      -meubles[indiceMeuble].largeur/2+largeurPied/2,
+      -meubles[indiceMeuble].hauteur / 2 - hauteurPied / 2 - cadre,
+      -meubles[indiceMeuble].profondeur / 2 + largeurPied/2);
+      piedD.name = "piedD";
+    meubleRoot[indiceMeuble].children[0].add(piedD);
   }
   //cadre
   if (meubles[indiceMeuble].cadre) {
@@ -874,6 +939,7 @@ var buttonPlateau;
 var buttonCadre;
 var buttonSocle;
 var buttonPied;
+var buttonSuspendu;
 var selectListMeubles;
 var selectListBlocs;
 var blocsDiv;
@@ -897,21 +963,33 @@ var divSwitchVertical;
 var colorDrawer,colorMeuble,colorPoignees;
 
 function buildEnvironnement () {
+  let loader = new THREE.TextureLoader();
+  let textureSol = loader.load('src/TCom_TilesPlain0118_1_seamless_S.jpg');
+  textureSol.wrapS = THREE.RepeatWrapping;
+  textureSol.wrapT = THREE.RepeatWrapping;
+  textureSol.repeat.set( 10, 10 );
   geometry = new THREE.PlaneGeometry( 1000, 1000 );
-  const materialSol = new THREE.MeshPhongMaterial( {color: 0xffffff} );
+  const materialSol = new THREE.MeshPhongMaterial( {color: 0xffffff, map:textureSol} );
+  materialSol.roughness = 1;
+  materialSol.metalness = 1;
+  materialSol.bumpMap = textureSol;
+  materialSol.bumpScale=5;
   const plane = new THREE.Mesh( geometry, materialSol );
   plane.rotateX(-Math.PI/2);
   plane.name = "sol";
+  plane.receiveShadow = true;
   scene.add( plane );
-  const murFond = new THREE.Mesh( geometry, materialSol );
+  const materialMur = new THREE.MeshPhongMaterial( {color: 0xffffff} );
+  const murFond = new THREE.Mesh( geometry, materialMur );
   murFond.name = "murFond"
+  murFond.receiveShadow = true;
   scene.add( murFond );
-  const murDroit = new THREE.Mesh( geometry, materialSol );
+  const murDroit = new THREE.Mesh( geometry, materialMur );
   murDroit.translateX(500);
   murDroit.rotateY(-Math.PI/2);
   murDroit.name="murDroit";
   scene.add( murDroit );
-  const murGauche = new THREE.Mesh( geometry, materialSol );
+  const murGauche = new THREE.Mesh( geometry, materialMur );
   murGauche.translateX(-500);
   murGauche.rotateY(Math.PI/2);
   murGauche.name="murGauche";
@@ -942,6 +1020,7 @@ function getHTMLElements () {
   selectListMeubles =document.getElementById("selectListMeubles");
   buttonSocle = document.getElementById("buttonSocle");
   buttonPied = document.getElementById("buttonPied");
+  buttonSuspendu = document.getElementById("buttonSuspendu");
   buttonPlateau = document.getElementById("buttonPlateau");
   buttonCadre = document.getElementById("buttonCadre");
   blocsDiv = document.getElementById("blocs");
@@ -958,6 +1037,7 @@ function getHTMLElements () {
   buttonOuverturePorteGauche = document.getElementById("buttonOuverturePorteGauche");
   nbPortes = document.getElementById("nbPortes");
   sensOuverture = document.getElementById("sensOuverture");
+  buttonEtageresVerticales = document.getElementById("checkBoxEtageresVerticales");
   meubleSliders = document.getElementById("meubleSliders");
   blocsSliders = document.getElementById("blocsSliders");
   listPoigneesPopup = document.getElementById("listPoigneesPopup");
@@ -1016,6 +1096,11 @@ function initializeInterface() {
     refreshInterfaceBlocs(indiceCurrentMeuble);
     updateMeuble(indiceCurrentMeuble);
   }, false);
+  buttonEtageresVerticales.addEventListener("click", function () {
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etageresVerticales=!meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etageresVerticales;
+    updateMeuble(indiceCurrentMeuble);
+  }
+  ,false );
   styleMenu.addEventListener("change", function changeStyle(event) { 
     style = event.target.value;
     updateScene(); 
@@ -1031,16 +1116,35 @@ function initializeInterface() {
   }, false);
   buttonSocle.addEventListener("click",function() {
     meubles[indiceCurrentMeuble].socle=!meubles[indiceCurrentMeuble].socle;
-    if (meubles[indiceCurrentMeuble].socle) meubles[indiceCurrentMeuble].pied=false;
+    if (meubles[indiceCurrentMeuble].socle) {
+      meubles[indiceCurrentMeuble].pied=false;
+      meubles[indiceCurrentMeuble].suspendu=false;
+    }
     updateButtonSocle(indiceCurrentMeuble);
     updateButtonPied(indiceCurrentMeuble);
+    updateButtonSuspendu(indiceCurrentMeuble);
     updateMeuble(indiceCurrentMeuble);
   },false);
   buttonPied.addEventListener("click",function() {
     meubles[indiceCurrentMeuble].pied=!meubles[indiceCurrentMeuble].pied;
-    if (meubles[indiceCurrentMeuble].pied) meubles[indiceCurrentMeuble].socle=false;
+    if (meubles[indiceCurrentMeuble].pied) {
+      meubles[indiceCurrentMeuble].socle=false;
+      meubles[indiceCurrentMeuble].suspendu=false;
+    }
     updateButtonPied(indiceCurrentMeuble);
     updateButtonSocle(indiceCurrentMeuble);
+    updateButtonSuspendu(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+  },false);
+  buttonSuspendu.addEventListener("click",function() {
+    meubles[indiceCurrentMeuble].suspendu=!meubles[indiceCurrentMeuble].suspendu;
+    if (meubles[indiceCurrentMeuble].suspendu) {
+      meubles[indiceCurrentMeuble].pied=false;
+      meubles[indiceCurrentMeuble].socle=false;
+    }
+    updateButtonPied(indiceCurrentMeuble);
+    updateButtonSocle(indiceCurrentMeuble);
+    updateButtonSuspendu(indiceCurrentMeuble);
     updateMeuble(indiceCurrentMeuble);
   },false);
   buttonPlateau.addEventListener("click",function() {
@@ -1284,16 +1388,7 @@ function initializeBloc(indiceMeuble, numBloc) {
   plancheDroite.position.set(-l/2 + epaisseur/2,0,0);
   plancheGauche.position.set(l/2 - epaisseur/2,0,0);
   blocRoot[numBloc].add(plancheBas,plancheHaut,plancheDroite,plancheGauche);
-  //boîte de sélection
-  //geometry = new THREE.BoxGeometry( meuble.bloc[numBloc].largeur+epsilon, meuble.hauteur+epsilon, meuble.profondeur+epsilon );
-  geometry = RoundEdgedBox(l+epsilon, h+epsilon, p+epsilon,2,1,1,1,1);
-  //geometry = getElementBase(meuble.bloc[numBloc].largeur+epsilon, meuble.hauteur+epsilon, meuble.profondeur+epsilon,style);
-  boite[numBloc] = new THREE.Mesh( geometry, materialSelectionBloc );
-  boite[numBloc].name = "BoiteSelectionBloc"+numBloc;
-  blocRoot[numBloc].add(boite[numBloc]);
-  selectableBloc.push(boite[numBloc]);
-  boite[numBloc].visible=false;
-  boite[numBloc].numero=numBloc;
+
  
   //portes
   if (meuble.bloc[numBloc].type == "Portes") {
@@ -1346,15 +1441,29 @@ function initializeBloc(indiceMeuble, numBloc) {
   
   //etageres
   if (meuble.bloc[numBloc].type == "Etageres") {
-    var step = (h-2*epaisseur)/(meuble.bloc[numBloc].etageres+1);
-    for (var i = 0; i < meuble.bloc[numBloc].etageres; i++) {
-      //geometry = getElementBase(meuble.bloc[numBloc].largeur - 2 * epaisseur, epaisseur, meuble.profondeur - epaisseur,style);
-      geometry = new THREE.BoxGeometry(l - 2 * epaisseur, epaisseur, p - epaisseur);
-      etagere[i] = new THREE.Mesh(geometry, material);
-      etagere[i].name = "etagere "+i;
-      var position = step * (0.5 + i - meuble.bloc[numBloc].etageres / 2);
-      etagere[i].position.set(0, position, 0);
-      blocRoot[numBloc].add(etagere[i]);
+    if (meuble.bloc[numBloc].etageresVerticales) {
+      //var haut=h/meuble.nbBlocs;
+      var step = (l - 2 * epaisseur) / (meuble.bloc[numBloc].etageres + 1);
+      for (var i = 0; i < meuble.bloc[numBloc].etageres; i++) {
+        geometry = new THREE.BoxGeometry(epaisseur, h-2*epaisseur, p - epaisseur);
+        etagere[i] = new THREE.Mesh(geometry, material);
+        etagere[i].name = "etagere " + i;
+        var position = step * (0.5 + i - meuble.bloc[numBloc].etageres / 2);
+        etagere[i].position.set(position, 0, 0);
+        blocRoot[numBloc].add(etagere[i]);
+      }
+    }
+    else {
+      var step = (h - 2 * epaisseur) / (meuble.bloc[numBloc].etageres + 1);
+      for (var i = 0; i < meuble.bloc[numBloc].etageres; i++) {
+        //geometry = getElementBase(meuble.bloc[numBloc].largeur - 2 * epaisseur, epaisseur, meuble.profondeur - epaisseur,style);
+        geometry = new THREE.BoxGeometry(l - 2 * epaisseur, epaisseur, p - epaisseur);
+        etagere[i] = new THREE.Mesh(geometry, material);
+        etagere[i].name = "etagere " + i;
+        var position = step * (0.5 + i - meuble.bloc[numBloc].etageres / 2);
+        etagere[i].position.set(0, position, 0);
+        blocRoot[numBloc].add(etagere[i]);
+      }
     }
   }
 
@@ -1398,6 +1507,24 @@ function initializeBloc(indiceMeuble, numBloc) {
     else {
       blocRoot[numBloc].position.set(0, blocPosition, 0);
     }
+
+    //shadows
+   blocRoot[numBloc].traverse(function (child) {
+      child.receiveShadow = true;
+      child.castShadow = true;
+      console.log(child.name);
+    }) 
+
+      //boîte de sélection
+  //geometry = new THREE.BoxGeometry( meuble.bloc[numBloc].largeur+epsilon, meuble.hauteur+epsilon, meuble.profondeur+epsilon );
+  geometry = RoundEdgedBox(l+epsilon, h+epsilon, p+epsilon,2,1,1,1,1);
+  //geometry = getElementBase(meuble.bloc[numBloc].largeur+epsilon, meuble.hauteur+epsilon, meuble.profondeur+epsilon,style);
+  boite[numBloc] = new THREE.Mesh( geometry, materialSelectionBloc );
+  boite[numBloc].name = "BoiteSelectionBloc"+numBloc;
+  blocRoot[numBloc].add(boite[numBloc]);
+  selectableBloc.push(boite[numBloc]);
+  boite[numBloc].visible=false;
+  boite[numBloc].numero=numBloc;
 }
 
 function updateBloc (indiceMeuble, numBloc) {
@@ -1771,6 +1898,7 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
   updateButtonCadre(indiceMeuble);
   updateButtonSocle(indiceMeuble);
   updateButtonPied(indiceMeuble);
+  updateButtonSuspendu(indiceMeuble);
 }
 
 function updateButtonPlateau(indiceMeuble) {
@@ -1787,6 +1915,10 @@ function updateButtonSocle(indiceMeuble) {
 
 function updateButtonPied(indiceMeuble) {
   if (meubles[indiceMeuble].pied) {buttonPied.className="buttonOn"} else {buttonPied.className="buttonOff"}
+}
+
+function updateButtonSuspendu(indiceMeuble) {
+  if (meubles[indiceMeuble].suspendu) {buttonSuspendu.className="buttonOn"} else {buttonSuspendu.className="buttonOff"}
 }
 
 function updateInterfaceLargeur(indiceMeuble) {
@@ -1869,6 +2001,8 @@ function refreshInterfaceBlocs(indiceMeuble) {
     buttonOuverturePorteDroite.className = "buttonOff";
     sensOuverture.style.display="none";
   } else { buttonDeuxPortes.className = "buttonOff" }
+
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].etageresVerticales) {console.log("checked"); buttonEtageresVerticales.checked=true;} else {buttonEtageresVerticales.checked=false;}
 }
 
 function updateInterfaceBlocs(indiceMeuble) {
