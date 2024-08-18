@@ -24,6 +24,7 @@ class blocClass {
     this.ouverturePorte="gauche";
     this.nombrePortes="1";
     this.etageresVerticales=false;
+    this.rentrant=false;
   }
 }
 
@@ -129,6 +130,7 @@ const maxEtageres = 20;
 const epsilon = 5;
 const taillePoignees = 1.5;
 const focale=60;
+const decalagePoignee=0.4;
 var focaleV;
 var meubleRoot=[];  //Racine 3D de chaque meuble
 var plancheBas;
@@ -547,18 +549,29 @@ function onPointerMove( event ) {
 }
 
 //Materials
+
+  let loader2 = new THREE.TextureLoader();
+  let textureBois = loader2.load('src/plywood_diff_4k.jpg');
+  textureBois.wrapS = THREE.RepeatWrapping;
+  textureBois.wrapT = THREE.RepeatWrapping;
+  textureBois.repeat.set( 2, 2 );
+
+
+
 const materialParams = {
   color: '#ffaa00',
   refractionRatio: 0.98,
   transparent: false,
-  opacity: 1
+  opacity: 1,
+  map : textureBois
 };
 
 const materialTiroirsParams = {
   color: '#ffffff',
   refractionRatio: 0.98,
   transparent: false,
-  opacity: 1
+  opacity: 1,
+  map : textureBois
 };
 
 const materialPoigneesParams = {
@@ -596,7 +609,9 @@ const materialSelectionMeubleParams = {
   opacity: 0.5
 };
 
-const material = new THREE.MeshPhongMaterial( materialParams);
+
+
+const material = new THREE.MeshPhongMaterial( materialParams , );
 const materialTiroirs = new THREE.MeshPhongMaterial( materialTiroirsParams);
 const materialPoignees = new THREE.MeshPhongMaterial( materialPoigneesParams);
 const materialPlateau = new THREE.MeshPhongMaterial( materialPlateauParams);
@@ -637,7 +652,7 @@ lightC.position.set( -200, 150, 160 );
 //lightC.castShadow = true;
 renderer.setClearColor( 0xAAAAAA, 1 );
 scene.add( lightC );
-const ambientLight = new THREE.AmbientLight( 0x404020,2 ); // soft white light
+const ambientLight = new THREE.AmbientLight( 0x404020,0.5 );
 scene.add( ambientLight );
 /*const helperA = new THREE.CameraHelper(lightA.shadow.camera);
 scene.add(helperA);
@@ -949,6 +964,7 @@ var buttonDeuxPortes,buttonUnePorte,buttonOuverturePorteDroite,buttonOuverturePo
 var nbPortes,sensOuverture;
 var buttonEtageresVerticales;
 var divPortes,divEtageres;
+var checkboxRentrant;
 var listPoigneesPopup;
 var listPoigneesName;
 var meubleSliders;
@@ -968,6 +984,7 @@ function buildEnvironnement () {
   textureSol.wrapS = THREE.RepeatWrapping;
   textureSol.wrapT = THREE.RepeatWrapping;
   textureSol.repeat.set( 10, 10 );
+
   geometry = new THREE.PlaneGeometry( 1000, 1000 );
   const materialSol = new THREE.MeshPhongMaterial( {color: 0xffffff, map:textureSol} );
   materialSol.roughness = 1;
@@ -1040,6 +1057,7 @@ function getHTMLElements () {
   buttonEtageresVerticales = document.getElementById("checkBoxEtageresVerticales");
   meubleSliders = document.getElementById("meubleSliders");
   blocsSliders = document.getElementById("blocsSliders");
+  checkboxRentrant = document.getElementById("checkboxRentrant");
   listPoigneesPopup = document.getElementById("listPoigneesPopup");
   listPoigneesName = document.getElementById("listPoigneesName");
   styleMenu = document.getElementById("style");
@@ -1099,8 +1117,11 @@ function initializeInterface() {
   buttonEtageresVerticales.addEventListener("click", function () {
     meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etageresVerticales=!meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etageresVerticales;
     updateMeuble(indiceCurrentMeuble);
-  }
-  ,false );
+  }, false);
+  checkboxRentrant.addEventListener("click", function () {
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].rentrant=!meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].rentrant;
+    updateMeuble(indiceCurrentMeuble);
+  }, false);
   styleMenu.addEventListener("change", function changeStyle(event) { 
     style = event.target.value;
     updateScene(); 
@@ -1205,7 +1226,7 @@ function initializeInterface() {
 const poigneesFileList = new Map;
 poigneesFileList.set("Poignee type 1","src/furniture_handle_1.glb");
 poigneesFileList.set("Tulip Country","src/furniture_handle_2.glb");
-poigneesFileList.set("Poignee type 3","src/furniture_handle_3.gltf");
+poigneesFileList.set("Poignee type 3","src/furniture_handle_3.glb");
 poigneesFileList.set("Tulip Virella","src/furniture_handle_4.glb");
 poigneesFileList.set("Vintage","src/furniture_handle_10.glb");
 poigneesFileList.set("Square","src/furniture_handle_6.glb");
@@ -1392,8 +1413,9 @@ function initializeBloc(indiceMeuble, numBloc) {
  
   //portes
   if (meuble.bloc[numBloc].type == "Portes") {
+    var offset = meuble.bloc[numBloc].rentrant*epaisseur;
     if (meuble.bloc[numBloc].nombrePortes == "1") {
-      geometry = getElementBase(l - 0.25 * epaisseur, h-0.25*epaisseur, epaisseur,style);
+      geometry = getElementBase(l - 0.25 * epaisseur-2*offset, h-0.25*epaisseur-2*offset, epaisseur,style);
       etagere[0] = new THREE.Mesh(geometry, materialTiroirs);
       etagere[0].name = "porte 0";
       //poignee
@@ -1404,13 +1426,13 @@ function initializeBloc(indiceMeuble, numBloc) {
       if (deltaX<0) deltaX=0;
       if (meuble.bloc[numBloc].ouverturePorte=="droite") {deltaX*=-1; poigneeB.rotateZ(Math.PI/2);}
       else poigneeB.rotateZ(-Math.PI/2);  // a soumettre à option
-      poigneeB.position.set(deltaX,0,epaisseur);
-      etagere[0].position.set(0,0,meuble.profondeur/2);
+      poigneeB.position.set(deltaX,0,epaisseur/2);
+      etagere[0].position.set(0,0,meuble.profondeur/2-offset);
       blocRoot[numBloc].add(etagere[0]);
     }
     else {
       //porte gauche
-      geometry = getElementBase(l/2 - 0.25 * epaisseur, h-0.25*epaisseur, epaisseur,style);
+      geometry = getElementBase(l/2 - 0.25 * epaisseur-offset/2, h-0.25*epaisseur-2*offset, epaisseur,style);
       etagere[0] = new THREE.Mesh(geometry, materialTiroirs);
       etagere[0].name = "porte 0";
       //poignee gauche
@@ -1420,8 +1442,8 @@ function initializeBloc(indiceMeuble, numBloc) {
       etagere[0].add(poigneeB);
       let deltaX=l/4 - 4*taillePoignees;
       if (4*taillePoignees>l/4) deltaX=0;
-      poigneeB.position.set(deltaX,0,epaisseur);
-      etagere[0].position.set(-l/4,0,p/2);
+      poigneeB.position.set(deltaX,0,epaisseur/2);
+      etagere[0].position.set(-l/4+offset/2,0,p/2-offset);
       blocRoot[numBloc].add(etagere[0]);
 
       //porte droite
@@ -1432,9 +1454,9 @@ function initializeBloc(indiceMeuble, numBloc) {
       poigneeC.rotateZ(Math.PI/2);  // a soumettre à option
       etagere[1].add(poigneeC);
       deltaX*=-1
-      poigneeC.position.set(deltaX,0,epaisseur);
+      poigneeC.position.set(deltaX,0,epaisseur/2);
       poigneeC.name="poignee";
-      etagere[1].position.set(l/4,0,p/2);
+      etagere[1].position.set(l/4-offset/2,0,p/2-offset);
       blocRoot[numBloc].add(etagere[1]);
     }
   }
@@ -1469,10 +1491,11 @@ function initializeBloc(indiceMeuble, numBloc) {
 
   //tiroirs
   if (meuble.bloc[numBloc].type == "Tiroirs") {
-    var step = (h-0.25*epaisseur)/(meuble.bloc[numBloc].etageres+1);
+    var offset = meuble.bloc[numBloc].rentrant*epaisseur;
+    var step = (h-0.25*epaisseur-offset)/(meuble.bloc[numBloc].etageres+1);
     for (var i = 0; i < meuble.bloc[numBloc].etageres+1; i++) {
-      let xl = l - 0.25 * epaisseur;
-      let yl = (h - epaisseur)/(meuble.bloc[numBloc].etageres+1);//-epaisseur/4;
+      let xl = l - 0.25 * epaisseur - 2*offset;
+      let yl = (h - epaisseur - offset/2)/(meuble.bloc[numBloc].etageres+1);//-epaisseur/4;
       let zl = epaisseur;
       //geometry = new THREE.BoxGeometry(xl, yl, zl);
       geometry = getElementBase(xl,yl,zl,style);
@@ -1482,10 +1505,10 @@ function initializeBloc(indiceMeuble, numBloc) {
       let poigneeB = poigneeGroup.clone(true);
       poigneeB.name="poignee";
       etagere[i].add(poigneeB);
-      poigneeB.position.set(0,0,epaisseur);//epaisseur+taillePoignees);
+      poigneeB.position.set(0,0,epaisseur/2);//epaisseur+taillePoignees);
       var positionY = step * (i - meuble.bloc[numBloc].etageres / 2);
       var positionZ = p/2;
-      etagere[i].position.set(0, positionY, positionZ);
+      etagere[i].position.set(0, positionY, positionZ-offset);
       blocRoot[numBloc].add(etagere[i]);
     }
   }
@@ -2003,6 +2026,7 @@ function refreshInterfaceBlocs(indiceMeuble) {
   } else { buttonDeuxPortes.className = "buttonOff" }
 
   if (meubles[indiceMeuble].bloc[indiceCurrentBloc].etageresVerticales) {console.log("checked"); buttonEtageresVerticales.checked=true;} else {buttonEtageresVerticales.checked=false;}
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].rentrant) {console.log("checked"); checkboxRentrant.checked=true;} else {checkboxRentrant.checked=false;}
 }
 
 function updateInterfaceBlocs(indiceMeuble) {
