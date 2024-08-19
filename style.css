@@ -101,6 +101,14 @@ p {
   width:70%;
 }
 
+.lineSlider, .lineColor {
+  display:flex;
+}
+
+.lineColor {
+  justify-content: space-between;
+}
+
 /* .popup {
   width: 0.8em;
 } */
@@ -161,7 +169,10 @@ p {
 
 #aspect {
   background-color: #d1daff;
-  /* height:100vh; */
+  height:100%;
+}
+
+#aspect, #enregistrement {
   padding-left: 8px;
 }
 
@@ -186,11 +197,23 @@ p {
 
 #blocs {
   /*border : solid;*/
+  
+  background-color: #d1ffff;
+  height: 100%;
+}
+
+#blocs, #enregistrement {
   border-top: solid;
   border-width : 1px;
   border-color: #888;
-  background-color: #d1ffff;
-  height: 100%;
+}
+
+#enregistrement {
+  display:flex;
+  flex-direction: column;
+  justify-content: end;
+  height:auto;
+  padding-bottom:12px;
 }
 
 #meuble {
@@ -233,10 +256,14 @@ p {
 }
 
 input[type=button] {
- width:30%;
+  width:30%;
  padding:2px;
  margin : 3px;
 }
+
+/* .buttonFlex {
+  width:30%;
+} */
 
 input[type=number] { 
   text-align: right; 
@@ -308,7 +335,7 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
 .dropDownTitle {
   display: flex;
   justify-content: space-between;
-  width:80%;
+  width:91%;
   padding-left: 8px;
   padding-right: 8px;
   margin-top:8px;
@@ -323,11 +350,11 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
 .dropDownContent {
   display : none;
   position: absolute;
-  /* left: -8px; */
-  width: 88%;
+  width: 99%;
   overflow: auto;
   background-color: #ffffff;
-  overflow:hidden;
+  z-index:999;
+  max-height: 200px;
 }
 
 .dropDownTitle, .dropDownContent {
@@ -339,10 +366,10 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
 
 .dropDown:hover .dropDownContent {
   display : block;
-  animation-name: animationDropDown;
+  /* animation-name: animationDropDown; 
   animation-duration: 0.5s;
   animation-iteration-count: 1;
-  transition-timing-function: ease-out;
+  transition-timing-function: ease-out;*/
 }
 
 /* .dropDown:not(:hover) .dropDownContent {
@@ -382,15 +409,18 @@ li:hover {
   animation-direction: reverse;
 } */
 
-#enregistrement {
-  display:flex;
-  flex-direction: column;
-  justify-content: end;
-  height:100%;
-  padding-bottom:12px;
-}
-
 .containerBoutons {
   display:flex;
-  flex-direction: row;
+  flex-direction: column;
+  height:auto;
+}
+
+.deuxBoutons {
+display: flex;
+width:100%;
+}
+
+img {
+  width : 100px;
+  height : 100px;
 }

@@ -9,6 +9,33 @@ import { mx_bilerp_0 } from 'three/src/nodes/materialx/lib/mx_noise.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { DragControls } from 'three/addons/controls/DragControls.js';
 
+const imagesPath="src/";
+
+class image {
+  constructor(filename, thumbnail, titre) {
+    this.fileName = imagesPath + filename;
+    this.thumbnail = imagesPath + thumbnail;
+    this.titre = titre;
+    console.log(this.fileName);
+  }
+}
+
+var imagesPlateau = new Array;
+
+function initListTexturesPlateau() {
+  imagesPlateau[0] = new image("124_big.jpg", "124_big_thumb.jpg", "Noyer");
+  imagesPlateau[1] = new image("126_chene_de_montreal.jpg", "126_chene_de_montreal_thumb.jpg", "Chêne de Montréal");
+  imagesPlateau[2] = new image("149_big.jpg", "149_big_thumb.jpg", "Béton gris terra");
+  imagesPlateau[3] = new image("274_big.jpg", "274_big_thumb.jpg", "Marbre de Teramo");
+  imagesPlateau[4] = new image("355_bronze.jpg", "355_bronze_thumb.jpg", "Bronze");
+  imagesPlateau[5] = new image("393_chene_vintage.jpg", "393_chene_vintage_thumb.jpg", "Chêne vintage");
+  imagesPlateau[6] = new image("398_noyer_naturel.jpg", "398_noyer_naturel_thumb.jpg", "Noyer naturel");
+  imagesPlateau[7] = new image("781_venato_bianco.jpg", "781_venato_bianco_thumb.jpg", "Venato Bianco");
+  imagesPlateau[8] = new image("809_epic_ash_grain-quartz.jpg", "809_epic_ash_grain-quartz_thumb.jpg", "Ash grain - quartz");
+  imagesPlateau[8] = new image("Plan-de-travail-stratifié-marbre-noir.jpg", "Plan-de-travail-stratifié-marbre-noir_thumb.jpg", "Marbre noir");
+  imagesPlateau[9] = new image("plan-travail-beton.jpg", "plan-travail-beton_thumb.jpg", "Béton");
+}
+
 class configurationClass {
   constructor () {
     this.style = "style 1";
@@ -43,7 +70,7 @@ class meubleClass {
     this.disposition = "horizontal";
     for (var i=0; i<this.nbBlocs; i++) {this.bloc[i] = new blocClass()}
     this.calculTaille();
-    this.plateau=false;  //////////////////////////////initialiser bouton et menus couleurs
+    this.plateau=true;  //////////////////////////////initialiser bouton et menus couleurs
     this.cadre=false;
     this.socle=false;
     this.pied=false;
@@ -568,7 +595,8 @@ const materialPlateauParams = {
   color: '#ffffff',
   refractionRatio: 0.98,
   transparent: false,
-  opacity: 1
+  opacity: 1,
+  map:textureBois
 };
 
 const materialCadreParams = {
@@ -592,7 +620,7 @@ const materialSelectionMeubleParams = {
   opacity: 0.5
 };
 
-const material = new THREE.MeshPhongMaterial( materialParams , );
+const material = new THREE.MeshPhongMaterial( materialParams );
 const materialTiroirs = new THREE.MeshPhongMaterial( materialTiroirsParams);
 const materialPoignees = new THREE.MeshPhongMaterial( materialPoigneesParams);
 const materialPlateau = new THREE.MeshPhongMaterial( materialPlateauParams);
@@ -958,7 +986,8 @@ var styleMenu;
 var slidersAspect;
 var checkboxVertical;
 var divSwitchVertical;
-var colorDrawer,colorMeuble,colorPoignees;
+var colorDrawer,colorMeuble,colorPlateau,colorCadre;
+var menuTexturesPlateau;
 
 function buildEnvironnement () {
   let loader = new THREE.TextureLoader();
@@ -1006,6 +1035,7 @@ function initializeScene() {
     createInterfaceMeuble(indiceCurrentMeuble);
     updateInterfaceBlocs(indiceCurrentMeuble);
     updateInterfaceAspect(indiceCurrentMeuble);
+    createMenuTextures();
     frameCamera();
     renderer.setAnimationLoop( animate );
 }
@@ -1049,7 +1079,9 @@ function getHTMLElements () {
   checkboxVertical = document.getElementById("checkboxVertical");
   colorDrawer = document.getElementById("colorDrawer");
   colorMeuble = document.getElementById("colorMeuble");
-  colorPoignees = document.getElementById("colorPoignees");
+  colorPlateau = document.getElementById("colorPlateau");
+  colorCadre = document.getElementById("colorCadre");
+  menuTexturesPlateau = document.getElementById("menuTexturesPlateau");
 }
 
 function initializeInterface() {
@@ -1193,18 +1225,60 @@ function initializeInterface() {
     updateScene(); 
     console.log(style) 
   }, false);
-  colorMeuble.addEventListener("change", function eventColorMeubleChange(event) {
+  colorMeuble.addEventListener("input", function eventColorMeubleChange(event) {
     material.color=new THREE.Color(event.target.value);
   }, false);
-  colorDrawer.addEventListener("change", function eventColorDrawerChange(event) {
+  colorDrawer.addEventListener("input", function eventColorDrawerChange(event) {
     materialTiroirs.color=new THREE.Color(event.target.value);
   }, false);
-  colorPoignees.addEventListener("change", function eventColorPoigneesChange(event) {
-    materialPoignees.color=new THREE.Color(event.target.value);
+  colorPlateau.addEventListener("input", function eventColorPlateauChange(event) {
+    materialPlateau.color=new THREE.Color(event.target.value);
+  }, false);
+  colorCadre.addEventListener("input", function eventColorCadreChange(event) {
+    materialCadre.color=new THREE.Color(event.target.value);
   }, false);
   colorMeuble.value=materialParams.color;
   colorDrawer.value=materialTiroirsParams.color;
-  colorPoignees.value=materialPoigneesParams.color;
+  colorPlateau.value=materialPlateauParams.color;
+  colorCadre.value=materialCadreParams.color;
+}
+
+function loadTexture(i) {
+  console.log(i);
+  var file=imagesPlateau[i].fileName;
+  console.log(file);
+  let loaderPlateau = new THREE.TextureLoader();
+  var texturePlateau = loaderPlateau.load(file);
+  texturePlateau.wrapS = THREE.RepeatWrapping;
+  texturePlateau.wrapT = THREE.RepeatWrapping;
+  texturePlateau.repeat.set( 1, 1 );
+  materialPlateau.map=texturePlateau;
+  materialPlateau.bumpMap = texturePlateau;
+  materialPlateau.bumpScale=5;
+	//texture1.dispose();
+}
+
+function createMenuTextures() {
+  initListTexturesPlateau();
+  menuTexturesPlateau.innerHTML="";
+  for (var i=0;i<imagesPlateau.length;i++) {
+    console.log(imagesPlateau[i].fileName);
+    let divLineMenu=document.createElement("div");
+    divLineMenu.className="lineMenuImage";
+    divLineMenu.value=i;
+    let im=document.createElement("img");
+    im.src=imagesPlateau[i].thumbnail;
+    im.value=i;
+    let caption=document.createElement("div");
+    caption.innerHTML=imagesPlateau[i].titre;
+    caption.value=i;
+    divLineMenu.append(im);
+    divLineMenu.append(caption);
+    var file=imagesPlateau[i].fileName;
+    divLineMenu.addEventListener("click",function changeTexture(event){console.log("value=",event.target.value);loadTexture(event.target.value)},false);
+    //console.log(divLineMenu,im,caption);
+    menuTexturesPlateau.append(divLineMenu);
+  }
 }
 
 const poigneesFileList = new Map;
@@ -1520,7 +1594,6 @@ function initializeBloc(indiceMeuble, numBloc) {
    blocRoot[numBloc].traverse(function (child) {
       child.receiveShadow = true;
       child.castShadow = true;
-      console.log(child.name);
     }) 
 
       //boîte de sélection
@@ -1686,24 +1759,28 @@ function createSliderWithoutListener(objet,key,nom,value,type,min,max) {
       l.innerHTML = nom;
       divParamName.append(l);
       divParam.append(divParamName);
+      let sl = document.createElement("div");
+      sl.className = "lineSlider";
       let s = document.createElement("input");
       s.type="range";
       s.name="s."+nom;
+      s.id="slider";
       s.value=value;
       s.min=min;
       s.max=max;
       s.classList.add("inputSlider");
-      divParam.append(s);
+      sl.append(s);
       let b = document.createElement("input");
       b.type="number";
       b.name="b."+nom;;
+      b.id="number";
       b.value=value;
       b.min=min;
       b.max=max;
       b.classList.add("inputValue");
-      divParam.append(b);
-      //console.log("done");
-      return([divParam,s,b]);
+      sl.append(b);
+      divParam.append(sl);
+      return([divParam,s,b,sl]);
 }
 
 function updateInterfaceMeuble() {
@@ -1791,9 +1868,14 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
 //listMeublesName.value=meuble.name;  // keep
   elh=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
   meubleSliders.append(elh);
+  console.log("result=",elh);
+  console.log("childNodes[0]=",elh.querySelector("#slider"),elh.querySelector("#number"));
+  // hautS=elh.childNodes[1].childNodes[1];
+  // hautB=elh.childNodes[1].childNodes[2];
+  hautS=elh.querySelector("#slider");
+  hautB=elh.querySelector("#number");
 
-  hautS=elh.childNodes[1];
-  hautB=elh.childNodes[2];
+  console.log(hautB);
   hautS.addEventListener("input",function() {eventHauteurInput(indiceMeuble)},false);
   hautB.addEventListener("change",function() {eventHauteurInput(indiceMeuble)},false);
 
@@ -1809,15 +1891,16 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
   }
 
   let elp=createSlider(meuble,"profondeur","Profondeur",meuble.profondeur,0,10,250);
-  elp.childNodes[1].addEventListener("input",function eventElpInput() {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
-  elp.childNodes[2].addEventListener("change",function eventElpChange() {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
+  console.log("el=",elp);
+  elp.querySelector("#slider").addEventListener("input",function eventElpInput() {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
+  elp.querySelector("#number").addEventListener("change",function eventElpChange() {updateMeuble(indiceCurrentMeuble);frameCamera();},false);
   meubleSliders.append(elp);
 
   large=createSlider(meuble,"largeur","Largeur",meuble.largeur,0,10,500);
   meubleSliders.append(large);
 
-  largeS=large.childNodes[1];
-  largeB=large.childNodes[2];
+  largeS=large.querySelector("#slider");
+  largeB=large.querySelector("#number");
   largeS.addEventListener("input",function() {eventLargeInput(indiceMeuble)},false);
   largeB.addEventListener("change",function() {eventLargeInput(indiceMeuble)},false);
 
@@ -1833,8 +1916,8 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
   }
   
   let elnbb = createSlider(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
-  elnbb.childNodes[1].addEventListener("input",function eventElnbbInput() {onChangeBlocsQuantity(indiceMeuble)},false);
-  elnbb.childNodes[2].addEventListener("change",function eventElnbbChange() {onChangeBlocsQuantity(indiceMeuble)},false);
+  elnbb.querySelector("#slider").addEventListener("input",function eventElnbbInput() {onChangeBlocsQuantity(indiceMeuble)},false);
+  elnbb.querySelector("#number").addEventListener("change",function eventElnbbChange() {onChangeBlocsQuantity(indiceMeuble)},false);
   meubleSliders.append(elnbb);
   let retour = createSliderWithoutListener(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
   elX=retour[0];
@@ -1931,23 +2014,23 @@ function updateButtonSuspendu(indiceMeuble) {
 }
 
 function updateInterfaceLargeur(indiceMeuble) {
-  large.childNodes[1].value = meubles[indiceMeuble].largeur;
-  large.childNodes[2].value = meubles[indiceMeuble].largeur;
+  large.querySelector("#slider").value = meubles[indiceMeuble].largeur;
+  large.querySelector("#number").value = meubles[indiceMeuble].largeur;
 }
 
 function updateInterfaceHauteur(indiceMeuble) {
-  elh.childNodes[1].value = meubles[indiceMeuble].hauteur;
-  elh.childNodes[2].value = meubles[indiceMeuble].hauteur;
+  elh.querySelector("#slider").value = meubles[indiceMeuble].hauteur;
+  elh.querySelector("#number").value = meubles[indiceMeuble].hauteur;
 }
 
 function updateInterfaceX(indiceMeuble) {
-  elX.childNodes[1].value = meubles[indiceMeuble].x;
-  elX.childNodes[2].value = meubles[indiceMeuble].x;
+  elX.querySelector("#slider").value = meubles[indiceMeuble].x;
+  elX.querySelector("#number").value = meubles[indiceMeuble].x;
 }
 
 function updateInterfaceY(indiceMeuble) {
-  elY.childNodes[1].value = meubles[indiceMeuble].y;
-  elY.childNodes[2].value = meubles[indiceMeuble].y;
+  elY.querySelector("#slider").value = meubles[indiceMeuble].y;
+  elY.querySelector("#number").value = meubles[indiceMeuble].y;
 }
 
 function changeCurrentBlocFromClick(num) {
@@ -2052,7 +2135,7 @@ function createSlidersBlocs(indiceMeuble, numBloc) {
   let meuble = meubles[indiceMeuble];
   let slideLargeurBloc = createSlider(meuble.bloc[numBloc], "taille", "Taille du bloc", meuble.bloc[numBloc].taille, 0, 10, 200);
   blocsSliders.append(slideLargeurBloc);
-  slideLargeurBloc.childNodes[1].addEventListener("input", function () {
+  slideLargeurBloc.querySelector("#slider").addEventListener("input", function () {
     meuble.calculTaille();
     updateInterfaceLargeur(indiceMeuble);
     updateInterfaceHauteur(indiceMeuble);
@@ -2060,7 +2143,7 @@ function createSlidersBlocs(indiceMeuble, numBloc) {
     frameCamera();
   }
     , false);
-  slideLargeurBloc.childNodes[2].addEventListener("change", function () {
+  slideLargeurBloc.querySelector("#number").addEventListener("change", function () {
     meuble.calculTaille();
     updateInterfaceLargeur(indiceMeuble);
     updateInterfaceHauteur(indiceMeuble);
@@ -2069,11 +2152,11 @@ function createSlidersBlocs(indiceMeuble, numBloc) {
   }
     , false);
   let sliderEtageres = createSlider(meuble.bloc[numBloc], "etageres", "Nombre d'étagères", meuble.bloc[numBloc].etageres, 0, 0, maxEtageres);
-  sliderEtageres.childNodes[1].addEventListener("input", function () {
+  sliderEtageres.querySelector("#slider").addEventListener("input", function () {
     updateMeuble(indiceCurrentMeuble);
     frameCamera();
   }, false);
-  sliderEtageres.childNodes[2].addEventListener("change", function () {
+  sliderEtageres.querySelector("#number").addEventListener("change", function () {
     updateMeuble(indiceCurrentMeuble);
     frameCamera();
   }, false);
