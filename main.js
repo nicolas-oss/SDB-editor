@@ -48,6 +48,7 @@ class meubleClass {
     this.socle=false;
     this.pied=false;
     this.suspendu=true;
+    this.offsetPoignees=0;
   }
 
   calculTaille () {
@@ -439,19 +440,10 @@ function getLimitTranslationY(num) {
   var maxYGlobal=10e34;
   var minY=0;
   var maxY=10e34;
-  /*var hA=meubles[num].hauteur;
-  var bordSupA=Math.max(2*meubles[num].cadre*epaisseurCadre,meubles[num].plateau*epaisseurPlateau);
-  var piedA = meubles[num].pied*hauteurPied;
-  var socleA = meubles[num].socle*hauteurSocle;
-  var plateauA = meubles[num].plateau*epaisseurPlateau;*/
   var hAReelle=meubles[num].getHauteurReelle();
   for (var i = 0; i < meubles.length; i++) {
     if (i != num) {
-      //var hB=meubles[i].hauteur;
       var yB=meubles[i].y
-      /*var bordSupB=Math.max(2*meubles[i].cadre*epaisseurCadre,meubles[i].plateau*epaisseurPlateau);
-      var piedB = meubles[i].pied*hauteurPied;
-      var socleB = meubles[i].socle*hauteurSocle;*/
       if (intersectX(num,i)) {
           if (meubles[num].y > meubles[i].y) {
             minY = meubles[i].getHauteurReelle();//(yB + hB + bordSupB + piedB + socleB);
@@ -475,7 +467,6 @@ function getMaxAllowedWidth(num) {
   for (var i = 0; i < meubles.length; i++) {
     if (i != num) {
       bY = meubles[i].y + meubles[i].hauteur / 2;
-      //var intersectY = (Math.abs(aY - bY) * 2 < (meubles[num].hauteur + meubles[i].hauteur));
       if (intersectY(num,i)) {
         if (meubles[num].x > meubles[i].x) {
           deltaX = (meubles[num].x) - (meubles[i].x + meubles[i].largeur / 2 + meubles[i].cadre*epaisseurCadre + meubles[num].cadre*epaisseurCadre);
@@ -502,14 +493,8 @@ function getMaxAllowedHeight(num) {
 
   for (var i = 0; i < meubles.length; i++) {
     if (i != num) {
-      //var intersectX = (Math.abs(meubles[num].x - meubles[i].x) * 2 < (meubles[num].largeur + meubles[i].largeur));
       if (intersectX(num,i)) {
-        //var hB=meubles[i].hauteur;
         var yB=meubles[i].y;
-        /*var bordSupB=Math.max(2*meubles[i].cadre*epaisseurCadre,meubles[i].plateau*epaisseurPlateau);
-        var piedB = meubles[i].pied*hauteurPied;
-        var socleB = meubles[i].socle*hauteurSocle;*/
-        //var cadreB = meubles[i].cadre*epaisseurCadre;
         if (meubles[num].y < meubles[i].y) {
           deltaY = yB-yA-cadreA-socleA-piedA-plateauA;
         }
@@ -555,8 +540,6 @@ function onPointerMove( event ) {
   textureBois.wrapS = THREE.RepeatWrapping;
   textureBois.wrapT = THREE.RepeatWrapping;
   textureBois.repeat.set( 2, 2 );
-
-
 
 const materialParams = {
   color: '#ffaa00',
@@ -608,8 +591,6 @@ const materialSelectionMeubleParams = {
   transparent: true,
   opacity: 0.5
 };
-
-
 
 const material = new THREE.MeshPhongMaterial( materialParams , );
 const materialTiroirs = new THREE.MeshPhongMaterial( materialTiroirsParams);
@@ -974,6 +955,7 @@ var elh,hautS,hautB;
 var elX,elXS,elXB;
 var elY,elYS,elYB;
 var styleMenu;
+var slidersAspect;
 var checkboxVertical;
 var divSwitchVertical;
 var colorDrawer,colorMeuble,colorPoignees;
@@ -1023,6 +1005,7 @@ function initializeScene() {
     createNewMeuble();
     createInterfaceMeuble(indiceCurrentMeuble);
     updateInterfaceBlocs(indiceCurrentMeuble);
+    updateInterfaceAspect(indiceCurrentMeuble);
     frameCamera();
     renderer.setAnimationLoop( animate );
 }
@@ -1061,6 +1044,7 @@ function getHTMLElements () {
   listPoigneesPopup = document.getElementById("listPoigneesPopup");
   listPoigneesName = document.getElementById("listPoigneesName");
   styleMenu = document.getElementById("style");
+  slidersAspect = document.getElementById("slidersAspect");
   divSwitchVertical = document.getElementById("divSwitchVertical");
   checkboxVertical = document.getElementById("checkboxVertical");
   colorDrawer = document.getElementById("colorDrawer");
@@ -1073,6 +1057,14 @@ function initializeInterface() {
 
   // listeners
   // buttons blocs
+  checkboxVertical.addEventListener("click", function switchVertical() {
+    console.log("checkbox clicked");
+    if (meubles[indiceCurrentMeuble].disposition == "vertical") meubles[indiceCurrentMeuble].disposition = "horizontal";
+    else meubles[indiceCurrentMeuble].disposition = "vertical";
+    computeBlocsSize(indiceCurrentMeuble);
+    updateMeuble(indiceCurrentMeuble);
+    frameCamera()
+  }, false);
   buttonPorte.addEventListener("click", function () { 
     meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].type="Portes";
     console.log("indiceCurrentBloc=",indiceCurrentBloc);
@@ -1121,19 +1113,6 @@ function initializeInterface() {
   checkboxRentrant.addEventListener("click", function () {
     meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].rentrant=!meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].rentrant;
     updateMeuble(indiceCurrentMeuble);
-  }, false);
-  styleMenu.addEventListener("change", function changeStyle(event) { 
-    style = event.target.value;
-    updateScene(); 
-    console.log(style) 
-  }, false);
-  checkboxVertical.addEventListener("click", function switchVertical() {
-    console.log("checkbox clicked");
-    if (meubles[indiceCurrentMeuble].disposition == "vertical") meubles[indiceCurrentMeuble].disposition = "horizontal";
-    else meubles[indiceCurrentMeuble].disposition = "vertical";
-    computeBlocsSize(indiceCurrentMeuble);
-    updateMeuble(indiceCurrentMeuble);
-    frameCamera()
   }, false);
   buttonSocle.addEventListener("click",function() {
     meubles[indiceCurrentMeuble].socle=!meubles[indiceCurrentMeuble].socle;
@@ -1208,6 +1187,11 @@ function initializeInterface() {
     updateInterfaceBlocs(indiceCurrentMeuble);
     updateSelectableBlocs(indiceCurrentMeuble);
     frameCamera();
+  }, false);
+  styleMenu.addEventListener("change", function changeStyle(event) { 
+    style = event.target.value;
+    updateScene(); 
+    console.log(style) 
   }, false);
   colorMeuble.addEventListener("change", function eventColorMeubleChange(event) {
     material.color=new THREE.Color(event.target.value);
@@ -1505,7 +1489,8 @@ function initializeBloc(indiceMeuble, numBloc) {
       let poigneeB = poigneeGroup.clone(true);
       poigneeB.name="poignee";
       etagere[i].add(poigneeB);
-      poigneeB.position.set(0,0,epaisseur/2);//epaisseur+taillePoignees);
+      let posY=yl*(meuble.offsetPoignees/250);
+      poigneeB.position.set(0,posY,epaisseur/2);//epaisseur+taillePoignees);
       var positionY = step * (i - meuble.bloc[numBloc].etageres / 2);
       var positionZ = p/2;
       etagere[i].position.set(0, positionY, positionZ-offset);
@@ -1746,6 +1731,7 @@ function changeCurrentMeuble(num) {
   updateInterfaceMeuble();
   updateInterfaceBlocs(indiceCurrentMeuble);
   updateSelectableBlocs(indiceCurrentMeuble);
+  updateInterfaceAspect(indiceCurrentMeuble);
   console.log("meuble changed");
   console.log("meubles[num].x=",meubles[num].x);
   console.log("meubleRoot[num].position=",meubleRoot[num].position);
@@ -2092,6 +2078,13 @@ function createSlidersBlocs(indiceMeuble, numBloc) {
     frameCamera();
   }, false);
   blocsSliders.append(sliderEtageres);
+}
+
+function updateInterfaceAspect(indiceMeuble) {
+  slidersAspect.innerHTML="";
+  let sliderOffsetPoignees=createSlider(meubles[indiceMeuble],"offsetPoignees","Décalage",meubles[indiceMeuble].offsetPoignees,0,-100,100);
+  slidersAspect.append(sliderOffsetPoignees);
+  sliderOffsetPoignees.addEventListener("input", function () {updateMeuble(indiceMeuble)}, false);
 }
 
 window.addEventListener("DOMContentLoaded", initializeScene);

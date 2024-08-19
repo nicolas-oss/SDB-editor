@@ -97,6 +97,7 @@
       </select>
       <p>Poignees</p>
       <select id="listPoigneesSelect"></select>
+      <div id="slidersAspect"></div>
       <p>Couleurs</p>
       <label for="colors">Meuble</label>
       <input type="color" value="#ffffff" list="colorMeubleList" id="colorMeuble" />
@@ -110,7 +111,7 @@
       <input type="color" list="colorDrawerList" id="colorDrawer" />
       <datalist id="colorDrawerList">
         <option value="#800000"></option>
-        <option value="#8B0000"></option>
+        <option value="#8B0000"></option>²
         <option value="#A52A2A"></option>
         <option value="#DC143C"></option>
       </datalist>
@@ -121,11 +122,26 @@
         <option value="#8B0000"></option>
         <option value="#A52A2A"></option>
         <option value="#DC143C"></option>
-      </datalist>
-      <div id="enregistrement" class="boutons">
-        <input type="button" id="charger" value="Charger">
-        <input type="button" id="enregistrer" value="Enregistrer">
-      </div>
-    </div>
-  </body>
-</html>
+        </datalist>
+        <div class="dropDown">
+          <div class="dropDownTitle">
+          <div class="popupTitle">Plateau</div> 	<div class="dropDownRightArrow">▼</div>
+        </div>
+          <div class="dropDownContent">
+            <ul>
+              <li>marbre</li>
+              <li>noyer</li>
+              <li>ardoise</li>
+            </ul>
+          </div>
+        </div>
+        <div id="enregistrement" class="boutons">
+          <div class="containerBoutons">
+            <input type="button" id="charger" value="Charger">
+            <input type="button" id="enregistrer" value="Enregistrer">
+          </div>
+        </div>
+        </div>
+        </body>
+        
+        </html>
