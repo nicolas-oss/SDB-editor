@@ -40,12 +40,12 @@ h1 {
   line-height: 1.1;
 }
 
-#app {
+/* #app {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-}
+} */
 
 button {
   border: 1px solid transparent;
@@ -84,10 +84,11 @@ p, label, .inputSlider {
 
 p {
   font-weight:500;
+  margin-bottom: 4px;
 }
 
 .inputValue {
-  width: 4em;
+  width: 25%;
   border-width: 1px;
   justify-self: center;
   /* padding:4px;
@@ -95,13 +96,14 @@ p {
 }
 
 .inputSlider {
-  min-width: 150px;
-  max-width: 200px;
+  /* min-width: 150px;
+  max-width: 300px; */
+  width:70%;
 }
 
-.popup {
+/* .popup {
   width: 0.8em;
-}
+} */
 
 .animationBlocsName {
   background-color: rgb(0, 255, 255);
@@ -129,12 +131,16 @@ p {
   to {background-color: rgb(255, 255, 255);}
 }
 
-#interface, #aspect {
+#interfaceGauche, #interfaceDroite {
   display:flex;
   flex-direction:column;
   align-self: flex-start;
-  min-width: 220px;
-  overflow:auto;
+   min-width: 220px;
+  /* min-width: 10%; */
+  /* overflow:auto; */
+  /* width:auto; */
+  height: 100vh;
+  /* overflow: hidden; */
   /*height: 100vh;
   min-width: 220px;
   width:220px;
@@ -142,26 +148,31 @@ p {
   /*margin : 12px;*/
 }
 
+#interfaceGauche {
+  min-width: 20%;
+}
+
 .overflow {
   height:100vh;
-  overflow:hidden;
+  overflow:auto;
   min-width: 250px;
   max-width:300px;
 }
 
 #aspect {
   background-color: #d1daff;
-  height:100vh;
+  /* height:100vh; */
+  padding-left: 8px;
 }
 
-#interface {
+#enregistrement {
+  background-color: #edd1ff;
+}
+
+#interfaceGauche {
   background-color: #d1ffd1;
-  overflow:auto;
-  height:100vh;
-}
-
-.overflow {
-  overflow:auto;
+  /* overflow:auto; */
+  /* height:100vh; */
 }
 
 #enteteMeuble {
@@ -169,8 +180,8 @@ p {
 }
 
 #meuble, #blocs, #aspect {
-  padding: 12px;
   padding-top: 0px;
+  padding-right: 8px;
 }
 
 #blocs {
@@ -188,17 +199,32 @@ p {
 }
 
 #meubleSliders {
-  padding-top: 12px;
-  padding-bottom:12px;
+  padding-top: 4px;
+  padding-bottom:4px;
+}
+
+#globalContainer {
+  display:flex;
+  width:100%;
+}
+
+#containerCentral {
+  width:80%;
 }
 
 #canvas {
   max-height: fit-content;
-  max-width : 100%;
-  min-width: 75%;
+  /* max-width : 80%;*/
+  /* min-width: 50%;*/
+  width:100%;
+  /* max-width : 100%;
+  min-width: 75%; */
   /*max-width:90%;
   width:auto;*/
   height : 100%;
+  /*max-width:90%;
+  width:auto;*/
+  /* height : 100vh; */
   background-color: #ffffff;
 }
 
@@ -207,7 +233,7 @@ p {
 }
 
 input[type=button] {
- width:44%;
+ width:30%;
  padding:2px;
  margin : 3px;
 }
@@ -218,7 +244,7 @@ input[type=number] {
 
 .boutons {
   display: flex;
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
 }
 
 /*select option[value="value"] {
@@ -226,7 +252,7 @@ input[type=number] {
 }*/
 
 select {
-  width : 91%;
+  width : 99%;
   padding : 3px;
   margin : 3px;
 }
@@ -251,6 +277,7 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
   border-style: solid; */
   display:inline-block;
   position:relative;
+  width:100%;
   /* border-color: #000000;
   width:80%;
   padding-left: 8px;
@@ -334,6 +361,16 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
   animation-iteration-count: 1;
   animation-iteration-count: 1;
   animation-fill-mode: both;
+}
+
+ul {
+  list-style-type: none;
+  text-align: left;
+  padding-inline: 12px;
+}
+
+li:hover {
+  background-color: #3b7948;
 }
 
 /* .dropDown:not(:hover) .dropDownRightArrow {
