@@ -71,7 +71,7 @@ class meubleClass {
     for (var i=0; i<this.nbBlocs; i++) {this.bloc[i] = new blocClass()}
     this.calculTaille();
     this.plateau=true;  //////////////////////////////initialiser bouton et menus couleurs
-    this.cadre=false;
+    this.cadre=true;
     this.socle=false;
     this.pied=false;
     this.suspendu=true;
@@ -603,7 +603,8 @@ const materialCadreParams = {
   color: '#ffffff',
   refractionRatio: 0.98,
   transparent: false,
-  opacity: 1
+  opacity: 1,
+  map:textureBois
 };
 
 const materialSelectionBlocParams = {
@@ -987,7 +988,7 @@ var slidersAspect;
 var checkboxVertical;
 var divSwitchVertical;
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
-var menuTexturesPlateau;
+var menuTexturesPlateau,menuTexturesCadre;
 
 function buildEnvironnement () {
   let loader = new THREE.TextureLoader();
@@ -1035,7 +1036,8 @@ function initializeScene() {
     createInterfaceMeuble(indiceCurrentMeuble);
     updateInterfaceBlocs(indiceCurrentMeuble);
     updateInterfaceAspect(indiceCurrentMeuble);
-    createMenuTextures();
+    createMenuTextures(menuTexturesPlateau,imagesPlateau,"plateau");
+    createMenuTextures(menuTexturesCadre,imagesPlateau,"cadre");
     frameCamera();
     renderer.setAnimationLoop( animate );
 }
@@ -1082,6 +1084,7 @@ function getHTMLElements () {
   colorPlateau = document.getElementById("colorPlateau");
   colorCadre = document.getElementById("colorCadre");
   menuTexturesPlateau = document.getElementById("menuTexturesPlateau");
+  menuTexturesCadre = document.getElementById("menuTexturesCadre");
 }
 
 function initializeInterface() {
@@ -1243,41 +1246,51 @@ function initializeInterface() {
   colorCadre.value=materialCadreParams.color;
 }
 
-function loadTexture(i) {
-  console.log(i);
-  var file=imagesPlateau[i].fileName;
-  console.log(file);
-  let loaderPlateau = new THREE.TextureLoader();
-  var texturePlateau = loaderPlateau.load(file);
-  texturePlateau.wrapS = THREE.RepeatWrapping;
-  texturePlateau.wrapT = THREE.RepeatWrapping;
-  texturePlateau.repeat.set( 1, 1 );
-  materialPlateau.map=texturePlateau;
-  materialPlateau.bumpMap = texturePlateau;
-  materialPlateau.bumpScale=5;
+function loadTexture(textures,material,i) {
+  var file=textures[i].fileName;
+  let loader = new THREE.TextureLoader();
+  var texture = loader.load(file);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set( 1, 1 );
+  material.map=texture;
+  material.bumpMap = texture;
+  material.bumpScale=5;
 	//texture1.dispose();
 }
 
-function createMenuTextures() {
+function changeTexture(event) {
+  let i=event.target.value;
+  let piece=event.target.piece;
+  if (piece=="plateau") loadTexture(imagesPlateau,materialPlateau,i);
+  if (piece=="cadre") loadTexture(imagesPlateau,materialCadre,i);
+  //if (piece="cadre") loadTexture(materialCadre,i);
+}
+
+function createMenuTextures(menu,textures,piece) {
   initListTexturesPlateau();
-  menuTexturesPlateau.innerHTML="";
-  for (var i=0;i<imagesPlateau.length;i++) {
-    console.log(imagesPlateau[i].fileName);
+  console.log(menu);
+  menu.innerHTML="";
+  for (var i=0;i<textures.length;i++) {
+    console.log(textures[i].fileName);
     let divLineMenu=document.createElement("div");
     divLineMenu.className="lineMenuImage";
     divLineMenu.value=i;
+    divLineMenu.piece=piece;
     let im=document.createElement("img");
-    im.src=imagesPlateau[i].thumbnail;
+    im.src=textures[i].thumbnail;
     im.value=i;
+    im.piece=piece;
     let caption=document.createElement("div");
-    caption.innerHTML=imagesPlateau[i].titre;
+    caption.innerHTML=textures[i].titre;
     caption.value=i;
+    caption.piece=piece;
     divLineMenu.append(im);
     divLineMenu.append(caption);
-    var file=imagesPlateau[i].fileName;
-    divLineMenu.addEventListener("click",function changeTexture(event){console.log("value=",event.target.value);loadTexture(event.target.value)},false);
+    //var file=textures[i].fileName;
+    divLineMenu.addEventListener("click",function eventChangeTexture(event){console.log("value=",event.target.value);changeTexture(event)},false);
     //console.log(divLineMenu,im,caption);
-    menuTexturesPlateau.append(divLineMenu);
+    menu.append(divLineMenu);
   }
 }
 
