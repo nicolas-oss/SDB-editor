@@ -364,7 +364,40 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
   border-style: solid;
 }
 
-.dropDown:hover .dropDownContent {
+.lineMenuImage {
+  display:flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding:4px;
+}
+
+.lineMenuImage:hover {
+background-color: #93ccff;
+}
+
+.lineMenuImage:active .dropDownContent {
+display: none;
+}
+
+.caption {
+  width: 100%;
+  align-content: space-around;
+  padding-left:8px;
+}
+
+/* .dropDownContent:not(:hover) .dropDownContent {
+  display : none;
+} */
+
+/* .dropDown:hover .dropDownContent {
+  display : block; */
+  /* animation-name: animationDropDown; 
+  animation-duration: 0.5s;
+  animation-iteration-count: 1;
+  transition-timing-function: ease-out;*/
+
+
+.dropDownContent:hover .dropDownContent {
   display : block;
   /* animation-name: animationDropDown; 
   animation-duration: 0.5s;

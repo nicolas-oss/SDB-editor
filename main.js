@@ -8,8 +8,60 @@ import { ScreenNode } from 'three/src/nodes/display/BlendModeNode.js';
 import { mx_bilerp_0 } from 'three/src/nodes/materialx/lib/mx_noise.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { DragControls } from 'three/addons/controls/DragControls.js';
+import { RoundedBoxGeometry } from 'three/examples/jsm/Addons.js';
 
 const imagesPath="src/";
+const poigneesPath="src/";
+
+class poigneeClass {
+  constructor (filename, thumbnail, name, largeur, parametrable, nbPointAttache)
+  {
+    this.filename=poigneesPath+filename;
+    this.thumbnail=poigneesPath+thumbnail;
+    this.name=name;
+    this.largeur=largeur;
+    this.parametrable=parametrable,
+    this.nbPointAttache=nbPointAttache;
+  }
+}
+
+var poignees=new Array;
+
+const poigneesFileList = new Map;
+poigneesFileList.set("Poignee type 1","src/furniture_handle_1.glb");
+poigneesFileList.set("Tulip Country","src/furniture_handle_2.glb");
+poigneesFileList.set("Poignee type 3","src/furniture_handle_3.glb");
+poigneesFileList.set("Tulip Virella","src/furniture_handle_4.glb");
+poigneesFileList.set("Vintage","src/furniture_handle_10.glb");
+poigneesFileList.set("Square","src/furniture_handle_6.glb");
+poigneesFileList.set("Half circle","src/furniture_handle_7.glb");
+poigneesFileList.set("Semi round","src/furniture_handle_8.glb");
+poigneesFileList.set("Barre","src/furniture_handle_9.glb");
+//poigneesFileList.set("10 bouton","src/furniture_handle_10.glb");
+poigneesFileList.set("11","src/furniture_handle_11.glb");
+poigneesFileList.set("12","src/furniture_handle_12.glb");
+poigneesFileList.set("13","src/furniture_handle_13.glb");
+poigneesFileList.set("14","src/furniture_handle_14.glb");
+poigneesFileList.set("15","src/furniture_handle_15.glb");
+poigneesFileList.set("16","src/furniture_handle_16.glb");
+poigneesFileList.set("17","src/furniture_handle_17.glb");
+poigneesFileList.set("18 bouton","src/furniture_handle_18.glb");
+poigneesFileList.set("19","src/furniture_handle_19.glb");
+poigneesFileList.set("20","src/furniture_handle_20.glb");
+poigneesFileList.set("21","src/furniture_handle_21.glb");
+poigneesFileList.set("22","src/furniture_handle_22.glb");
+poigneesFileList.set("23","src/furniture_handle_23.glb");
+poigneesFileList.set("24","src/furniture_handle_24.glb");
+poigneesFileList.set("25","src/furniture_handle_25.glb");
+poigneesFileList.set("26","src/furniture_handle_26.glb");
+//poigneesFileList.set("27","src/furniture_handle_27.glb");
+poigneesFileList.set("28","src/furniture_handle_28.glb");
+poigneesFileList.set("29","src/furniture_handle_29.glb");
+poigneesFileList.set("30","src/furniture_handle_30.glb");
+
+function initPoigneesList() {
+  poignees[0] = new("")
+}
 
 class image {
   constructor(filename, thumbnail, titre) {
@@ -34,6 +86,69 @@ function initListTexturesPlateau() {
   imagesPlateau[8] = new image("809_epic_ash_grain-quartz.jpg", "809_epic_ash_grain-quartz_thumb.jpg", "Ash grain - quartz");
   imagesPlateau[8] = new image("Plan-de-travail-stratifié-marbre-noir.jpg", "Plan-de-travail-stratifié-marbre-noir_thumb.jpg", "Marbre noir");
   imagesPlateau[9] = new image("plan-travail-beton.jpg", "plan-travail-beton_thumb.jpg", "Béton");
+}
+
+var imagesMeuble = new Array;
+
+function initListTexturesMeuble() {
+  imagesMeuble[0] = new image("066_big.jpg", "066.jpg", "Ardoise");
+  imagesMeuble[1] = new image("070_big.jpg", "070.jpg", "Gris Soie");
+  imagesMeuble[2] = new image("078_big.jpg", "078.jpg", "Chêne San Rémo");
+  imagesMeuble[3] = new image("097_big.jpg", "097.jpg", "Chêne Havane");
+  imagesMeuble[4] = new image("117_big.jpg", "117.jpg", "Copper vintage");
+  imagesMeuble[5] = new image("123_big.jpg", "123.jpg", "Chêne de Virginie");
+  imagesMeuble[6] = new image("124_big.jpg", "124.jpg", "Noyer");
+  imagesMeuble[7] = new image("126_big.jpg", "126.jpg", "Chêne de Montréal");
+  imagesMeuble[8] = new image("149_big.jpg", "149.jpg", "Gris Terra");
+  imagesMeuble[8] = new image("192_big.jpg", "192.jpg", "Chêne ambré");
+  imagesMeuble[9] = new image("198_big.jpg", "198.jpg", "Chêne sierra");
+  imagesMeuble[10] = new image("201_big.jpg", "201.jpg", "Béton sable fin");
+  imagesMeuble[11] = new image("205_big.jpg", "205.jpg", "Chêne vicking");
+  imagesMeuble[12] = new image("215_big.jpg", "215.jpg", "Stomboli clair");
+  imagesMeuble[13] = new image("220_big.jpg", "220.jpg", "Pin Arizona");
+  imagesMeuble[14] = new image("225_big.jpg", "225.jpg", "Écorce de chêne");
+  imagesMeuble[15] = new image("231_big.jpg", "231.jpg", "Chêne Bergamo");
+  imagesMeuble[16] = new image("235_big.jpg", "235.jpg", "Marbre Venato Bianco");
+  imagesMeuble[17] = new image("265_big.jpg", "265.jpg", "Rouille");
+  imagesMeuble[18] = new image("266_big.jpg", "266.jpg", "Calédonia");
+  imagesMeuble[19] = new image("272_big.jpg", "272.jpg", "Chêne veiné");
+  imagesMeuble[20] = new image("274_big.jpg", "274.jpg", "Marbre de Teramo");
+  imagesMeuble[21] = new image("319_big.jpg", "319.jpg", "Métal oxidé");
+  imagesMeuble[22] = new image("320_big.jpg", "320.jpg", "Marbre Venato Nero");
+  imagesMeuble[23] = new image("322_big.jpg", "322.jpg", "Terrato blanc");
+  imagesMeuble[24] = new image("330_big.jpg", "330.jpg", "Béton gris");
+  imagesMeuble[25] = new image("344_big.jpg", "344.jpg", "Granit flammé noir");
+  imagesMeuble[26] = new image("345_big.jpg", "345.jpg", "Chêne Yukon");
+  imagesMeuble[27] = new image("355_big.jpg", "355.jpg", "Bronze");
+  imagesMeuble[28] = new image("356_big.jpg", "356.jpg", "Loupe de chêne");
+  imagesMeuble[29] = new image("363_big.jpg", "363.jpg", "Basalte gris taupe");
+  imagesMeuble[30] = new image("366_big.jpg", "367.jpg", "Chêne artisan");
+  imagesMeuble[31] = new image("369_big.jpg", "369.jpg", "Ardoise gris pierre");
+  imagesMeuble[32] = new image("373_big.jpg", "373.jpg", "Ardoise grise");
+  imagesMeuble[33] = new image("376_big.jpg", "376.jpg", "Limestone");
+  imagesMeuble[34] = new image("378_big.jpg", "378.jpg", "Béton noir");
+  imagesMeuble[35] = new image("392_big.jpg", "392.jpg", "Chêne maître");
+  imagesMeuble[36] = new image("393_big.jpg", "393.jpg", "Chêne vintage");
+  imagesMeuble[37] = new image("398_big.jpg", "398.jpg", "Noyer naturel");
+  imagesMeuble[38] = new image("781_big.jpg", "781.jpg", "Venato bianco");
+  imagesMeuble[39] = new image("783_big.jpg", "783.jpg", "Vénato nero");
+  imagesMeuble[40] = new image("784_big.jpg", "784.jpg", "Gris fossile");
+  imagesMeuble[41] = new image("785_big.jpg", "785.jpg", "Oxyde métallique");
+  imagesMeuble[42] = new image("787_big.jpg", "787.jpg", "Chêne pierre");
+  imagesMeuble[43] = new image("790_big.jpg", "790.jpg", "Plain black");
+  imagesMeuble[44] = new image("792_big.jpg", "792.jpg", "Pierre bleue belge");
+  imagesMeuble[45] = new image("794_big.jpg", "794.jpg", "Béton gris soie");
+  imagesMeuble[46] = new image("796_big.jpg", "796.jpg", "Béton blanc");
+  imagesMeuble[47] = new image("798_big.jpg", "798.jpg", "Béton sable fin");
+  imagesMeuble[48] = new image("802_big.jpg", "802.jpg", "Epic raw");
+  imagesMeuble[49] = new image("804_big.jpg", "804.jpg", "Epic black");
+  imagesMeuble[50] = new image("806_big.jpg", "806.jpg", "Epic white");
+  imagesMeuble[51] = new image("807_big.jpg", "807.jpg", "Epic easy clay");
+  imagesMeuble[52] = new image("809_big.jpg", "809.jpg", "Epic ash grain");
+  imagesMeuble[53] = new image("347_big.jpg", "347.jpg", "If");
+  imagesMeuble[54] = new image("353_big.jpg", "353.jpg", "Béton blanc");
+  imagesMeuble[55] = new image("354_big.jpg", "354.jpg", "Béton gris ardoise");
+  imagesMeuble[56] = new image("366_big.jpg", "366.jpg", "Noir structuré");
 }
 
 class configurationClass {
@@ -70,8 +185,8 @@ class meubleClass {
     this.disposition = "horizontal";
     for (var i=0; i<this.nbBlocs; i++) {this.bloc[i] = new blocClass()}
     this.calculTaille();
-    this.plateau=true;  //////////////////////////////initialiser bouton et menus couleurs
-    this.cadre=true;
+    this.plateau=false;  //////////////////////////////initialiser bouton et menus couleurs
+    this.cadre=false;
     this.socle=false;
     this.pied=false;
     this.suspendu=true;
@@ -139,7 +254,7 @@ class meubleClass {
   }
 }
 
-var style="flat";
+var style="Basique";
 
 var indiceCurrentBloc = 0;
 var indiceCurrentMeuble = 0;
@@ -153,6 +268,8 @@ const retraitSocle = 2;
 const hauteurSocle = 8;
 const hauteurPied = 6;
 const largeurPied= 4;
+const epaisseurSuedois = 2;
+const largeurSuedois = 4;
 const maxBlocs = 9;
 const maxEtageres = 20;
 const epsilon = 5;
@@ -599,6 +716,22 @@ const materialPlateauParams = {
   map:textureBois
 };
 
+const materialPlateauAvantParams = {
+  color: '#ffffff',
+  refractionRatio: 0.98,
+  transparent: false,
+  opacity: 1,
+  map:textureBois
+};
+
+const materialPlateauCoteParams = {
+  color: '#ffffff',
+  refractionRatio: 0.98,
+  transparent: false,
+  opacity: 1,
+  map:textureBois
+};
+
 const materialCadreParams = {
   color: '#ffffff',
   refractionRatio: 0.98,
@@ -621,13 +754,21 @@ const materialSelectionMeubleParams = {
   opacity: 0.5
 };
 
-const material = new THREE.MeshPhongMaterial( materialParams );
-const materialTiroirs = new THREE.MeshPhongMaterial( materialTiroirsParams);
-const materialPoignees = new THREE.MeshPhongMaterial( materialPoigneesParams);
-const materialPlateau = new THREE.MeshPhongMaterial( materialPlateauParams);
-const materialCadre = new THREE.MeshPhongMaterial( materialCadreParams);
-const materialSelectionBloc = new THREE.MeshPhongMaterial( materialSelectionBlocParams);
-const materialSelectionMeuble = new THREE.MeshPhongMaterial( materialSelectionMeubleParams);
+const material = new THREE.MeshStandardMaterial( materialParams );
+const materialAvant = new THREE.MeshStandardMaterial( materialParams );
+const materialCote = new THREE.MeshStandardMaterial( materialParams );
+const materialTiroirs = new THREE.MeshStandardMaterial( materialTiroirsParams);
+const materialTiroirsAvant = new THREE.MeshStandardMaterial( materialTiroirsParams);
+const materialTiroirsCote = new THREE.MeshStandardMaterial( materialTiroirsParams);
+const materialPoignees = new THREE.MeshStandardMaterial( materialPoigneesParams);
+const materialPlateau = new THREE.MeshStandardMaterial( materialPlateauParams);
+const materialPlateauAvant = new THREE.MeshStandardMaterial( materialPlateauAvantParams);
+const materialPlateauCote = new THREE.MeshStandardMaterial( materialPlateauCoteParams);
+const materialCadre = new THREE.MeshStandardMaterial( materialCadreParams);
+const materialCadreAvant = new THREE.MeshStandardMaterial( materialCadreParams);
+const materialCadreCote = new THREE.MeshStandardMaterial( materialCadreParams);
+const materialSelectionBloc = new THREE.MeshStandardMaterial( materialSelectionBlocParams);
+const materialSelectionMeuble = new THREE.MeshStandardMaterial( materialSelectionMeubleParams);
 const wireframeMaterial = new THREE.MeshBasicMaterial( 0x00ff00 );
 wireframeMaterial.wireframe = true;
 
@@ -818,13 +959,23 @@ function updateMeuble (indiceMeuble) {
   meubleRoot[indiceMeuble].children[0].children=[];
   //plateau
   if (meubles[indiceMeuble].plateau) {
-    geometry = new THREE.BoxGeometry(
-      meubles[indiceMeuble].largeur + 2 * debordPlateau,
-      epaisseurPlateau,
-      meubles[indiceMeuble].profondeur + debordPlateau);
-    plateau = new THREE.Mesh(geometry, materialPlateau);
+    let sx=meubles[indiceMeuble].largeur + 2 * debordPlateau;
+    let sy=epaisseurPlateau;
+    let sz=meubles[indiceMeuble].profondeur + debordPlateau;
+    if (/*meubles[indiceMeuble].*/style=="Basique") {
+      geometry = new THREE.BoxGeometry(sx,sy,sz);
+      plateau = new THREE.Mesh(geometry, [materialPlateauCote,materialPlateauCote,materialPlateau,materialPlateau,materialPlateauAvant,materialPlateauAvant])
+    }
+      else {
+        geometry = RoundEdgedBox( sx, sy, sz , 0.5 , 1,1,1,1);
+        plateau = new THREE.Mesh(geometry, materialPlateau);
+      }
+
     plateau.position.set(0, meubles[indiceMeuble].hauteur / 2 + epaisseurPlateau / 2, debordPlateau / 2);
     plateau.name = "plateau";
+    plateau.sx=sx;
+    plateau.sy=sy;
+    plateau.sz=sz;
     meubleRoot[indiceMeuble].children[0].add(plateau);
   }
   //socle
@@ -878,26 +1029,26 @@ function updateMeuble (indiceMeuble) {
   //cadre
   if (meubles[indiceMeuble].cadre) {
     geometry = new THREE.BoxGeometry(
-      meubles[indiceMeuble].largeur + 2 * epaisseurCadre,
+      meubles[indiceMeuble].largeur + 2 * epaisseurCadre-0.05,
       epaisseurCadre,
-      meubles[indiceMeuble].profondeur + debordCadre);
-    let cadreHaut = new THREE.Mesh(geometry, materialCadre);
+      meubles[indiceMeuble].profondeur + debordCadre+0.05);
+    let cadreHaut = new THREE.Mesh(geometry, materialCadreCote,materialCadreCote,materialCadre,materialCadre,materialCadreAvant,materialCadreAvant);
     cadreHaut.position.set(0, meubles[indiceMeuble].hauteur / 2 + epaisseurCadre / 2, debordCadre);
     cadreHaut.name = "cadreHaut";
     meubleRoot[indiceMeuble].children[0].add(cadreHaut);
-    let cadreBas = new THREE.Mesh(geometry, materialCadre);
+    let cadreBas = new THREE.Mesh(geometry, materialCadreCote,materialCadreCote,materialCadre,materialCadre,materialCadreAvant,materialCadreAvant);
     cadreBas.position.set(0, -meubles[indiceMeuble].hauteur / 2 - epaisseurCadre / 2, debordCadre);
     cadreHaut.name = "cadreBas";
     meubleRoot[indiceMeuble].children[0].add(cadreBas);
     geometry = new THREE.BoxGeometry(
       epaisseurCadre,
-      meubles[indiceMeuble].hauteur + 2 * epaisseurCadre,
+      meubles[indiceMeuble].hauteur + 2 * epaisseurCadre-0.05,
       meubles[indiceMeuble].profondeur + debordCadre);
-    let cadreGauche = new THREE.Mesh(geometry, materialCadre);
+    let cadreGauche = new THREE.Mesh(geometry, materialCadreCote,materialCadreCote,materialCadre,materialCadre,materialCadreAvant,materialCadreAvant);
     cadreGauche.position.set(-meubles[indiceMeuble].largeur / 2- epaisseurCadre / 2, 0, debordCadre);
     cadreGauche.name = "cadreGauche";
     meubleRoot[indiceMeuble].children[0].add(cadreGauche);
-    let cadreDroit = new THREE.Mesh(geometry, materialCadre);
+    let cadreDroit = new THREE.Mesh(geometry, materialCadreCote,materialCadreCote,materialCadre,materialCadre,materialCadreAvant,materialCadreAvant);
     cadreDroit.position.set(meubles[indiceMeuble].largeur / 2+ epaisseurCadre / 2, 0, debordCadre);
     cadreDroit.name = "cadreDroit";
     meubleRoot[indiceMeuble].children[0].add(cadreDroit);
@@ -988,7 +1139,8 @@ var slidersAspect;
 var checkboxVertical;
 var divSwitchVertical;
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
-var menuTexturesPlateau,menuTexturesCadre;
+var menuTexturesPlateau,menuTexturesCadre,menuTexturesMeuble,menuTexturesTiroirs;
+var dropDownMeuble, dropDownTiroirs, dropDownPlateau, dropDownCadre;
 
 function buildEnvironnement () {
   let loader = new THREE.TextureLoader();
@@ -998,7 +1150,7 @@ function buildEnvironnement () {
   textureSol.repeat.set( 10, 10 );
 
   geometry = new THREE.PlaneGeometry( 1000, 1000 );
-  const materialSol = new THREE.MeshPhongMaterial( {color: 0xffffff, map:textureSol} );
+  const materialSol = new THREE.MeshStandardMaterial( {color: 0xffffff, map:textureSol} );
   materialSol.roughness = 1;
   materialSol.metalness = 1;
   materialSol.bumpMap = textureSol;
@@ -1008,7 +1160,7 @@ function buildEnvironnement () {
   plane.name = "sol";
   plane.receiveShadow = true;
   scene.add( plane );
-  const materialMur = new THREE.MeshPhongMaterial( {color: 0xffffff} );
+  const materialMur = new THREE.MeshStandardMaterial( {color: 0xffffff} );
   const murFond = new THREE.Mesh( geometry, materialMur );
   murFond.name = "murFond"
   murFond.receiveShadow = true;
@@ -1036,8 +1188,10 @@ function initializeScene() {
     createInterfaceMeuble(indiceCurrentMeuble);
     updateInterfaceBlocs(indiceCurrentMeuble);
     updateInterfaceAspect(indiceCurrentMeuble);
-    createMenuTextures(menuTexturesPlateau,imagesPlateau,"plateau");
-    createMenuTextures(menuTexturesCadre,imagesPlateau,"cadre");
+    createMenuTextures(menuTexturesMeuble,imagesMeuble,"meuble");
+    createMenuTextures(menuTexturesTiroirs,imagesMeuble,"tiroirs");
+    createMenuTextures(menuTexturesPlateau,imagesMeuble,"plateau");
+    createMenuTextures(menuTexturesCadre,imagesMeuble,"cadre");
     frameCamera();
     renderer.setAnimationLoop( animate );
 }
@@ -1085,6 +1239,12 @@ function getHTMLElements () {
   colorCadre = document.getElementById("colorCadre");
   menuTexturesPlateau = document.getElementById("menuTexturesPlateau");
   menuTexturesCadre = document.getElementById("menuTexturesCadre");
+  menuTexturesMeuble = document.getElementById("menuTexturesMeuble");
+  menuTexturesTiroirs = document.getElementById("menuTexturesTiroirs");
+  dropDownMeuble = document.getElementById("dropDownMeuble");
+  dropDownTiroirs = document.getElementById("dropDownTiroirs");
+  dropDownPlateau = document.getElementById("dropDownPlateau");
+  dropDownCadre = document.getElementById("dropDownCadre");
 }
 
 function initializeInterface() {
@@ -1236,39 +1396,144 @@ function initializeInterface() {
   }, false);
   colorPlateau.addEventListener("input", function eventColorPlateauChange(event) {
     materialPlateau.color=new THREE.Color(event.target.value);
+    materialPlateauAvant.color=new THREE.Color(event.target.value);
+    materialPlateauCote.color=new THREE.Color(event.target.value);
   }, false);
   colorCadre.addEventListener("input", function eventColorCadreChange(event) {
     materialCadre.color=new THREE.Color(event.target.value);
+    materialCadreCote.color=new THREE.Color(event.target.value);
+    materialCadreAvant.color=new THREE.Color(event.target.value);
   }, false);
+
+  //refresh colors
   colorMeuble.value=materialParams.color;
   colorDrawer.value=materialTiroirsParams.color;
   colorPlateau.value=materialPlateauParams.color;
   colorCadre.value=materialCadreParams.color;
+
+  //dropdown menus
+  dropDownMeuble.addEventListener("click",function (event) {dropMenu(event)},false);
+  dropDownTiroirs.addEventListener("click",function (event) {dropMenu(event)},false);
+  dropDownPlateau.addEventListener("click",function (event) {dropMenu(event)},false);
+  dropDownCadre.addEventListener("click",function (event) {dropMenu(event)},false);
 }
 
-function loadTexture(textures,material,i) {
+function dropMenu(event) {
+ let elt=document.getElementById(event.target.attributes["cible"].value);
+ elt.addEventListener("mouseleave",function (event) {closeMenu(event)},false);
+ console.log(elt);
+  if (elt.style.display=="block") elt.style.display="none"
+  else elt.style.display="block";
+  if (elt.id=="menuTexturesMeuble") {
+    menuTexturesCadre.style.display="none";
+    menuTexturesPlateau.style.display="none";
+    menuTexturesTiroirs.style.display="none";
+  }
+  if (elt.id=="menuTexturesTiroirs") {
+    menuTexturesCadre.style.display="none";
+    menuTexturesPlateau.style.display="none";
+    menuTexturesMeuble.style.display="none";
+  }
+  if (elt.id=="menuTexturesPlateau") {
+    menuTexturesCadre.style.display="none";
+    menuTexturesMeuble.style.display="none";
+    menuTexturesTiroirs.style.display="none";
+  }
+  if (elt.id=="menuTexturesCadre") {
+    menuTexturesMeuble.style.display="none";
+    menuTexturesPlateau.style.display="none";
+    menuTexturesTiroirs.style.display="none";
+  }
+}
+
+function closeMenu(event) {
+  event.target.style="none";
+}
+
+function loadTexture(textures,i,material,materialAvant,materialCote,sx,sy,sz) {
   var file=textures[i].fileName;
   let loader = new THREE.TextureLoader();
+
+  if (sx && sy && sz) {
+    var sMax = Math.max(sx,sy,sz);
+  }
+  else {
+    sx=1;
+    sy=1;
+    sz=1;
+  }
+
   var texture = loader.load(file);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set( 1, 1 );
+  texture.repeat.set( 1, sx/sMax );
   material.map=texture;
   material.bumpMap = texture;
   material.bumpScale=5;
+
+  if (materialAvant) {
+    var textureAvant = texture.clone();
+    textureAvant.repeat.set( 1, sy/sMax );
+    materialAvant.map=textureAvant;
+    materialAvant.bumpMap = textureAvant;
+    materialAvant.bumpScale=5;
+  }
+
+  if (materialCote) {
+    var textureCote = texture.clone();
+    textureCote.repeat.set( 1, sz/sMax );
+    materialCote.map=textureCote;
+    materialCote.bumpMap = textureCote;
+    materialCote.bumpScale=5;
+  }
 	//texture1.dispose();
 }
 
-function changeTexture(event) {
+function changeTexture(indiceMeuble,event) {
   let i=event.target.value;
   let piece=event.target.piece;
-  if (piece=="plateau") loadTexture(imagesPlateau,materialPlateau,i);
-  if (piece=="cadre") loadTexture(imagesPlateau,materialCadre,i);
+  if (piece=="plateau") {
+    console.log("indiceMeuble=",indiceMeuble);
+    let obj=meubleRoot[indiceMeuble].getObjectByName("plateau");
+    loadTexture(imagesMeuble,i,materialPlateau,materialPlateauAvant,materialPlateauCote,obj.sx,obj.sy,obj.sz);
+    //materialPlateau.
+  }
+  if (piece=="cadre") loadTexture(
+    imagesMeuble,
+    i,
+    materialCadre,
+    materialCadreAvant,
+    materialCadreCote,
+    meubles[indiceMeuble].largeur,
+    meubles[indiceMeuble].hauteur,
+    meubles[indiceMeuble].profondeur
+  );
+  if (piece=="meuble") loadTexture(
+    imagesMeuble,
+    i,
+    material,
+    materialAvant,
+    materialCote,
+    meubles[indiceMeuble].largeur,
+    meubles[indiceMeuble].hauteur,
+    meubles[indiceMeuble].profondeur
+  );
+  if (piece=="tiroirs") loadTexture(
+    imagesMeuble,
+    i,
+    materialTiroirs,
+    materialTiroirsAvant,
+    materialTiroirsCote,
+    meubles[indiceMeuble].largeur,
+    meubles[indiceMeuble].hauteur,
+    meubles[indiceMeuble].profondeur
+  );
   //if (piece="cadre") loadTexture(materialCadre,i);
 }
 
 function createMenuTextures(menu,textures,piece) {
   initListTexturesPlateau();
+  initListTexturesMeuble();
   console.log(menu);
   menu.innerHTML="";
   for (var i=0;i<textures.length;i++) {
@@ -1278,32 +1543,21 @@ function createMenuTextures(menu,textures,piece) {
     divLineMenu.value=i;
     divLineMenu.piece=piece;
     let im=document.createElement("img");
+    im.className="image";
     im.src=textures[i].thumbnail;
     im.value=i;
     im.piece=piece;
     let caption=document.createElement("div");
+    caption.className="caption";
     caption.innerHTML=textures[i].titre;
     caption.value=i;
     caption.piece=piece;
     divLineMenu.append(im);
     divLineMenu.append(caption);
-    //var file=textures[i].fileName;
-    divLineMenu.addEventListener("click",function eventChangeTexture(event){console.log("value=",event.target.value);changeTexture(event)},false);
-    //console.log(divLineMenu,im,caption);
+    divLineMenu.addEventListener("click",function eventChangeTexture(event){console.log("value=",event.target.value);changeTexture(indiceCurrentMeuble,event)},false);
     menu.append(divLineMenu);
   }
 }
-
-const poigneesFileList = new Map;
-poigneesFileList.set("Poignee type 1","src/furniture_handle_1.glb");
-poigneesFileList.set("Tulip Country","src/furniture_handle_2.glb");
-poigneesFileList.set("Poignee type 3","src/furniture_handle_3.glb");
-poigneesFileList.set("Tulip Virella","src/furniture_handle_4.glb");
-poigneesFileList.set("Vintage","src/furniture_handle_10.glb");
-poigneesFileList.set("Square","src/furniture_handle_6.glb");
-poigneesFileList.set("Half circle","src/furniture_handle_7.glb");
-poigneesFileList.set("Semi round","src/furniture_handle_8.glb");
-poigneesFileList.set("Barre","src/furniture_handle_9.glb");
 
 var poigneeRoot;
 var poigneeGroup=new THREE.Group();
@@ -1444,13 +1698,47 @@ function destroyBloc(indiceMeuble, numBloc) {
     material.dispose();
 }
 
+function getElementSuedois(x, y, z, largeur, epaisseurS) {
+  let geo = new THREE.BufferGeometry;
+  let pieceA = new THREE.BufferGeometry;
+  pieceA = RoundEdgedBox(largeur, y, epaisseurS, 0.5, 1, 1, 1, 1);
+  let pieceB = pieceA.clone(true);
+  pieceA.translate(largeur / 2 - x / 2, 0, 0);
+  pieceB.translate(-largeur / 2 + x / 2, 0, 0);
+  let pieceC = new THREE.BufferGeometry;
+  //let offset=0.7;
+  let offset = -0.70;
+  pieceC = RoundEdgedBox(x - 2 * largeur - offset, largeur, epaisseurS, 0.5, 1, 1, 1, 1);
+  let pieceD = pieceC.clone(true);
+  pieceC.translate(0, -y / 2 + largeur/2, 0);
+  pieceD.translate(0, y / 2 - largeur/2, 0);
+  let cadre = new THREE.BoxGeometry(x - 2 * largeur, y - largeur, z);
+  let geometries = [];
+  geometries.push(pieceA, pieceB, pieceC, pieceD, cadre);
+  geo = BufferGeometryUtils.mergeGeometries(geometries);
+  pieceA.dispose();
+  pieceB.dispose();
+  pieceC.dispose();
+  pieceD.dispose();
+  return geo;
+}
+
 function getElementBase (x,y,z,styleParam) {
   let geo = new THREE.BufferGeometry;
-  //console.log(styleParam);
-  if (styleParam == "rounded") {geo = RoundEdgedBox(x,y,z,0.5,1,1,1,1)}
-  else {geo = new THREE.BoxGeometry( x,y,z )}
-  //if (styleParam = "flat") 
-  
+  if (styleParam == "Arrondi") {geo = RoundEdgedBox(x,y,z,0.5,1,1,1,1)}
+  if (styleParam=="Basique") {geo = new THREE.BoxGeometry( x,y,z )}
+  if (styleParam=="Suédois 1") { 
+    geo = getElementSuedois (x,y,z,largeurSuedois,epaisseurSuedois);
+  }
+  if (styleParam=="Suédois 2") { 
+    let geoTemp = getElementSuedois (x,y,z,largeurSuedois/2,epaisseurSuedois);
+    let pieceCentre = new THREE.BufferGeometry;
+    pieceCentre = RoundEdgedBox(x-2*largeurSuedois, y-2*largeurSuedois, epaisseurSuedois, 0.5, 1, 1, 1, 1);
+    let geometries=[];
+    geometries.push(geoTemp,pieceCentre);
+    geo = BufferGeometryUtils.mergeGeometries(geometries);
+    //dispose
+  }
   return geo;
 }
 
@@ -1844,7 +2132,7 @@ function onMaterialAnimationFinish (num) {
   mixerMaterial=undefined;
 }
 
-var materialSelectionMeubleAnim = new THREE.MeshPhongMaterial( materialSelectionMeubleParams );
+var materialSelectionMeubleAnim = new THREE.MeshStandardMaterial( materialSelectionMeubleParams );
 var offset = new THREE.NumberKeyframeTrack( '.opacity', [ 0, 1 ], [ 0.5,0] )
 var clipMaterial = new THREE.AnimationClip( 'opacity_animation', 1, [ offset ] );
 var mixerMaterial;
@@ -2132,7 +2420,7 @@ function onMaterialBlocAnimationFinish (num) {
   mixerMaterial=undefined;
 }
 
-var materialSelectionBlocAnim = new THREE.MeshPhongMaterial( materialSelectionBlocParams );
+var materialSelectionBlocAnim = new THREE.MeshStandardMaterial( materialSelectionBlocParams );
 
 function startMaterialAnimationBloc(num) {
   selectableBloc[num].material = materialSelectionBlocAnim;

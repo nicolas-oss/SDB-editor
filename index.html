@@ -98,9 +98,10 @@
           <p>Aspect</p>
           <p>Style</p>
           <select id="style">
-            <option>flat</option>
-            <option>rounded</option>
-            <option>style 3</option>
+            <option>Basique</option>
+            <option>Arrondi</option>
+            <option>Suédois 1</option>
+            <option>Suédois 2</option>
           </select>
           <p>Poignees</p>
           <select id="listPoigneesSelect"></select>
@@ -147,12 +148,12 @@
             </datalist>
           </div>
           <p>Matières</p>
-          <div class="dropDown">
-            <div class="dropDownTitle">
-              <div class="popupTitle">Meuble</div>
-              <div class="dropDownRightArrow">▼</div>
+          <div class="dropDown" cible="menuTexturesMeuble" id="dropDownMeuble">
+            <div class="dropDownTitle" cible="menuTexturesMeuble">
+              <div class="popupTitle" cible="menuTexturesMeuble">Meuble</div>
+              <div class="dropDownRightArrow" cible="menuTexturesMeuble">▼</div>
             </div>
-            <div class="dropDownContent">
+            <div class="dropDownContent" id="menuTexturesMeuble">
               <ul>
                 <li>marbre</li>
                 <li>noyer</li>
@@ -160,12 +161,12 @@
               </ul>
             </div>
           </div>
-          <div class="dropDown">
-            <div class="dropDownTitle">
-              <div class="popupTitle">Tiroirs</div>
-              <div class="dropDownRightArrow">▼</div>
+          <div class="dropDown" cible="menuTexturesTiroirs" id="dropDownTiroirs">
+            <div class="dropDownTitle" cible="menuTexturesTiroirs">
+              <div class="popupTitle" cible="menuTexturesTiroirs">Tiroirs</div>
+              <div class="dropDownRightArrow" cible="menuTexturesTiroirs">▼</div>
             </div>
-            <div class="dropDownContent">
+            <div class="dropDownContent" id="menuTexturesTiroirs">
               <ul>
                 <li><img src="src/126_chene_de_montreal_thumb.jpg">Chêne de montréal</li>
                 <li><img src="src/355_bronze_thumb.jpg">Bronze</li>
@@ -173,10 +174,10 @@
               </ul>
             </div>
           </div>
-          <div class="dropDown">
-            <div class="dropDownTitle">
-              <div class="popupTitle">Plateau</div>
-              <div class="dropDownRightArrow">▼</div>
+          <div class="dropDown" cible="menuTexturesPlateau" id="dropDownPlateau">
+            <div class="dropDownTitle" cible="menuTexturesPlateau">
+              <div class="popupTitle" cible="menuTexturesPlateau">Plateau</div>
+              <div class="dropDownRightArrow" cible="menuTexturesPlateau">▼</div>
             </div>
             <div id="menuTexturesPlateau" class="dropDownContent">
               <ul>
@@ -186,10 +187,10 @@
               </ul>
             </div>
           </div>
-          <div class="dropDown">
-            <div class="dropDownTitle">
-              <div class="popupTitle">Cadre</div>
-              <div class="dropDownRightArrow">▼</div>
+          <div class="dropDown" cible="menuTexturesCadre" id="dropDownCadre">
+            <div class="dropDownTitle" cible="menuTexturesCadre">
+              <div class="popupTitle" cible="menuTexturesCadre">Cadre</div>
+              <div class="dropDownRightArrow" cible="menuTexturesCadre">▼</div>
             </div>
             <div class="dropDownContent" id="menuTexturesCadre">
               <ul>
