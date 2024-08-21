@@ -31,15 +31,28 @@ var poignees=new Array;
 function initPoigneesList() {
   poignees[0] = new poigneeClass("furniture_handle_1.glb","poignee1.0001.png","Vintage 1",1,10,false,2,0,0);
   poignees[1] = new poigneeClass("furniture_handle_2.glb","poignee2.0001.png","Vintage 2",2,10,false,2,0,0);
-  poignees[2] = new poigneeClass("furniture_handle_3.glb","poignee3.0001.png","Vintage 2",3,10,false,2,0,0);
-  poignees[3] = new poigneeClass("furniture_handle_4.glb","poignee4.0001.png","Vintage 2",4,10,false,2,0,0);
-  poignees[4] = new poigneeClass("furniture_handle_6.glb","poignee6.0001.png","Vintage 2",5,10,false,2,0,0);
+  poignees[2] = new poigneeClass("furniture_handle_3.glb","poignee3.0001.png","Classique",3,10,false,2,0,0);
+  poignees[3] = new poigneeClass("furniture_handle_4.glb","poignee4.0001.png","Virolla",4,10,false,2,0,0);
+  poignees[4] = new poigneeClass("furniture_handle_6.glb","poignee6.0001.png","Moderne",5,10,false,2,0,0);
   poignees[5] = new poigneeClass("furniture_handle_7.glb","poignee7.0001.png","Circle",6,10,false,2,0,0);
-  poignees[6] = new poigneeClass("furniture_handle_9.glb","poignee9.0001.png","Barre",7,10,true,2,0,0);
+  poignees[6] = new poigneeClass("furniture_handle_9.glb","poignee9.0001.png","Barre 1",7,10,true,2,0,0);
   poignees[7] = new poigneeClass("furniture_handle_10.glb","poignee10.0001.png","Vintage",8,10,false,2,0,0);
-  poignees[8] = new poigneeClass("furniture_handle_11.glb","poignee11.0001.png","Vintage",9,10,false,2,0,0);
-  poignees[9] = new poigneeClass("furniture_handle_12.glb","poignee12.0001.png","Barre",10,10,false,2,0,0);
-  poignees[10] = new poigneeClass("furniture_handle_13.glb","poignee13.0001.png","Barre",10,10,false,2,0,0);
+  poignees[8] = new poigneeClass("furniture_handle_11.glb","poignee11.0001.png","Moderne",9,10,false,2,0,0);
+  poignees[9] = new poigneeClass("furniture_handle_12.glb","poignee12.0001.png","Barre 2",10,10,true,2,0,0);
+  poignees[10] = new poigneeClass("furniture_handle_13.glb","poignee13.0001.png","Barre 3",10,10,true,2,0,0);
+  poignees[11] = new poigneeClass("furniture_handle_14.glb","poignee14.0001.png","Barre 4",10,10,true,2,0,0);
+  poignees[12] = new poigneeClass("furniture_handle_15.glb","poignee15.0001.png","Poignée",10,10,false,2,0,0);
+  poignees[13] = new poigneeClass("furniture_handle_16.glb","poignee16.0001.png","Bouton 1",10,10,false,1,0,0);
+  poignees[14] = new poigneeClass("furniture_handle_17.glb","poignee17.0001.png","Bouton 2",10,10,false,1,0,0);
+  poignees[15] = new poigneeClass("furniture_handle_18.glb","poignee18.0001.png","Bouton 3",10,10,false,1,0,0);
+  poignees[16] = new poigneeClass("furniture_handle_19.glb","poignee19.0001.png","Bouton 4",10,10,false,1,0,0);
+  poignees[17] = new poigneeClass("furniture_handle_20.glb","poignee20.0001.png","Bouton 5",10,10,false,1,0,0);
+  poignees[18] = new poigneeClass("furniture_handle_21.glb","poignee21.0001.png","Poignée vintage",10,10,false,2,0,0);
+  poignees[19] = new poigneeClass("furniture_handle_22.glb","poignee22.0001.png","Poignée moderne",10,10,false,2,0,0);
+  poignees[20] = new poigneeClass("furniture_handle_23.glb","poignee23.0001.png","Barre 5",10,10,false,2,0,0);
+  poignees[21] = new poigneeClass("furniture_handle_24.glb","poignee24.0001.png","Poignée moderne",10,10,false,2,0,0);
+  poignees[22] = new poigneeClass("furniture_handle_25.glb","poignee25.0001.png","Barre 6",10,10,false,2,0,0);
+  poignees[23] = new poigneeClass("furniture_handle_26.glb","poignee26.0001.png","Poignée",10,10,false,2,0,0);
 }
 
 const poigneesFileList = new Map;
