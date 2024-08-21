@@ -344,7 +344,7 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
 .dropDownRightArrow {
   display: inline-block;
   justify-content: end;
-  rotate:90deg;
+  /* rotate:90deg; */
 }
 
 .dropDownContent {
@@ -415,13 +415,13 @@ display: none;
   animation-direction: reverse;
 } */
 
-.dropDown:hover .dropDownRightArrow {
+/* .dropDown:active .dropDownRightArrow {
   animation-name: animationArrowDropDown;
   animation-duration: 0.35s;
   animation-iteration-count: 1;
   animation-iteration-count: 1;
   animation-fill-mode: both;
-}
+} */
 
 ul {
   list-style-type: none;
@@ -455,5 +455,6 @@ width:100%;
 
 img {
   width : 100px;
-  height : 100px;
+  /* height : 100px; */
+  object-fit: contain;
 }

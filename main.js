@@ -14,18 +14,33 @@ const imagesPath="src/";
 const poigneesPath="src/";
 
 class poigneeClass {
-  constructor (filename, thumbnail, name, largeur, parametrable, nbPointAttache)
+  constructor (filename, thumbnail, titre, indice, largeur, parametrable, nbPointAttache, type, material)
   {
     this.filename=poigneesPath+filename;
     this.thumbnail=poigneesPath+thumbnail;
-    this.name=name;
+    this.titre=titre;
     this.largeur=largeur;
     this.parametrable=parametrable,
     this.nbPointAttache=nbPointAttache;
+    this.id=indice;
   }
 }
 
 var poignees=new Array;
+
+function initPoigneesList() {
+  poignees[0] = new poigneeClass("furniture_handle_1.glb","poignee1.0001.png","Vintage 1",1,10,false,2,0,0);
+  poignees[1] = new poigneeClass("furniture_handle_2.glb","poignee2.0001.png","Vintage 2",2,10,false,2,0,0);
+  poignees[2] = new poigneeClass("furniture_handle_3.glb","poignee3.0001.png","Vintage 2",3,10,false,2,0,0);
+  poignees[3] = new poigneeClass("furniture_handle_4.glb","poignee4.0001.png","Vintage 2",4,10,false,2,0,0);
+  poignees[4] = new poigneeClass("furniture_handle_6.glb","poignee6.0001.png","Vintage 2",5,10,false,2,0,0);
+  poignees[5] = new poigneeClass("furniture_handle_7.glb","poignee7.0001.png","Circle",6,10,false,2,0,0);
+  poignees[6] = new poigneeClass("furniture_handle_9.glb","poignee9.0001.png","Barre",7,10,true,2,0,0);
+  poignees[7] = new poigneeClass("furniture_handle_10.glb","poignee10.0001.png","Vintage",8,10,false,2,0,0);
+  poignees[8] = new poigneeClass("furniture_handle_11.glb","poignee11.0001.png","Vintage",9,10,false,2,0,0);
+  poignees[9] = new poigneeClass("furniture_handle_12.glb","poignee12.0001.png","Barre",10,10,false,2,0,0);
+  poignees[10] = new poigneeClass("furniture_handle_13.glb","poignee13.0001.png","Barre",10,10,false,2,0,0);
+}
 
 const poigneesFileList = new Map;
 poigneesFileList.set("Poignee type 1","src/furniture_handle_1.glb");
@@ -58,10 +73,6 @@ poigneesFileList.set("26","src/furniture_handle_26.glb");
 poigneesFileList.set("28","src/furniture_handle_28.glb");
 poigneesFileList.set("29","src/furniture_handle_29.glb");
 poigneesFileList.set("30","src/furniture_handle_30.glb");
-
-function initPoigneesList() {
-  poignees[0] = new("")
-}
 
 class image {
   constructor(filename, thumbnail, titre) {
@@ -1139,8 +1150,9 @@ var slidersAspect;
 var checkboxVertical;
 var divSwitchVertical;
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
+var menuPoignees;
 var menuTexturesPlateau,menuTexturesCadre,menuTexturesMeuble,menuTexturesTiroirs;
-var dropDownMeuble, dropDownTiroirs, dropDownPlateau, dropDownCadre;
+var dropDownPoignees, dropDownMeuble, dropDownTiroirs, dropDownPlateau, dropDownCadre;
 
 function buildEnvironnement () {
   let loader = new THREE.TextureLoader();
@@ -1180,7 +1192,7 @@ function buildEnvironnement () {
 function initializeScene() {
     buildEnvironnement ();
     initializeInterface();
-    initializeListePoignees();
+    //initializeListePoignees();
     initializeRaycast();
     initializePoignees();
     initDrag();
@@ -1188,10 +1200,19 @@ function initializeScene() {
     createInterfaceMeuble(indiceCurrentMeuble);
     updateInterfaceBlocs(indiceCurrentMeuble);
     updateInterfaceAspect(indiceCurrentMeuble);
-    createMenuTextures(menuTexturesMeuble,imagesMeuble,"meuble");
-    createMenuTextures(menuTexturesTiroirs,imagesMeuble,"tiroirs");
-    createMenuTextures(menuTexturesPlateau,imagesMeuble,"plateau");
-    createMenuTextures(menuTexturesCadre,imagesMeuble,"cadre");
+    //initListTexturesPlateau();
+    initPoigneesList();
+    initListTexturesMeuble();
+    createDropDownMenu(menuTexturesMeuble,imagesMeuble,"meuble");
+    addListenerMenuTexture(menuTexturesMeuble);
+    createDropDownMenu(menuTexturesTiroirs,imagesMeuble,"tiroirs");
+    addListenerMenuTexture(menuTexturesTiroirs);
+    createDropDownMenu(menuTexturesPlateau,imagesMeuble,"plateau");
+    addListenerMenuTexture(menuTexturesPlateau);
+    createDropDownMenu(menuTexturesCadre,imagesMeuble,"cadre");
+    addListenerMenuTexture(menuTexturesCadre);
+    createDropDownMenu(menuPoignees,poignees,"poignees");
+    addListenerMenuPoignees(menuPoignees);
     frameCamera();
     renderer.setAnimationLoop( animate );
 }
@@ -1237,10 +1258,12 @@ function getHTMLElements () {
   colorMeuble = document.getElementById("colorMeuble");
   colorPlateau = document.getElementById("colorPlateau");
   colorCadre = document.getElementById("colorCadre");
+  menuPoignees = document.getElementById("menuPoignees");
   menuTexturesPlateau = document.getElementById("menuTexturesPlateau");
   menuTexturesCadre = document.getElementById("menuTexturesCadre");
   menuTexturesMeuble = document.getElementById("menuTexturesMeuble");
   menuTexturesTiroirs = document.getElementById("menuTexturesTiroirs");
+  dropDownPoignees = document.getElementById("dropDownPoignees");
   dropDownMeuble = document.getElementById("dropDownMeuble");
   dropDownTiroirs = document.getElementById("dropDownTiroirs");
   dropDownPlateau = document.getElementById("dropDownPlateau");
@@ -1412,6 +1435,7 @@ function initializeInterface() {
   colorCadre.value=materialCadreParams.color;
 
   //dropdown menus
+  dropDownPoignees.addEventListener("click",function (event) {dropMenu(event)},false);
   dropDownMeuble.addEventListener("click",function (event) {dropMenu(event)},false);
   dropDownTiroirs.addEventListener("click",function (event) {dropMenu(event)},false);
   dropDownPlateau.addEventListener("click",function (event) {dropMenu(event)},false);
@@ -1424,25 +1448,38 @@ function dropMenu(event) {
  console.log(elt);
   if (elt.style.display=="block") elt.style.display="none"
   else elt.style.display="block";
+  if (elt.id=="menuPoignees") {
+    menuTexturesMeuble.style.display="none";
+    menuTexturesCadre.style.display="none";
+    menuTexturesPlateau.style.display="none";
+    menuTexturesTiroirs.style.display="none";
+  }
   if (elt.id=="menuTexturesMeuble") {
     menuTexturesCadre.style.display="none";
     menuTexturesPlateau.style.display="none";
     menuTexturesTiroirs.style.display="none";
+    menuPoignees.style.display="none";
   }
   if (elt.id=="menuTexturesTiroirs") {
     menuTexturesCadre.style.display="none";
     menuTexturesPlateau.style.display="none";
     menuTexturesMeuble.style.display="none";
+    menuPoignees.style.display="none";
+
   }
   if (elt.id=="menuTexturesPlateau") {
     menuTexturesCadre.style.display="none";
     menuTexturesMeuble.style.display="none";
     menuTexturesTiroirs.style.display="none";
+    menuPoignees.style.display="none";
+
   }
   if (elt.id=="menuTexturesCadre") {
     menuTexturesMeuble.style.display="none";
     menuTexturesPlateau.style.display="none";
     menuTexturesTiroirs.style.display="none";
+    menuPoignees.style.display="none";
+
   }
 }
 
@@ -1531,13 +1568,11 @@ function changeTexture(indiceMeuble,event) {
   //if (piece="cadre") loadTexture(materialCadre,i);
 }
 
-function createMenuTextures(menu,textures,piece) {
-  initListTexturesPlateau();
-  initListTexturesMeuble();
+function createDropDownMenu(menu,textures,piece) {
   console.log(menu);
   menu.innerHTML="";
   for (var i=0;i<textures.length;i++) {
-    console.log(textures[i].fileName);
+    //console.log(textures[i].fileName);
     let divLineMenu=document.createElement("div");
     divLineMenu.className="lineMenuImage";
     divLineMenu.value=i;
@@ -1554,19 +1589,41 @@ function createMenuTextures(menu,textures,piece) {
     caption.piece=piece;
     divLineMenu.append(im);
     divLineMenu.append(caption);
-    divLineMenu.addEventListener("click",function eventChangeTexture(event){console.log("value=",event.target.value);changeTexture(indiceCurrentMeuble,event)},false);
+    // divLineMenu.addEventListener("click",function eventChangeTexture(event){
+    //   console.log("value=",event.target.value);
+    //   changeTexture(indiceCurrentMeuble,event)}
+    //   ,false);
     menu.append(divLineMenu);
+  }
+}
+
+function addListenerMenuTexture(menu) {
+  //let divLineMenu=menu.querySelector("#divLineMenu");
+  for (var divLineMenu of menu.children) {
+    divLineMenu.addEventListener("click",function eventChangeTexture(event){
+      console.log("value=",event.target.value);
+      changeTexture(indiceCurrentMeuble,event)}
+      ,false);
+  }
+}
+
+function addListenerMenuPoignees(menu) {
+  //let divLineMenu=menu.querySelector("#divLineMenu");
+  for (var divLineMenu of menu.children) {
+    divLineMenu.addEventListener("click",function eventChangePoignee(event) {changePoignee(event.target.value)},false);
   }
 }
 
 var poigneeRoot;
 var poigneeGroup=new THREE.Group();
 
-function changePoignee(name) {
+function changePoignee(i) {
+  console.log(i);
+  let name=poignees[i].filename;
   console.log(name);
   const loader = new GLTFLoader();
   poigneeGroup = new THREE.Group(); // revoir init
-  loader.load(poigneesFileList.get(name), function (gltf) {
+  loader.load(name, function (gltf) {
     let poigneeRoot = gltf.scene.getObjectByName('poignee');
     for (var i = poigneeRoot.children.length; i > 0; i--) {
       poigneeGroup.add(poigneeRoot.children[i - 1]);
@@ -1577,12 +1634,12 @@ function changePoignee(name) {
   });
 }
 
-function refreshListPoigneesPopup() {
+/* function refreshListPoigneesPopup() {
   listPoigneesPopup.id = "listPoigneesSelect";
   listPoigneesSelect.addEventListener("change",function eventChangePoignee(event) {changePoignee(event.target.value)},false);
-}
+} */
 
-function initializeListePoignees() {
+/* function initializeListePoignees() {
   var listPoigneesSelect = document.getElementById("listPoigneesSelect");
   listPoigneesSelect.innerHTML="";
   for (const [key,value] of poigneesFileList) {
@@ -1591,7 +1648,7 @@ function initializeListePoignees() {
     listPoigneesSelect.append(o);
   }
   listPoigneesSelect.addEventListener("change",function eventChangePoignee(event) {changePoignee(event.target.value)},false);
-}
+} */
 
 function initializePoignees() {
   geometry = new THREE.SphereGeometry(taillePoignees,12,8);
