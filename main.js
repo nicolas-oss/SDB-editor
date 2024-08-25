@@ -143,7 +143,6 @@ class meubleClass {
     blocs.name="blocs";
     this.root.add(blocs);
     scene.add(this.root);
-    //console.log("create");
   }
 
   placeMeuble() {
@@ -158,9 +157,7 @@ class meubleClass {
   }
 
   updateMeuble () {
-    console.log("update",this.largeur);
     //selectableBloc=[];
-    //console.log(this.root.getObjectByName("blocs"))
     this.root.children=[];
     this.createGeometryRoot();
     let blocs=this.root.getObjectByName("blocs");
@@ -289,8 +286,6 @@ class meubleClass {
   }
 
   initializeBloc(numBloc) {
-    //let this = this;
-    console.log("initBloc");
     this.blocRoot[numBloc] = new THREE.Object3D();
     this.blocRoot[numBloc].name = "Bloc "+numBloc;
     var h;
@@ -334,7 +329,6 @@ class meubleClass {
         poigneeB.position.set(deltaX,0,epaisseur/2);
         etagere[0].position.set(0,0,this.profondeur/2-offset);
         this.blocRoot[numBloc].add(etagere[0]);
-        console.log("etagere");
       }
       else {
         //porte gauche
@@ -452,10 +446,8 @@ class meubleClass {
     boiteSelectionBloc[numBloc].name = "boiteSelectionBloc"+numBloc;
     boiteSelectionBloc[numBloc].shortName="boiteSelectionBloc";
     boiteSelectionBloc[numBloc].numeroMeuble = this.numero;
-    console.log("numero meuble=",this.numero);
     boiteSelectionBloc[numBloc].bloc = this.bloc[numBloc];
     this.blocRoot[numBloc].add(boiteSelectionBloc[numBloc]);
-    //selectableBloc.push(boiteSelectionBloc[numBloc]);
     boiteSelectionBloc[numBloc].visible=false;
     boiteSelectionBloc[numBloc].numero=numBloc;
   }
@@ -475,7 +467,6 @@ class meubleClass {
   }
 
   computeBlocsSize() {
-    //let this = this; 
     if (this.disposition == "horizontal") {
       var largeurSommeBlocs = 0;
       for (var i=0; i<this.nbBlocs; i++) {
@@ -487,7 +478,6 @@ class meubleClass {
       } 
     }
     if (this.disposition == "vertical") {
-      //let this = this;  
       var hauteurSommeBlocs = 0;
       for (var i=0; i<this.nbBlocs; i++) {
         hauteurSommeBlocs += this.bloc[i].taille;
@@ -732,7 +722,6 @@ function initDrag() {
     aaX = pos.x;
     aaY = pos.y-obj.offsetBasA/2+obj.offsetHautA/2;
     var intersectB = false;
-    //console.log("nb meubles=", meubles.length);
     for (var i = 0; i < meubles.length; i++) {
       if (i != num) {
 
@@ -749,7 +738,6 @@ function initDrag() {
 
         var bbX = meubles[i].x;
 
-        //console.log("i=", i, " aaX,aaY,bbX,bbY=", aaX, aaY, bbX, bbY);
         if ((Math.abs(aaX - bbX) * 2 < (wwA + wwB)) && (Math.abs(aaY - bbY) * 2 < (hhA + hhB))) intersectB = true;
         if (intersectB) { console.log("intersect with ", i, " num=", num) }
       }
@@ -792,16 +780,13 @@ function initDrag() {
           else { pos.x -= decalX; aX -= decalX; }
           replace = true;
         }
-        //console.log(aX,aY,bX,bY,cadra)
         //correction en y si on rentre dans le sol, après ajustement
         if (aY < hA/2) { pos.y += (hA/2 - aY); aY=hA/2; replace=true }
       }
     }
     if (replace) {
       if (intersectWithOneOfAll(obj1,num,pos.x,pos.y,wA,hA)==false) {
-      //console.log("pos ok");
       obj1.xOk=pos.x; obj1.yOk=pos.y;
-      //console.log("xOk,yOk=",obj1.xOk,obj1.yOk)
     }
     else {pos.x=obj1.xOk; pos.y=obj1.yOk;}
   }
@@ -827,26 +812,18 @@ function initDrag() {
 
 function updateSelectableBlocs() {
   selectableBloc = [];
-  if (selectionMode=="blocs") {
+  // if (selectionMode=="blocs") {
     scene.getObjectsByProperty("shortName","boiteSelectionBloc",selectableBloc);
     for (var i=0; i<selectableBloc.length; i++) {selectableBloc[i].numero=i}
-  }
-  //let root = this.root.getObjectByName("blocs");
-  /* for (var i = 0; i < this.nbBlocs; i++) {
-    var oneSelectableBloc = this.root.getObjectByName("boiteSelectionBloc" + i);
-    if (oneSelectableBloc) selectableBloc.push(oneSelectableBloc);
-  } */
+  // }
   dragBlocControls.setObjects(selectableBloc);
 }
 
 function updateSelectableMeubles() {
   selectableMeuble = [];
-  if (selectionMode=="meubles") {scene.getObjectsByProperty("shortName","boiteSelectionMeuble",selectableMeuble);}
-  //let root = this.root.getObjectByName("blocs");
-  /* for (var i = 0; i < this.nbBlocs; i++) {
-    var oneSelectableBloc = this.root.getObjectByName("boiteSelectionBloc" + i);
-    if (oneSelectableBloc) selectableBloc.push(oneSelectableBloc);
-  } */
+  // if (selectionMode=="meubles") {
+    scene.getObjectsByProperty("shortName","boiteSelectionMeuble",selectableMeuble);
+  // }
   dragMeubleControls.setObjects(selectableMeuble);
 }
 
@@ -895,10 +872,8 @@ function getLimitTranslationX(num) {
           if (meubles[num].x < meubles[i].x) {
             maxX = (meubles[i].x - meubles[i].largeur / 2 - meubles[i].cadre*epaisseurCadre) - (meubles[num].largeur / 2 + meubles[num].cadre*epaisseurCadre);
           }
-          //console.log("minX,maxX=",minX,maxX);
           minXGlobal=Math.max(minX,minXGlobal);
           maxXGlobal=Math.min(maxX,maxXGlobal);
-          //console.log("minX,maxX=",minX,maxX);
       }
     }
   }
@@ -1145,7 +1120,7 @@ function checkRaycast() {
   raycaster.setFromCamera(pointer, camera, 0, 1000);
   //check intersect with blocs
   const intersects = raycaster.intersectObjects(selectableBloc, true);
-  if (intersects.length > 0) {
+  if (intersects.length > 0 && selectionMode=="blocs") {
     if (IntersectedBloc != intersects[0].object) {
       if (IntersectedBloc) IntersectedBloc.visible = false;
       IntersectedBloc = intersects[0].object;
@@ -1160,7 +1135,7 @@ function checkRaycast() {
   }
   //check intersect with meubles
   const intersectsMeuble = raycaster.intersectObjects(selectableMeuble, true);
-  if (intersectsMeuble.length > 0) { //  && intersectsMeuble[0].object.numero!=indiceCurrentMeuble) {
+  if (intersectsMeuble.length > 0 && selectionMode=="meubles") { //  && intersectsMeuble[0].object.numero!=indiceCurrentMeuble) {
     if (IntersectedMeuble != intersectsMeuble[0].object) {
       if (IntersectedMeuble) IntersectedMeuble.visible = false;
       IntersectedMeuble = intersectsMeuble[0].object;
@@ -1267,8 +1242,6 @@ function frameCamera () {
   boundingBoxCenter = getGlobalBoundingBoxCenter();
   //controls.target = boundingBoxCenter;
   cameraTarget.position.set(boundingBoxCenter);
-  //console.log("boudingbox = ",boundingBoxCenter);
-  //console.log("bB width, Height = ",boundingBoxWidth,boundingBoxHeight);
 }
 
 function updateScene () {
@@ -1358,8 +1331,6 @@ function buildEnvironnement () {
 function initializeScene() {
     buildEnvironnement ();
     initializeInterface();
-    //refreshSelectButtons();
-    //initializeListePoignees();
     initializeRaycast();
     initializePoignees();
     initDrag();
@@ -1367,7 +1338,6 @@ function initializeScene() {
     createInterfaceMeuble(indiceCurrentMeuble);
     updateInterfaceBlocs(indiceCurrentMeuble);
     updateInterfaceAspect(indiceCurrentMeuble);
-    //initListTexturesPlateau();
     initPoigneesList();
     initListTexturesMeuble();
     createDropDownMenu(menuTexturesMeuble,imagesMeuble,"meuble");
@@ -1445,7 +1415,6 @@ function initializeInterface() {
   // listeners
   // buttons blocs
   checkboxVertical.addEventListener("click", function switchVertical() {
-    console.log("checkbox clicked");
     if (meubles[indiceCurrentMeuble].disposition == "vertical") meubles[indiceCurrentMeuble].disposition = "horizontal";
     else meubles[indiceCurrentMeuble].disposition = "vertical";
     meubles[indiceCurrentMeuble].computeBlocsSize();
@@ -1454,7 +1423,6 @@ function initializeInterface() {
   }, false);
   buttonPorte.addEventListener("click", function () { 
     meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].type="Portes";
-    console.log("indiceCurrentBloc=",indiceCurrentBloc);
     refreshInterfaceBlocs(indiceCurrentMeuble);
     meubles[indiceCurrentMeuble].updateMeuble();
   }, false);
@@ -1545,13 +1513,11 @@ function initializeInterface() {
     meubles[indiceCurrentMeuble].updateMeuble();
   },false);
   selectListMeubles.addEventListener("change", function eventListMeublesPopup(event) { 
-    console.log(event); 
     changeCurrentMeubleFromPopup(event.target.value);
   }, false);
   selectListBlocs.addEventListener("change",function changeCurrentBlocFromPopup(event) { 
     startMaterialAnimationBloc(event.target.value);
     indiceCurrentBloc=event.target.value;
-    console.log("indiceCurrentBloc=",indiceCurrentBloc);
     updateInterfaceBlocs(indiceCurrentMeuble);
   },false);
   buttonNewMeuble.addEventListener("click", function eventButtonNewMeuble() {
@@ -1578,7 +1544,6 @@ function initializeInterface() {
   styleMenu.addEventListener("change", function changeStyle(event) { 
     style = event.target.value;
     updateScene(); 
-    console.log(style) 
   }, false);
   colorMeuble.addEventListener("input", function eventColorMeubleChange(event) {
     material.color=new THREE.Color(event.target.value);
@@ -1599,14 +1564,16 @@ function initializeInterface() {
 
   buttonSelectMeuble.addEventListener("click", function clickSelectMeubles(event) {
     selectionMode = "meubles";
-    updateSelectableBlocs();
-    updateSelectableMeubles();
+    dragMeubleControls.activate();
+    dragBlocControls.desactivate();
+    //updateSelectableBlocs();
+    //updateSelectableMeubles();
     refreshSelectButtons();
   },false);
   buttonSelectBloc.addEventListener("click", function clickSelectBlocs(event) {
     selectionMode = "blocs";
-    updateSelectableBlocs();
-    updateSelectableMeubles();
+    //updateSelectableBlocs();
+    //updateSelectableMeubles();
     refreshSelectButtons();
   },false);
 
@@ -1627,7 +1594,6 @@ function initializeInterface() {
 }
 
 function refreshSelectButtons() {
-  console.log(selectionMode);
   if (selectionMode=="meubles") {buttonSelectMeuble.className="buttonOn"}
   else {buttonSelectMeuble.className="buttonOff"}
   if (selectionMode=="blocs") {buttonSelectBloc.className="buttonOn"}
@@ -1637,7 +1603,6 @@ function refreshSelectButtons() {
 function dropMenu(event) {
  let elt=document.getElementById(event.target.attributes["cible"].value);
  elt.addEventListener("mouseleave",function (event) {closeMenu(event)},false);
- console.log(elt);
   if (elt.style.display=="block") elt.style.display="none"
   else elt.style.display="block";
   if (elt.id=="menuPoignees") {
@@ -1721,10 +1686,8 @@ function loadTexture(textures,i,material,materialAvant,materialCote,sx,sy,sz) {
 
 
 function createDropDownMenu(menu,textures,piece) {
-  //console.log(menu);
   menu.innerHTML="";
   for (var i=0;i<textures.length;i++) {
-    //console.log(textures[i].fileName);
     let divLineMenu=document.createElement("div");
     divLineMenu.className="lineMenuImage";
     divLineMenu.value=i;
@@ -1742,7 +1705,6 @@ function createDropDownMenu(menu,textures,piece) {
     divLineMenu.append(im);
     divLineMenu.append(caption);
     // divLineMenu.addEventListener("click",function eventChangeTexture(event){
-    //   console.log("value=",event.target.value);
     //   changeTexture(indiceCurrentMeuble,event)}
     //   ,false);
     menu.append(divLineMenu);
@@ -1753,7 +1715,6 @@ function addListenerMenuTexture(menu) {
   //let divLineMenu=menu.querySelector("#divLineMenu");
   for (var divLineMenu of menu.children) {
     divLineMenu.addEventListener("click",function eventChangeTexture(event){
-      console.log("value=",event.target.value);
       meubles[indiceCurrentMeuble].changeTexture(event)}
       ,false);
   }
@@ -1770,9 +1731,7 @@ var poigneeRoot;
 var poigneeGroup=new THREE.Group();
 
 function changePoignee(i) {
-  console.log(i);
   let name=poignees[i].filename;
-  console.log(name);
   const loader = new GLTFLoader();
   poigneeGroup = new THREE.Group(); // revoir init
   loader.load(name, function (gltf) {
@@ -1863,7 +1822,6 @@ function duplicatePropertiesValues(fromObj,toObj) {
       duplicatePropertiesValues(fromObj[key],toObj[key]);
     }
     else {toObj[key]=fromObj[key]}
-    console.log(typeof toObj[key]);
   });
 }
 
@@ -2116,14 +2074,11 @@ function changeCurrentMeuble(num) {
   let indicePreviousMeuble = indiceCurrentMeuble;
   indiceCurrentMeuble = num;
   if (meubles[indicePreviousMeuble].root.cube) meubles[indicePreviousMeuble].root.cube.visible=false;
-  if (meubles[indiceCurrentMeuble].disposition=="vertical") {console.log("checked"); checkboxVertical.checked=true;} else {checkboxVertical.checked=false;}
+  if (meubles[indiceCurrentMeuble].disposition=="vertical") {checkboxVertical.checked=true;} else {checkboxVertical.checked=false;}
   updateInterfaceMeuble();
   updateInterfaceBlocs(indiceCurrentMeuble);
   //meubles[indiceCurrentMeuble].updateSelectableBlocs();
   updateInterfaceAspect(indiceCurrentMeuble);
-  // console.log("meuble changed");
-  // console.log("meubles[num].x=",meubles[num].x);
-  // console.log("meubleRoot[num].position=",meubleRoot[num].position);
 }
 
 function changeCurrentMeubleFromClick(num) {
@@ -2169,7 +2124,6 @@ function changeCurrentMeubleFromPopup(num) {
 
 function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list meubles
   let meuble = meubles[indiceMeuble];
-  console.log("selectListMeubles=",selectListMeubles);
   for (var i=0;i<meubles.length;i++) {
     let o = document.createElement("option");
     o.value = i;
@@ -2180,14 +2134,11 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
 //listMeublesName.value=meuble.name;  // keep
   elh=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
   meubleSliders.append(elh);
-  console.log("result=",elh);
-  console.log("childNodes[0]=",elh.querySelector("#slider"),elh.querySelector("#number"));
   // hautS=elh.childNodes[1].childNodes[1];
   // hautB=elh.childNodes[1].childNodes[2];
   hautS=elh.querySelector("#slider");
   hautB=elh.querySelector("#number");
 
-  console.log(hautB);
   hautS.addEventListener("input",function() {eventHauteurInput(indiceMeuble)},false);
   hautB.addEventListener("change",function() {eventHauteurInput(indiceMeuble)},false);
 
@@ -2203,7 +2154,6 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
   }
 
   let elp=createSlider(meuble,"profondeur","Profondeur",meuble.profondeur,0,10,250);
-  console.log("el=",elp);
   elp.querySelector("#slider").addEventListener("input",function eventElpInput() {meubles[indiceCurrentMeuble].updateMeuble();frameCamera();},false);
   elp.querySelector("#number").addEventListener("change",function eventElpChange() {meubles[indiceCurrentMeuble].updateMeuble();frameCamera();},false);
   meubleSliders.append(elp);
@@ -2251,7 +2201,6 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
 
   function eventElxInput(indiceMeuble,x) {
     var translateX = getLimitTranslationX(indiceMeuble);
-    console.log("translateX=",translateX);
     x = (x<translateX[0]) ? translateX[0] : x;
     x = (x>translateX[1]) ? translateX[1] : x;
     meubles[indiceMeuble].x = x;
@@ -2284,7 +2233,6 @@ function createInterfaceMeuble(indiceMeuble) { // Rebuild HTML content for list 
 
   function eventElyInput(indiceMeuble,y) {
     var translateY = getLimitTranslationY(indiceMeuble);
-    console.log("translateY=",translateY);
     y = (y<translateY[0]) ? translateY[0] : y;
     y = (y>translateY[1]) ? translateY[1] : y;
     meubles[indiceMeuble].y = y;
@@ -2352,7 +2300,6 @@ function changeCurrentBlocFromClick(num) {
   console.log("new current bloc=",selectableBloc[num].bloc);
   console.log("new current bloc=",indiceCurrentBloc);
   //indiceCurrentMeuble = selectableBloc[num].bloc.numero;
-  //console.log("new current bloc=",indiceCurrentBloc);
   updateInterfaceBlocs(indiceCurrentMeuble);
   selectListBlocs.classList.remove("animationBlocsName");
   selectListBlocs.offsetWidth; // pour temporisation
@@ -2385,7 +2332,6 @@ function refreshInterfaceBlocs(indiceMeuble) {
     divPortes.style.display = "inline";
   }
   else {
-    console.log("divPortes=",divPortes);
     buttonPorte.className = "buttonOff";
     divPortes.style.display = "none";
   }
@@ -2412,8 +2358,8 @@ function refreshInterfaceBlocs(indiceMeuble) {
     sensOuverture.style.display="none";
   } else { buttonDeuxPortes.className = "buttonOff" }
 
-  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].etageresVerticales) {console.log("checked"); buttonEtageresVerticales.checked=true;} else {buttonEtageresVerticales.checked=false;}
-  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].rentrant) {console.log("checked"); checkboxRentrant.checked=true;} else {checkboxRentrant.checked=false;}
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].etageresVerticales) {buttonEtageresVerticales.checked=true;} else {buttonEtageresVerticales.checked=false;}
+  if (meubles[indiceMeuble].bloc[indiceCurrentBloc].rentrant) {checkboxRentrant.checked=true;} else {checkboxRentrant.checked=false;}
 }
 
 function updateInterfaceBlocs(indiceMeuble) {
@@ -2431,8 +2377,9 @@ function clearInterfaceBlocs() {
 function onMaterialBlocAnimationFinish (num) {
   clipActionMaterial.stop();
   clipActionMaterial.reset();
-  selectableBloc[num].material = materialSelectionBloc;
-  selectableBloc[num].visible = false;
+  let bloc=meubles[indiceCurrentMeuble].root.getObjectByName("boiteSelectionBloc"+num);
+  bloc.material = materialSelectionBloc;
+  bloc.visible = false;
   mixerMaterial.removeEventListener('finished', onMaterialBlocAnimationFinish, false);
   mixerMaterial=undefined;
 }
@@ -2440,8 +2387,10 @@ function onMaterialBlocAnimationFinish (num) {
 var materialSelectionBlocAnim = new THREE.MeshStandardMaterial( materialSelectionBlocParams );
 
 function startMaterialAnimationBloc(num) {
-  selectableBloc[num].material = materialSelectionBlocAnim;
-  selectableBloc[num].visible = true;
+  let bloc=meubles[indiceCurrentMeuble].root.getObjectByName("boiteSelectionBloc"+num);
+  //meubles[indiceCurrentMeuble].bloc[num]
+  bloc.material = materialSelectionBlocAnim;
+  bloc.visible = true;
   mixerMaterial = new THREE.AnimationMixer( materialSelectionBlocAnim );
   clipActionMaterial = mixerMaterial.clipAction( clipMaterial );
   clipActionMaterial.setLoop(0,1);
