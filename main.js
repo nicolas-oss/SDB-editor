@@ -72,6 +72,7 @@ class meubleClass {
     this.suspendu=true;
     this.offsetPoignees=0;
     this.blocRoot=[];    //Racine 3D de chaque bloc
+    this.sousMeuble=false;
 
   }
 
@@ -414,6 +415,31 @@ class meubleClass {
       }
     }
    
+    //sous-meuble
+    if (this.bloc[numBloc].type == "SousMeuble") {
+      var sousMeuble = new meubleClass(0);
+      //if (this.disposition=="horizontal") {
+        sousMeuble.largeur = 0+this.bloc[numBloc].taille;
+        sousMeuble.computeBlocsSize();
+        sousMeuble.hauteur = 0+this.hauteur;
+        sousMeuble.x=0;
+        sousMeuble.y=-this.hauteur/2;
+        console.log("sousMeuble.largeur ",this.bloc[numBloc].taille,this.hauteur );
+        console.log("sousMeuble.largeur ",sousMeuble.largeur,sousMeuble.hauteur );
+      //}
+      //var sousMeuble = new meubleClass(0);
+      //if (this.disposition=="vertical") {
+        //sousMeuble.largeur = this.largeur;
+        //sousMeuble.hauteur = this.bloc[numBloc].hauteur;
+      //}
+      sousMeuble.sousMeuble=true;
+      sousMeuble.createGeometryRoot();
+      sousMeuble.updateMeuble();
+      sousMeuble.root.translateZ(-this.profondeur/2);
+      this.blocRoot[numBloc].add(sousMeuble.root);
+    }
+
+
     //positionnement bloc dans meuble
     if (this.disposition=="horizontal") {
       var blocPosition = -this.largeur / 2;
@@ -656,7 +682,8 @@ function initDrag() {
       else {
         let bloc=meubles[selectableBloc[raycastedBloc].numeroMeuble].bloc;
         [bloc[num],bloc[raycastedBloc]]=[bloc[raycastedBloc],bloc[num]];
-        meubles[selectableBloc[raycastedBloc].numeroMeuble].updateMeuble();
+        //meubles[selectableBloc[raycastedBloc].numeroMeuble].updateMeuble();
+        updateScene();
       }
   });
 
@@ -1291,7 +1318,9 @@ var colorDrawer,colorMeuble,colorPlateau,colorCadre;
 var menuPoignees;
 var menuTexturesPlateau,menuTexturesCadre,menuTexturesMeuble,menuTexturesTiroirs;
 var dropDownPoignees, dropDownMeuble, dropDownTiroirs, dropDownPlateau, dropDownCadre;
-var buttonSelectMeuble,buttonSelectBloc;
+var buttonSelectMeuble,buttonSelectBloc,buttonSelectEtagere;
+var buttonSousMeuble;
+
 
 function buildEnvironnement () {
   let loader = new THREE.TextureLoader();
@@ -1330,10 +1359,11 @@ function buildEnvironnement () {
 
 function initializeScene() {
     buildEnvironnement ();
+    initDrag();
     initializeInterface();
     initializeRaycast();
     initializePoignees();
-    initDrag();
+    
     createNewMeuble();
     createInterfaceMeuble(indiceCurrentMeuble);
     updateInterfaceBlocs(indiceCurrentMeuble);
@@ -1407,6 +1437,9 @@ function getHTMLElements () {
   dropDownCadre = document.getElementById("dropDownCadre");
   buttonSelectMeuble = document.getElementById("buttonSelectMeuble");
   buttonSelectBloc = document.getElementById("buttonSelectBloc");
+  buttonSelectEtagere = document.getElementById("buttonSelectEtagere");
+  buttonSousMeuble = document.getElementById("buttonSousMeuble");
+
 }
 
 function initializeInterface() {
@@ -1441,6 +1474,13 @@ function initializeInterface() {
     refreshInterfaceBlocs(indiceCurrentMeuble);
     meubles[indiceCurrentMeuble].updateMeuble();
   }, false);
+
+  buttonSousMeuble.addEventListener("click", function() {
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].type="SousMeuble"; 
+    refreshInterfaceBlocs(indiceCurrentMeuble);
+    meubles[indiceCurrentMeuble].updateMeuble();
+  });
+
   buttonUnePorte.addEventListener("click", function () {
     meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].nombrePortes="1";
     refreshInterfaceBlocs(indiceCurrentMeuble);
@@ -1565,18 +1605,31 @@ function initializeInterface() {
   buttonSelectMeuble.addEventListener("click", function clickSelectMeubles(event) {
     selectionMode = "meubles";
     dragMeubleControls.activate();
-    dragBlocControls.desactivate();
-    //updateSelectableBlocs();
-    //updateSelectableMeubles();
+    dragBlocControls.deactivate();
+    //dragEtagereControls.deactivate();
+    updateSelectableBlocs();
+    updateSelectableMeubles();
     refreshSelectButtons();
   },false);
   buttonSelectBloc.addEventListener("click", function clickSelectBlocs(event) {
     selectionMode = "blocs";
-    //updateSelectableBlocs();
-    //updateSelectableMeubles();
+    dragMeubleControls.deactivate();
+    dragBlocControls.activate();
+    //dragEtagereControls.deactivate();
+    updateSelectableBlocs();
+    updateSelectableMeubles();
     refreshSelectButtons();
   },false);
 
+  buttonSelectEtagere.addEventListener("click", function clickSelectEtageres(event) {
+    selectionMode = "etageres";
+    dragMeubleControls.deactivate();
+    dragBlocControls.deactivate();
+    //dragEtagereControls.activate();
+    updateSelectableBlocs();
+    updateSelectableMeubles();
+    refreshSelectButtons();
+  },false);
   refreshSelectButtons();
 
   //refresh colors
@@ -1594,10 +1647,27 @@ function initializeInterface() {
 }
 
 function refreshSelectButtons() {
-  if (selectionMode=="meubles") {buttonSelectMeuble.className="buttonOn"}
+  if (selectionMode=="meubles") {
+    buttonSelectMeuble.className="buttonOn";
+    dragMeubleControls.activate();
+    dragBlocControls.deactivate();
+    //dragEtagereControls.deactivate();
+  }
   else {buttonSelectMeuble.className="buttonOff"}
-  if (selectionMode=="blocs") {buttonSelectBloc.className="buttonOn"}
+  if (selectionMode=="blocs") {
+    buttonSelectBloc.className="buttonOn";
+    dragMeubleControls.deactivate();
+    dragBlocControls.activate();
+    //dragEtagereControls.deactivate();
+  }
   else {buttonSelectBloc.className="buttonOff"}
+  if (selectionMode=="etageres") {
+    buttonSelectEtagere.className="buttonOn";
+    dragMeubleControls.deactivate();
+    dragBlocControls.deactivate();
+    //dragEtagereControls.activate();
+  }
+  else {buttonSelectEtagere.className="buttonOff"}
 }
 
 function dropMenu(event) {
