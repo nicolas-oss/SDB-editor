@@ -23,7 +23,10 @@
     <div class="overflow">
       <div id="interfaceGauche">
         <div id="meuble">
-          <p>Meuble</p>
+          <div class="title">
+            <p>Meuble</p>
+            <input type="button" id="buttonSelectMeuble" value="Sélect.">
+          </div>
           <select id="selectListMeubles">
           </select>
           <div id="buttonsMeubles" class="boutons">
@@ -49,7 +52,10 @@
           </div>
         </div>
         <div id="blocs">
-          <p>Blocs</p>
+          <div class="title">
+            <p>Blocs</p>
+            <input type="button" id="buttonSelectBloc" value="Sélect.">
+          </div>
           <select id="selectListBlocs">
           </select>
           <div id="blocsSliders"></div>
@@ -87,6 +93,12 @@
             Rentrant
           </div>
         </div>
+        <div id="etageres">
+          <div class="title">
+            <p>Étagères</p>
+          </div>
+          
+        </div>
       </div>
     </div>
     <div id="containerCentral">
@@ -95,7 +107,9 @@
     <div>
       <div id="interfaceDroite">
         <div id="aspect">
+          <div class="title">
           <p>Aspect</p>
+        </div>
           <p>Style</p>
           <select id="style">
             <option>Basique</option>

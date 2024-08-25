@@ -85,6 +85,7 @@ p, label, .inputSlider {
 p {
   font-weight:500;
   margin-bottom: 4px;
+  margin-top: 0px;
 }
 
 .inputValue {
@@ -190,15 +191,19 @@ p {
   align-self: flex-start;
 }
 
-#meuble, #blocs, #aspect {
+#meuble, #blocs, #aspect, #etageres {
   padding-top: 0px;
   padding-right: 8px;
 }
 
 #blocs {
-  /*border : solid;*/
+  border : solid;
   
   background-color: #d1ffff;
+  height: 100%;
+}
+
+#etageres {
   height: 100%;
 }
 
@@ -457,4 +462,12 @@ img {
   width : 100px;
   /* height : 100px; */
   object-fit: contain;
+}
+
+.title {
+  display : flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  margin-top: 4px;
 }
