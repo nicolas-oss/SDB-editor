@@ -387,6 +387,7 @@ class meubleClass {
           etagere[i].name = "etagere " + i;
           etagere[i].shortName = "etagere";
           etagere[i].numero = i;
+          etagere[i].numeroBloc = numBloc;
           var yPredefini = this.bloc[numBloc].etagereY[i];
           if (!yPredefini) {
             var position = step * (0.5 + i - this.bloc[numBloc].etageres / 2);
@@ -405,6 +406,7 @@ class meubleClass {
           etagere[i].name = "etagere " + i;
           etagere[i].shortName = "etagere";
           etagere[i].numero = i;
+          etagere[i].numeroBloc = numBloc;
 
           var yPredefini = this.bloc[numBloc].etagereY[i];
           if (!yPredefini) {
@@ -758,7 +760,9 @@ function initDrag() {
     //dragMeubleControls.enabled=false;
     event.object.material.emissive.set(0xaaaaaa);
     let id=event.object.numero;
+    let blocId=event.object.numeroBloc;
     console.log("etager id=",id);
+    console.log("bloc id=",blocId);
     let parent=event.object.parent;
     console.log("parent=",parent);
     let etagerePrecente = parent.getObjectByName("etagere "+(id-1));
@@ -774,17 +778,20 @@ function initDrag() {
       console.log("yMin, yMax = ",yMin,yMax);
       event.object.yMin=yMin+epaisseur;
       event.object.yMax=yMax-epaisseur;
+      event.object.blocId=blocId;
   });
 
   dragEtagereControls.addEventListener('drag', function (event) {
     event.object.material.emissive.set(0xaaaaaa);
     var obj1=event.object;
     var num=obj1.numero;
+    var blocId=obj1.blocId;
+    console.log(blocId);
     let y=obj1.position.y;
     y= y>event.object.yMax ? event.object.yMax : y;
     y= y<event.object.yMin ? event.object.yMin : y;
     obj1.position.set(0,y,0);
-    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etagereY[event.object.numero] = event.object.position.y;
+    meubles[indiceCurrentMeuble].bloc[blocId].etagereY[event.object.numero] = event.object.position.y;
     meubles[indiceCurrentMeuble].updateMeuble();
   });
 
@@ -793,7 +800,7 @@ function initDrag() {
     controls.enabled=true;
     rayCastEnabled=true;
    // meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etagereY[event.object.numero] = event.object.position.y;
-    console.log("y final = ",meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etagereY[event.object.numero]);
+    //console.log("y final = ",meubles[indiceCurrentMeuble].bloc[blocId].etagereY[event.object.numero]);
   });
 
 
@@ -973,11 +980,11 @@ function updateSelectableEtagere() {
   selectableEtagere = [];
   // if (selectionMode=="meubles") {
     let blocsRoot = scene.getObjectByName("meuble "+indiceCurrentMeuble).getObjectByName("blocs");//.getObjectByName("name","Bloc "+indiceCurrentBloc);//.getObjectsByProperty("shortName","etagere",selectableMeuble);
-   console.log("looking for Bloc " +indiceCurrentBloc);
-    let blocRoot = blocsRoot.getObjectByName("Bloc "+indiceCurrentBloc);
+   //console.log("looking for Bloc " +indiceCurrentBloc);
+    //let blocRoot = blocsRoot.getObjectByName("Bloc "+indiceCurrentBloc);
     console.log("blocsRoot=",blocsRoot);
-    console.log("blocRoot=",blocRoot);
-    blocRoot.getObjectsByProperty("shortName","etagere",selectableEtagere);
+    //console.log("blocRoot=",blocRoot);
+    blocsRoot.getObjectsByProperty("shortName","etagere",selectableEtagere);
     console.log("selectableEtagere=",selectableEtagere);
     // }
   dragEtagereControls.setObjects(selectableEtagere);
@@ -2323,6 +2330,7 @@ function changeCurrentMeuble(num) {
   updateInterfaceBlocs(indiceCurrentMeuble);
   //meubles[indiceCurrentMeuble].updateSelectableBlocs();
   updateInterfaceAspect(indiceCurrentMeuble);
+  updateSelectableEtagere();
 }
 
 function changeCurrentMeubleFromClick(num) {
