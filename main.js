@@ -377,7 +377,7 @@ class meubleClass {
     }
     
     //etageres
-    if (this.bloc[numBloc].type == "Etageres") {
+    if (this.bloc[numBloc].type == "Etageres" || this.bloc[numBloc].type == "Tiroirs") {
       if (this.bloc[numBloc].etageresVerticales) {
         //var haut=h/this.nbBlocs;
         var step = (l - 2 * epaisseur) / (this.bloc[numBloc].etageres + 1);
@@ -784,13 +784,15 @@ function initDrag() {
     y= y>event.object.yMax ? event.object.yMax : y;
     y= y<event.object.yMin ? event.object.yMin : y;
     obj1.position.set(0,y,0);
+    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etagereY[event.object.numero] = event.object.position.y;
+    meubles[indiceCurrentMeuble].updateMeuble();
   });
 
   dragEtagereControls.addEventListener('dragend', function (event) {
     event.object.material.emissive.set(0x000000);
     controls.enabled=true;
     rayCastEnabled=true;
-    meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etagereY[event.object.numero] = event.object.position.y;
+   // meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etagereY[event.object.numero] = event.object.position.y;
     console.log("y final = ",meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc].etagereY[event.object.numero]);
   });
 
@@ -1317,14 +1319,22 @@ function checkRaycast() {
     const intersectsEtagere = raycaster.intersectObjects(selectableEtagere, true);
     if (intersectsEtagere.length > 0 && selectionMode=="etageres") { //  && intersectsMeuble[0].object.numero!=indiceCurrentMeuble) {
       if (IntersectedEtagere != intersectsEtagere[0].object) {
-        if (IntersectedEtagere) IntersectedEtagere.material = material;
+        if (IntersectedEtagere) {
+          IntersectedEtagere.material.depthTest=false;
+          IntersectedEtagere.material = material;
+          IntersectedEtagere.renderOrder=1;
+        }
         IntersectedEtagere = intersectsEtagere[0].object;
         IntersectedEtagere.material = materialSelectionEtagere;
         raycastedMeuble = intersectsEtagere[0].object.numero;
       }
     }
     else {
-      if (IntersectedEtagere) IntersectedEtagere.material = material;
+      if (IntersectedEtagere) {
+        IntersectedEtagere.material = material;
+        IntersectedEtagere.material.depthTest=true;
+        IntersectedEtagere.renderOrder=0;
+      }
       IntersectedEtagere = null;
       raycastedMeuble = -1;
     }
