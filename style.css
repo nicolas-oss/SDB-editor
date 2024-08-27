@@ -148,7 +148,7 @@ p {
   /* min-width: 10%; */
   /* overflow:auto; */
   /* width:auto; */
-  height: 100vh;
+  height: auto;
   /* overflow: hidden; */
   /*height: 100vh;
   min-width: 220px;
@@ -161,8 +161,14 @@ p {
   min-width: 20%;
 }
 
+#interfaceDroite {
+  position:absolute;
+  right:0px;
+}
+
 .overflow {
-  height:100vh;
+  position: absolute;
+  height:auto;
   overflow:auto;
   min-width: 250px;
   max-width:300px;
@@ -200,11 +206,11 @@ p {
   border : solid;
   
   background-color: #d1ffff;
-  height: 100%;
+  height: auto;
 }
 
 #etageres {
-  height: 100%;
+  height: auto;
 }
 
 #blocs, #enregistrement {
@@ -229,6 +235,13 @@ p {
 #meubleSliders {
   padding-top: 4px;
   padding-bottom:4px;
+  position:relative;
+}
+
+.buttonsSelectDiv {
+  display:flex;
+  width: 100%;
+  justify-content: flex-end;
 }
 
 #globalContainer {
@@ -237,7 +250,7 @@ p {
 }
 
 #containerCentral {
-  width:80%;
+  width:100%;
 }
 
 #canvas {
@@ -261,9 +274,10 @@ p {
 }
 
 input[type=button] {
-  width:30%;
+  width:50%;
  padding:2px;
  margin : 3px;
+ min-width: 24px;
 }
 
 /* .buttonFlex {
@@ -359,7 +373,7 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
   overflow: auto;
   background-color: #ffffff;
   z-index:999;
-  max-height: 200px;
+  max-height: 50vh;
 }
 
 .dropDownTitle, .dropDownContent {
@@ -470,4 +484,21 @@ img {
   justify-content: space-between;
   margin-bottom: 4px;
   margin-top: 4px;
+}
+
+#meubleSliders {
+  display:none;
+}
+
+#btnControl:checked + label > #meubleSliders {
+  display: block;
+}
+
+
+
+
+
+.meniu:hover .lista-container,
+#button:checked + .meniu > .lista-container {
+  display: block;
 }

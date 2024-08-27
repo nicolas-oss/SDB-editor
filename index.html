@@ -23,9 +23,12 @@
     <div class="overflow">
       <div id="interfaceGauche">
         <div id="meuble">
-          <div class="title">
+          <div class="title" class="expand" target="meubleSliders" id="titleMeuble">
             <p>Meuble</p>
-            <input type="button" id="buttonSelectMeuble" value="Sélect.">
+            <div class="buttonsSelectDiv">
+              <input type="button" id="buttonAdjustMeuble" value="Ajust.">
+              <input type="button" id="buttonSelectMeuble" value="Sélect.">
+            </div>
           </div>
           <select id="selectListMeubles">
           </select>
@@ -40,7 +43,9 @@
               <span class="slider round">Vertical</span>
             </label>
           </div>
-          <div id="meubleSliders"></div>
+          <label class="btn" for="btnControl">
+          <div id="meubleSliders" class="expandContent"></div>
+        </label>
           <div class="boutons">
             <input type="button" id="buttonPied" value="Sur pieds" class="buttonFlex">
             <input type="button" id="buttonSocle" value="Sur socle" class="buttonFlex">
@@ -54,7 +59,10 @@
         <div id="blocs">
           <div class="title">
             <p>Blocs</p>
-            <input type="button" id="buttonSelectBloc" value="Sélect.">
+            <div class="buttonsSelectDiv">
+              <input type="button" id="buttonAdjustBloc" value="Ajust.">
+              <input type="button" id="buttonSelectBloc" value="Sélect.">
+            </div>
           </div>
           <select id="selectListBlocs">
           </select>
@@ -64,6 +72,8 @@
             <input type="button" id="buttonTiroirs" value="Tiroirs" class="buttonFlex">
             <input type="button" id="buttonEtageres" value="Étagères" class="buttonFlex">
             <input type="button" id="buttonPlein" value="Panneau" class="buttonFlex">
+          </div>
+          <div id="buttonsBlocs" class="boutons">            <input type="button" id="buttonSousMeuble" value="Meuble" class="buttonFlex">
           </div>
           <div id="divPortes">
             <div id="nbPortes">
@@ -96,6 +106,7 @@
         <div id="etageres">
           <div class="title">
             <p>Étagères</p>
+            <input type="button" id="buttonSelectEtagere" value="Sélect.">
           </div>
           
         </div>
