@@ -494,11 +494,13 @@ img {
   display: block;
 }
 
-
-
-
-
-.meniu:hover .lista-container,
-#button:checked + .meniu > .lista-container {
-  display: block;
+#contextMenu {
+  display:none;
+  position:absolute;
+  background-color: #ffffff;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #000000;
+  box-shadow: #000000;
+  border-radius: 8px;
 }

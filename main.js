@@ -758,9 +758,12 @@ var selectableHandleBloc=[];
 var selectableHandleMeuble=[];
 
 //pointer raycast
-const pointer = new THREE.Vector2();
+const pointer = new THREE.Vector2(); //coordonées three normalisées
 pointer.x=-1;
 pointer.y=-1;
+const pointerScreen = new THREE.Vector2(); // coordonées screenspace
+pointerScreen.x=-1;
+pointerScreen.y=-1;
 const radius = 5;
 
 //new scene and camera
@@ -808,6 +811,9 @@ canvas.addEventListener('mousemove', onPointerMove);
 window.addEventListener('resize', onWindowResize);
 canvas.addEventListener('click', onCanvasClick);
 canvas.addEventListener('dragstart', onCanvasDrag, false);
+canvas.addEventListener('contextmenu', onCanvasClickContextMenu);
+
+window.addEventListener('keydown',onKeyDown);
 
 function checkRaycast() {
   if (!rayCastEnabled) return;
@@ -924,6 +930,24 @@ function onCanvasClick () {
   console.log("raycastedbloc=",raycastedBloc);
   if (raycastedBloc>-1) changeCurrentBlocFromClick(raycastedBloc);
   if (raycastedMeuble>-1) changeCurrentMeubleFromClick(raycastedMeuble);
+  contextMenu.style.display="none";
+}
+
+function onKeyDown(event) {
+console.log(event);
+if (event.key=="Escape") {
+  contextMenu.style.display="none";
+}
+}
+
+function onCanvasClickContextMenu () {
+  console.log("context menu");
+  console.log(contextMenu);
+  //contextMenu.style.position="block";
+  contextMenu.style.display="block";
+  contextMenu.style.left=pointerScreen.x+"px";
+  contextMenu.style.top=pointerScreen.y+"px";
+  console.log(pointerScreen.x,pointerScreen.y);
 }
 
 function onCanvasDrag () {
@@ -1605,6 +1629,8 @@ function onPointerMove( event ) {
   canvasSize = canvas.getBoundingClientRect();
   let x = event.clientX - canvasSize.left; 
   let y = event.clientY - canvasSize.top;
+  pointerScreen.x=x;
+  pointerScreen.y=y;
   pointer.x = ( x / canvasSize.width ) * 2 - 1;
   pointer.y = - ( y / window.innerHeight ) * 2 + 1;
 }
@@ -1823,6 +1849,7 @@ var buttonSelectMeuble,buttonSelectBloc,buttonSelectEtagere;
 var buttonAdjustBloc,buttonAdjustMeuble;
 var buttonSousMeuble;
 var titleMeuble;
+var contextMenu;
 
 function initializeScene() {
     buildEnvironnement ();
@@ -1912,6 +1939,7 @@ function getHTMLElements () {
   buttonSelectEtagere = document.getElementById("buttonSelectEtagere");
   buttonSousMeuble = document.getElementById("buttonSousMeuble");
   titleMeuble=document.getElementById("titleMeuble");
+  contextMenu = document.getElementById("contextMenu");
 }
 
 function initializeInterface() {
@@ -2087,7 +2115,7 @@ function initializeInterface() {
     refreshSelectButtons();
   },false);
 
-  buttonAdjustMeuble.addEventListener("click", function clickSelectMeubles(event) {
+  buttonAdjustMeuble.addEventListener("click", function clickAjusteMeubles(event) {
     selectionMode = "ajusteMeubles";
     dragHandleMeubleControls.activate();
     dragMeubleControls.deactivate();
@@ -2109,7 +2137,7 @@ function initializeInterface() {
     refreshSelectButtons();
   },false);
 
-  buttonAdjustBloc.addEventListener("click", function clickSelectBlocs(event) {
+  buttonAdjustBloc.addEventListener("click", function clickAjusteBlocs(event) {
     selectionMode = "ajusteBlocs";
     dragMeubleControls.deactivate();
     dragHandleMeubleControls.deactivate();
@@ -2130,6 +2158,20 @@ function initializeInterface() {
     updateAllSelectable();
     refreshSelectButtons();
   },false);
+
+  let listOptionsContextMenu = document.getElementsByClassName("contextMenuOption");
+  for (let item of listOptionsContextMenu) {
+    item.addEventListener('click',onClickOptionMenu);
+  }
+
+  function onClickOptionMenu(event) {
+    console.log(event);
+    selectionMode=event.target.type;
+    console.log (selectionMode);
+    contextMenu.style.display="none";
+    updateAllSelectable();
+    refreshSelectButtons();
+  }
   
   refreshSelectButtons();
 
