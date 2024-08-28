@@ -1292,12 +1292,16 @@ function initDragHandleMeuble() {
     //event.object.material.emissive.set(0xaaaaaa);
     let meubleId = event.object.indiceMeuble;
     event.object.meubleId = meubleId;
+    //var dragLimit=new THREE.Vector2();
+    var dragLimit=getMaxAllowedSpaceOnSides(indiceCurrentMeuble);
     //event.object.xMax = xMax;
     event.object.xInitial = event.object.position.x;
     event.object.xMeubleInitial = meubles[indiceCurrentMeuble].x;
     event.object.yInitial = event.object.position.y;
     event.object.yMeubleInitial = meubles[indiceCurrentMeuble].y;
     event.object.largeurInitiale = meubles[indiceCurrentMeuble].largeur;
+    event.object.deltaMaxGauche=dragLimit[0];
+    event.object.deltaMaxDroite=dragLimit[1];
     isPreviewOn=true;
   });
 
@@ -1305,8 +1309,9 @@ function initDragHandleMeuble() {
     if (selectionMode!="ajusteMeubles") return;
     //event.object.material.emissive.set(0xaaaaaa);
     var obj1 = event.object;
+
     var meubleId = obj1.meubleId;
-    console.log(obj1.visible);
+    //console.log(obj1.visible);
 
     if (obj1.name == "handleMeubleHaut") {
       let y = obj1.position.y;
@@ -1320,8 +1325,27 @@ function initDragHandleMeuble() {
       let x = obj1.position.x;
       //y = x > event.object.xMax ? event.object.xMax : x;
       //x = x < event.object.xMin ? event.object.xMin : x;
-      obj1.position.set(x, 0, 0);
+      
       var delta = x - obj1.xInitial;
+      if (obj1.name == "handleMeubleGauche") {
+        console.log(delta,obj1.deltaMaxGauche,obj1.deltaMaxDroite);
+
+        if (-delta>(obj1.deltaMaxGauche/2)) {
+          delta = -obj1.deltaMaxGauche/2;
+          x=obj1.xInitial+delta;
+      } 
+      }
+
+      if (obj1.name == "handleMeubleDroit") {
+        console.log(delta,obj1.deltaMaxGauche,obj1.deltaMaxDroite);
+
+        if (delta>(obj1.deltaMaxDroite/2)) {
+          delta = obj1.deltaMaxDroite/2;
+          x=obj1.xInitial+delta;
+      } 
+      }
+
+      obj1.position.set(x, 0, 0);
       meubles[indiceCurrentMeuble].largeur = obj1.largeurInitiale-fact*delta*2;
       meubles[indiceCurrentMeuble].computeBlocsSize();
       meubles[indiceCurrentMeuble].x = obj1.xMeubleInitial+delta;
@@ -1779,7 +1803,7 @@ function getLimitTranslationY(num) {
 
 function getMaxAllowedWidth(num) {
   var bY;
-  var aY = meubles[num].y + meubles[num].hauteur / 2;
+  //var aY = meubles[num].y + meubles[num].hauteur / 2;
   var deltaX;
   var maxWidth = 10e34;
   for (var i = 0; i < meubles.length; i++) {
@@ -1797,6 +1821,33 @@ function getMaxAllowedWidth(num) {
     }
   }
   return 2 * maxWidth;
+}
+
+function getMaxAllowedSpaceOnSides(num) {
+  //var bY;
+  //var aY = meubles[num].y + meubles[num].hauteur / 2;
+  var deltaLeft,deltaRight;
+  var maxLeft = 10e34;
+  var maxRight = 10e34;
+  for (var i = 0; i < meubles.length; i++) {
+    if (i != num) {
+      //bY = meubles[i].y + meubles[i].hauteur / 2;
+      if (intersectY(num,i)) {
+        if (meubles[num].x > meubles[i].x) {
+          deltaLeft = (meubles[num].x-meubles[num].largeur/2 - meubles[num].hasCadre*epaisseurCadre) - (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*epaisseurCadre);
+        }
+        else {
+          deltaRight = -(meubles[num].x + meubles[num].largeur / 2 + meubles[num].hasCadre*epaisseurCadre) + (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre*epaisseurCadre);
+        }
+        maxLeft = Math.min(maxLeft, deltaLeft);
+        maxRight = Math.min(maxRight, deltaRight);
+      }
+    }
+  }
+  let spaceArray=[];
+  spaceArray[0]=maxLeft;
+  spaceArray[1]=maxRight;
+  return spaceArray;
 }
 
 function getMaxAllowedHeight(num) {
