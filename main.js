@@ -126,22 +126,22 @@ class Meuble {
     this.root = new THREE.Object3D();
     this.root.name = "meuble " + this.numero;
     this.root.position.set(0, 0, 0);
-    console.log("root created");
+    //console.log("root created");
 
     var geometries = new THREE.Object3D();
     geometries.name = "geometries";
     this.root.add(geometries);
-    console.log("geometries created");
+    //console.log("geometries created");
 
     /* var blocs = new THREE.Object3D();
     blocs.name = "blocs";
     geometries.add(blocs); */
 
-    console.log("blocs created");
+    //console.log("blocs created");
 
     var handlesMeuble = new THREE.Object3D();
     handlesMeuble.name = "handlesMeuble";
-    console.log("handlesMeuble created");
+    //console.log("handlesMeuble created");
     this.root.add(handlesMeuble);
 
     scene.add(this.root);
@@ -287,16 +287,16 @@ class Meuble {
   }
   
   updateGeometry() {
-    console.log("meuble après createGEOMETRY",this);
+    //console.log("meuble après createGEOMETRY",this);
         let geometries=this.root.getObjectByName("geometries");
         geometries.children=[];
         //let blocs=this.root.getObjectByName("blocs");
         //blocs.children=[];
-        console.log("geometries flushed in update geometry");
+        //console.log("geometries flushed in update geometry");
         geometry.remove;
         material.remove;
 
-    console.log("blocs",blocs);
+    //console.log("blocs",blocs);
     
     //plateau
     if (this.hasPlateau) {geometries.add(this.getNewPlateau());}
@@ -316,16 +316,17 @@ class Meuble {
       let blocRoot = this.initializeBloc(i);
       blocs.add(blocRoot);
     }
-    console.log("meuble à la sortie d'updateGeometry = ",this);
+    //console.log("meuble à la sortie d'updateGeometry = ",this);
   }
 
   updateMeuble() {
-    console.log("updateMeuble");
+    //console.log("updateMeuble");
     this.updateGeometry();
     let blocs = this.root.getObjectByName("blocs");
     let geometries = this.root.getObjectByName("geometries");
     let handlesMeuble = this.root.getObjectByName("handlesMeuble");
     
+    //console.log("handlesMeuble=",handlesMeuble);
     //flush manipulators
     handlesMeuble.children=[];
     geometry.dispose();
@@ -389,9 +390,9 @@ class Meuble {
         this.profondeur + 2*epaisseur+0.05,
         2,1,1,1,1); */
     geometry = new THREE.BoxGeometry(
-      this.largeur + 2*epaisseur+0.05,
+      this.largeur + 4*epaisseur+0.05,
         epaisseurHandleBlocs,
-        this.profondeur + 2*epaisseur+0.05
+        this.profondeur + 4*epaisseur+0.05
     )
     let handleMeubleHaut = new THREE.Mesh(geometry, materialSelectionMeuble);
     handleMeubleHaut.position.set(0, this.hauteur / 2, 0);
@@ -422,8 +423,8 @@ class Meuble {
 
     geometry = new THREE.BoxGeometry(
       epaisseurHandleBlocs,
-      this.hauteur + 2 * epaisseur - 0.05,
-      this.profondeur+epaisseur);
+      this.hauteur + 4 * epaisseur - 0.05,
+      this.profondeur+4*epaisseur);
 
 
 
@@ -469,7 +470,7 @@ class Meuble {
 
 
     updateAllSelectable();
-    console.log("meuble à la sortie d'updateMeuble = ",this);
+    //console.log("meuble à la sortie d'updateMeuble = ",this);
 
   }
     this.placeMeuble();
@@ -1004,7 +1005,7 @@ function checkRaycast() {
     if (intersectedMeuble != intersectsMeuble[0].object) {
       if (intersectedMeuble && selectionMode == "meubles" && intersectedMeuble.shortName=="boiteSelectionMeuble") intersectedMeuble.visible = false;
       intersectedMeuble = intersectsMeuble[0].object;
-      if (selectionMode == "meubles") intersectedMeuble.visible = true;
+      if (selectionMode == "meubles") {intersectedMeuble.visible = true;} //showChildren(intersectedMeuble);}
       raycastedMeuble = intersectsMeuble[0].object.numero;
     }
   }
@@ -1098,7 +1099,7 @@ function checkRaycast() {
 
 //raycast sur les objets 3d lors d'un changement de souris ou de camera
 function onCanvasClick () {
-  console.log("raycastedbloc=",raycastedBloc);
+  //console.log("raycastedbloc=",raycastedBloc);
   //if ((selectionMode=="blocs") && (raycastedBloc>-1)) changeCurrentBlocFromClick(raycastedBloc);
   //if ((selectionMode=="meubles") && (raycastedMeuble>-1)) changeCurrentMeubleFromClick(raycastedMeuble);
   hideAllContextMenu();
@@ -1112,7 +1113,7 @@ function hideAllContextMenu() {
 }
 
 function onKeyDown(event) {
-console.log(event);
+//console.log(event);
 if (event.key=="Escape") {
   hideAllContextMenu();
 }
@@ -1124,8 +1125,8 @@ function onOpenContextMenu () {
   contextMenuGeneral.style.display="block";
         contextMenuGeneral.style.left=pointerScreen.x+"px";
         contextMenuGeneral.style.top=pointerScreen.y+"px";
-        console.log(pointerScreen.x,pointerScreen.y);
-  console.log(raycastedEtagere);
+        //console.log(pointerScreen.x,pointerScreen.y);
+  //console.log(raycastedEtagere);
   if (raycastedMeuble > -1) {
     //if (raycastedMeuble!=indiceCurrentMeuble) {
     changeCurrentMeubleFromClick(raycastedMeuble);
@@ -1140,7 +1141,7 @@ if (raycastedBloc > -1) {
   //if (raycastedBloc!=indiceCurrentBloc) {
   changeCurrentBlocFromClick(raycastedBloc);
   updateAllSelectable();
-  console.log("raycastedBloc=", raycastedBloc);
+  //console.log("raycastedBloc=", raycastedBloc);
   //}
   contextMenuBloc.style.display = "block";
 }
@@ -1148,7 +1149,7 @@ if (raycastedEtagere > -1) {
   contextMenuEtagere.style.display = "block";
 }
 
-  console.log("context menu");
+  //console.log("context menu");
   //updateScene();
   //console.log(contextMenu);
   //contextMenu.style.position="block";
@@ -1175,13 +1176,21 @@ function clearRaycast() {
   if (intersectedMeuble!=null) {intersectedMeuble.visible = false; intersectedMeuble = null;}
 }
 
-/* function showChildren(obj) {
+ function showChildren(obj) {
   let listChildren = obj.children;
   for (let item of listChildren) {
-    if (item.visible) item.visible=true;
+    item.visible=true;
   }
-} */
+}
 
+function hideChildren(obj) {
+  let listChildren = obj.children;
+  for (let item of listChildren) {
+    if (item.visible) item.visible=false;
+  }
+} 
+
+var newHelper;
 //drag
 var dragHandleBlocControls;
 function initDragHandleBloc() {
@@ -1218,11 +1227,17 @@ function initDragHandleBloc() {
     event.object.yMax = yMax;
     event.object.yInitial = event.object.position.y;
     event.object.yMeubleInitial = meubles[indiceCurrentMeuble].y;
-    console.log("yinit=",event.object.yInitial);
+    //console.log("yinit=",event.object.yInitial);
   }
     if (blocId > 0) event.object.tailleBlocPrecedent = meubles[indiceCurrentMeuble].bloc[blocId - 1].taille;
     if (blocId < meubles[indiceCurrentMeuble].nbBlocs-1) event.object.tailleBlocSuivant = meubles[indiceCurrentMeuble].bloc[blocId + 1].taille;
     event.object.blocId = blocId;
+
+    /* newHelper=event.object.clone(true);
+    event.object.attach(newHelper);
+    newHelper.position.set(0,0,0);
+    scene.attach(newHelper);
+    event.object.newHelperXInit=newHelper.position.x; */
   });
 
   dragHandleBlocControls.addEventListener('drag', function (event) {
@@ -1230,17 +1245,20 @@ function initDragHandleBloc() {
     //event.object.material.emissive.set(0xaaaaaa);
     var obj1 = event.object;
     var blocId = obj1.blocId;
-    console.log(blocId);
+    //newHelper.visible=true;
+    //scene.add(newHelper);
+    //console.log(blocId);
+    //obj1.attach(newHelper);
 
     if (obj1.name == "handleMeubleHaut") {  //doublon !!!!
       let y = obj1.position.y;
       //y = x > event.object.xMax ? event.object.xMax : x;
       //x = x < event.object.xMin ? event.object.xMin : x;
       obj1.position.set(0, y, 0);
-      console.log(y);
+      //console.log(y);
       meubles[indiceCurrentMeuble].hauteur = y*2;
-      console.log(meubles[indiceCurrentMeuble].hauteur);
-      console.log(meubles[indiceCurrentMeuble]);
+      //console.log(meubles[indiceCurrentMeuble].hauteur);
+      //console.log(meubles[indiceCurrentMeuble]);
     }
     else {
 
@@ -1250,7 +1268,7 @@ function initDragHandleBloc() {
       x = x < event.object.xMin ? event.object.xMin : x;
       obj1.position.set(x, 0, 0);
       var delta = x - obj1.xInitial;
-      console.log("delta=", delta, obj1.position.x, obj1.xInitial);
+      //console.log("delta=", delta, obj1.position.x, obj1.xInitial);
       //poignee située entre 2 blocs :
       if (blocId > 0 && obj1.name != "handleBlocDroit") {
         meubles[indiceCurrentMeuble].bloc[blocId - 1].taille = obj1.tailleBlocPrecedent + delta;
@@ -1267,13 +1285,14 @@ function initDragHandleBloc() {
         meubles[indiceCurrentMeuble].x = obj1.xMeubleInitial + delta / 2;
       }
       meubles[indiceCurrentMeuble].bloc[blocId].taille = fact * (x + obj1.xInitial);
+      //newHelper.position.x=obj1.newHelperXInit+delta;
     }
 
     else { //vertical
       let y = obj1.position.y;
       obj1.position.set(0, y, 0);
       var delta = y - obj1.yInitial;
-      console.log("delta=", delta, obj1.position.y, obj1.yInitial);
+      //console.log("delta=", delta, obj1.position.y, obj1.yInitial);
         meubles[indiceCurrentMeuble].bloc[blocId].taille = 2*obj1.yInitial + delta;
         if (blocId<meubles[indiceCurrentMeuble].nbBlocs-1) 
           {meubles[indiceCurrentMeuble].bloc[blocId+1].taille = obj1.tailleBlocSuivant - delta}
@@ -1288,13 +1307,26 @@ function initDragHandleBloc() {
   });
 
   dragHandleBlocControls.addEventListener('dragend', function (event) {
+    //updateSelectableHandleBloc();
+    //console.log(selectableHandleBloc);
+    //scene.remove(newHelper);
+    //updateAllSelectable();
+    //geometry.dispose();
+    //material.dispose();
     if (selectionMode!="ajusteBlocs") return;
+    isPreviewOn=false;
+
     //event.object.material.emissive.set(0x000000);
+    meubles[indiceCurrentMeuble].updateMeuble();
+    //console.log(meubles[indiceCurrentMeuble]);
+    updateAllSelectable();
+
     controls.enabled = true;
     rayCastEnabled = true;
-    isPreviewOn=false;
-    meubles[indiceCurrentMeuble].updateMeuble();
-    updateAllSelectable();
+    
+    //scene.remove(newHelper);
+    //geometry.dispose();
+    //material.dispose();
   });
 
 }
@@ -1327,8 +1359,8 @@ function initDragHandleMeuble() {
     //event.object.material.emissive.set(0xaaaaaa);
     var obj1 = event.object;
     var meubleId = obj1.meubleId;
-    console.log(meubleId);
-    console.log(obj1);
+    //console.log(meubleId);
+    //console.log(obj1);
 
     if (obj1.name == "handleMeubleHaut") {
       let y = obj1.position.y;
@@ -1337,8 +1369,8 @@ function initDragHandleMeuble() {
       obj1.position.set(0, y, 0);
       //console.log(y);
       meubles[indiceCurrentMeuble].hauteur = y*2;
-      console.log(meubles[indiceCurrentMeuble].hauteur);
-      console.log(meubles[indiceCurrentMeuble]);
+     // console.log(meubles[indiceCurrentMeuble].hauteur);
+      //console.log(meubles[indiceCurrentMeuble]);
     }
     if (obj1.name == "handleMeubleDroit") {var fact=-1} else {var fact=1}
     if (obj1.name == "handleMeubleGauche" || obj1.name == "handleMeubleDroit") {
@@ -1364,7 +1396,7 @@ function initDragHandleMeuble() {
 
   dragHandleMeubleControls.addEventListener('dragend', function (event) {
     if (selectionMode!="ajusteMeubles") return;
-    console.log("DRAGGGG ENDDDDD");
+    //console.log("DRAGGGG ENDDDDD");
 
     //event.object.material.emissive.set(0x000000);
     controls.enabled = true;
@@ -1377,11 +1409,10 @@ function initDragHandleMeuble() {
 }
 
 var dragBlocControls;
-var dragMeubleControls;
-var dragEtagereControls;
-function initDrag() {
-  var wA,hA;
+var wA,hA;
   var aX,aY;
+function initDragBloc() {
+  
   //drag blocs
   dragBlocControls = new DragControls(selectableBloc, camera, renderer.domElement);
 
@@ -1409,6 +1440,10 @@ function initDrag() {
       }
   });
 
+}
+
+var dragEtagereControls;
+function initDragEtagere() {
   //drag etageres
   dragEtagereControls = new DragControls(selectableEtagere, camera, renderer.domElement);
 
@@ -1460,7 +1495,7 @@ function initDrag() {
     meubles[indiceCurrentMeuble].bloc[blocId].etagereY[event.object.numero] = event.object.position.y;
   }
   else {
-    console.log("test");
+    //console.log("test");
     let x=obj1.position.x;
     x= x>event.object.xMax ? event.object.xMax : x;
     x= x<event.object.xMin ? event.object.xMin : x;
@@ -1471,14 +1506,16 @@ function initDrag() {
   });
 
   dragEtagereControls.addEventListener('dragend', function (event) {
-    event.object.material.emissive.set(0x000000);
+    //event.object.material.emissive.set(0x000000);
     controls.enabled=true;
     rayCastEnabled=true;
   });
+}
 
+var dragMeubleControls;
+function initDragMeuble() {
   //drag meubles
   dragMeubleControls=new DragControls(selectableMeuble, camera, renderer.domElement);
-
   dragMeubleControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="meubles") return;
     controls.enabled=false;
@@ -1499,7 +1536,7 @@ function initDrag() {
     console.log(geometries);
     obj1.attach(geometries);  //on détache pour éviter les references circulaires dans les calculs de coordonnées
     geometries.position.set(0,0,0);
-    let cadreA =meubles[num].hasCadre*epaisseurCadre;
+    let cadreA = meubles[num].hasCadre*epaisseurCadre;
     let plateauA = meubles[num].hasPlateau*epaisseurPlateau;
     let piedA = meubles[num].hasPied*hauteurPied;
     let socleA = meubles[num].hasSocle*hauteurSocle;
@@ -1512,7 +1549,6 @@ function initDrag() {
   });
 
   dragMeubleControls.addEventListener('drag', function (event) { 
-
     var obj1=event.object;
     var num=obj1.numero;
     let wpos = new THREE.Vector3();
@@ -1520,9 +1556,7 @@ function initDrag() {
     obj1.localToWorld(wpos);
     aX=wpos.x;
     aY=wpos.y-obj1.offsetBasA/2+obj1.offsetHautA/2; // centre du bloc complet
-
     adjustObjectPosition(obj1,num,aX,aY,wA,hA,pos,0);
-
     meubles[num].x=obj1.xMeubleInit+obj1.position.x;
     meubles[num].y=obj1.yMeubleInit+obj1.position.y;
     updateInterfaceX(num);
@@ -1598,7 +1632,6 @@ function initDrag() {
 
   dragMeubleControls.addEventListener('dragend', function (event) {
     if (selectionMode!="meubles") return;
-
     controls.enabled = true;
     rayCastEnabled = true;
     //event.object.material.emissive.set(0x000000);
@@ -1708,6 +1741,7 @@ function updateSelectableEtagere() {
 
 function updateSelectableHandleBloc() {
   selectableHandleBloc = [];
+  //console.log(meubles[indiceCurrentMeuble].root);
   meubles[indiceCurrentMeuble].root.getObjectsByProperty("shortName", "handleBloc", selectableHandleBloc);
   let handleMeubleHaut =  meubles[indiceCurrentMeuble].root.getObjectByName("handleMeubleHaut");
   selectableHandleBloc.push(handleMeubleHaut);
@@ -1726,6 +1760,7 @@ function updateAllSelectable() {
   updateSelectableHandleMeuble();
   updateSelectableEtagere();
   updateSelectableHandleBloc();
+  //console.log("bloc=",selectableBloc,"meuble=",selectableMeuble,"handleMeuble=",selectableHandleMeuble,"handleBloc=",selectableHandleBloc,"etagere=",selectableEtagere);
 }
 
 //collisions
@@ -2056,7 +2091,9 @@ var contextMenuGeneral,contextMenuMeuble,contextMenuBloc,contextMenuEtagere;
 
 function initializeScene() {
     buildEnvironnement ();
-    initDrag();
+    initDragMeuble();
+    initDragBloc();
+    initDragEtagere();
     initializeInterface();
     initializeRaycast();
     initializePoignees();
@@ -2410,9 +2447,9 @@ function initializeInterface() {
   }
 
   function onClickOptionMenu(event) {
-    console.log(event);
+    //console.log(event);
     selectionMode=event.target.type;
-    console.log (selectionMode);
+    //console.log (selectionMode);
     contextMenuGeneral.style.display="none";
     updateAllSelectable();
     refreshSelectButtons();
@@ -2963,6 +3000,9 @@ function onMaterialAnimationFinish (num) {
   boiteSelectionMeuble.material = materialSelectionMeuble;
   mixerMaterial.removeEventListener('finished', onMaterialAnimationFinish, false);
   mixerMaterial=undefined;
+//console.log("show children boite");
+//console.log(boiteSelectionMeuble);
+  showChildren(boiteSelectionMeuble);
 }
 
 var materialSelectionMeubleAnim = new THREE.MeshStandardMaterial( materialSelectionMeubleParams );
@@ -2976,10 +3016,11 @@ var clock = new THREE.Clock();
 function startMaterialAnimationMeuble(num) {
   let boiteSelectionMeuble = selectableMeuble.find(boite => boite.numero == num)
   meubles[num].root.getObjectsByProperty("shortName","boiteSelectionMeuble");
-  boiteSelectionMeuble.material = materialSelectionMeubleAnim;
 
+  boiteSelectionMeuble.material = materialSelectionMeubleAnim;
+  hideChildren(boiteSelectionMeuble);
   boiteSelectionMeuble.visible = true;
-  console.log("boiteSelectionMeuble=",boiteSelectionMeuble);
+  //console.log("boiteSelectionMeuble=",boiteSelectionMeuble);
 
   mixerMaterial = new THREE.AnimationMixer( materialSelectionMeubleAnim );
   clipActionMaterial = mixerMaterial.clipAction( clipMaterial );
@@ -3167,11 +3208,11 @@ function updateInterfaceY(indiceMeuble) {
 }
 
 function changeCurrentBlocFromClick(num) {
-  console.log("new current meuble=",selectableBloc[num].numeroMeuble);
+  //console.log("new current meuble=",selectableBloc[num].numeroMeuble);
   changeCurrentMeubleFromClick(selectableBloc[num].numeroMeuble);
   indiceCurrentBloc = selectableBloc[num].bloc.numero;
-  console.log("new current bloc=",selectableBloc[num].bloc);
-  console.log("new current bloc=",indiceCurrentBloc);
+  //console.log("new current bloc=",selectableBloc[num].bloc);
+  //console.log("new current bloc=",indiceCurrentBloc);
   //indiceCurrentMeuble = selectableBloc[num].bloc.numero;
   updateInterfaceBlocs(indiceCurrentMeuble);
   selectListBlocs.classList.remove("animationBlocsName");
