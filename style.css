@@ -2,6 +2,7 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  font- ;
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
@@ -29,7 +30,6 @@ html {
 body {
   margin: 0;
   display: flex;
-  /*place-items: center;*/
   min-width: 320px;
   min-height: 100vh;
   overflow: hidden;
@@ -80,6 +80,10 @@ button:focus-visible {
 
 p, label, .inputSlider {
   margin-left: 3px;
+}
+
+label, .popupTitle {
+  font-size: smaller;
 }
 
 p {
@@ -145,16 +149,11 @@ p {
   flex-direction:column;
   align-self: flex-start;
    min-width: 220px;
-  /* min-width: 10%; */
-  /* overflow:auto; */
-  /* width:auto; */
   height: auto;
-  /* overflow: hidden; */
-  /*height: 100vh;
-  min-width: 220px;
-  width:220px;
-  */
-  /*margin : 12px;*/
+  border-radius: 8px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #1a1a1a;
 }
 
 #interfaceGauche {
@@ -172,11 +171,25 @@ p {
   overflow:auto;
   min-width: 250px;
   max-width:300px;
+  border-radius: 8px;
+}
+
+#aspect, #meuble {
+  border-top-right-radius: 8px;
+  border-top-left-radius: 8px;
+}
+
+#meuble, #blocs {
+  cursor:pointer;
 }
 
 #aspect {
-  background-color: #d1daff;
   height:100%;
+  padding-bottom: 8px;
+}
+
+input[type="color"] {
+  margin-left:4px;
 }
 
 #aspect, #enregistrement {
@@ -189,8 +202,10 @@ p {
 
 #interfaceGauche {
   background-color: #d1ffd1;
-  /* overflow:auto; */
-  /* height:100vh; */
+}
+
+#aspect {
+  background-color: #d1daff;
 }
 
 #enteteMeuble {
@@ -203,8 +218,6 @@ p {
 }
 
 #blocs {
-  border : solid;
-  
   background-color: #d1ffff;
   height: auto;
 }
@@ -213,7 +226,7 @@ p {
   height: auto;
 }
 
-#blocs, #enregistrement {
+#blocs, #enregistrement, #etageres, #meuble, #aspect {
   border-top: solid;
   border-width : 1px;
   border-color: #888;
@@ -225,11 +238,13 @@ p {
   justify-content: end;
   height:auto;
   padding-bottom:12px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 #meuble {
   background-color: #d1ffd1;
-  padding-bottom: 24px;
+  padding-bottom: 8px;
 }
 
 #meubleSliders {
@@ -317,18 +332,8 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
 }
 
 .dropDown {
-  /* background-color: #ffffff;
-  border-radius: 1px;
-  border-width: 1px;
-  border-style: solid; */
-  display:inline-block;
   position:relative;
   width:100%;
-  /* border-color: #000000;
-  width:80%;
-  padding-left: 8px;
-  display: flex;
-  justify-content: space-between; */
 }
 
 @keyframes animationDropDown {
@@ -354,10 +359,10 @@ select, input[type=button], .buttonOn, .dropDownTitle, .dropDownContent, button,
 .dropDownTitle {
   display: flex;
   justify-content: space-between;
-  width:91%;
+  /* width:50%; */
   padding-left: 8px;
   padding-right: 8px;
-  margin-top:8px;
+  /* margin-top:8px; */
 }
 
 .dropDownRightArrow {
@@ -474,7 +479,6 @@ width:100%;
 
 img {
   width : 100px;
-  /* height : 100px; */
   object-fit: contain;
 }
 
@@ -494,9 +498,16 @@ img {
   display: block;
 }
 
-#contextMenu {
-  display:none;
+#contextMenuGeneral {
   position:absolute;
+}
+
+#contextMenuMeuble, #contextMenuBloc, #contextMenuEtagere {
+  position:relative;
+}
+
+.contextMenu, #contextMenuGeneral, #contextMenuMeuble, #contextMenuBloc, #contextMenuEtagere {
+  display:none;
   background-color: #ffffff;
   border-width: 1px;
   border-style: solid;

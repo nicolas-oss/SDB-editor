@@ -23,8 +23,8 @@
     <div class="overflow">
       <div id="interfaceGauche">
         <div id="meuble">
-          <div class="title" class="expand" target="meubleSliders" id="titleMeuble">
-            <p>Meuble</p>
+          <div class="title" class="expand" target="meubleSliders">
+            <p id="titleMeuble">Meuble</p>
             <div class="buttonsSelectDiv">
               <input type="button" id="buttonAdjustMeuble" value="Ajust.">
               <input type="button" id="buttonSelectMeuble" value="Sélect.">
@@ -43,9 +43,6 @@
               <span class="slider round">Vertical</span>
             </label>
           </div>
-          <label class="btn" for="btnControl">
-          <div id="meubleSliders" class="expandContent"></div>
-        </label>
           <div class="boutons">
             <input type="button" id="buttonPied" value="Sur pieds" class="buttonFlex">
             <input type="button" id="buttonSocle" value="Sur socle" class="buttonFlex">
@@ -55,10 +52,12 @@
             <input type="button" id="buttonCadre" value="Cadre" class="buttonFlex">
             <input type="button" id="buttonPlateau" value="Plateau" class="buttonFlex">
           </div>
+          <div id="meubleSliders" class="expandContent"></div>
+
         </div>
         <div id="blocs">
           <div class="title">
-            <p>Blocs</p>
+            <p id="titleBloc">Blocs</p>
             <div class="buttonsSelectDiv">
               <input type="button" id="buttonAdjustBloc" value="Ajust.">
               <input type="button" id="buttonSelectBloc" value="Sélect.">
@@ -71,9 +70,11 @@
             <input type="button" id="buttonPorte" value="Portes" class="buttonFlex">
             <input type="button" id="buttonTiroirs" value="Tiroirs" class="buttonFlex">
             <input type="button" id="buttonEtageres" value="Étagères" class="buttonFlex">
-            <input type="button" id="buttonPlein" value="Panneau" class="buttonFlex">
           </div>
-          <div id="buttonsBlocs" class="boutons">            <input type="button" id="buttonSousMeuble" value="Meuble" class="buttonFlex">
+          <div id="buttonsBlocs" class="boutons">
+            <input type="button" id="buttonPlein" value="Panneau" class="buttonFlex">
+
+            <input type="button" id="buttonSousMeuble" value="Meuble" class="buttonFlex">
           </div>
           <div id="divPortes">
             <div id="nbPortes">
@@ -113,15 +114,43 @@
       </div>
     </div>
     <div id="containerCentral">
-      <div id="contextMenu">
+      <div id="contextMenuGeneral" class="contextMenu">
         <ul>
           <li class="contextMenuOption" type="meubles">Sélectionner meuble</li>
           <li class="contextMenuOption" type="ajusteMeubles">Ajuster meuble</li>
           <li class="contextMenuOption" type="blocs">Sélectionner bloc</li>
           <li class="contextMenuOption" type="ajusteBlocs">Ajuster bloc</li>
-          <li class="contextMenuOption" type="etageres">Sélectionner étagère</li>
+          <li class="contextMenuOption" type="etageres">Ajuster étagère</li>
         </ul>
+        <div id="contextMenuMeuble" class="contextMenu">
+          <ul>
+            <li class="contextMenuOption" id="switchVertical">Vertical</li>
+            <li class="contextMenuOption" id="switchPied">Sur pieds</li>
+            <li class="contextMenuOption" id="switchSocle">Sur socle</li>
+            <li class="contextMenuOption" id="switchCadre">Cadre</li>
+            <li class="contextMenuOption" id="switchPlateau">Plateau</li>
+          </ul>
+        </div>
+        <div id="contextMenuBloc" class="contextMenu">
+          <ul>
+            <li class="contextMenuOption" id="switchPorte">Porte</li>
+            <li class="contextMenuOption" id="switchTiroirs">Tiroirs</li>
+            <li class="contextMenuOption" id="switchEtageres">Etageres</li>
+            <li class="contextMenuOption" id="switchPanneau">Panneau</li>
+            <li class="contextMenuOption" id="switchSousMeuble">Meuble</li>
+          </ul>
+        </div>
+        <div id="contextMenuEtagere" class="contextMenu">
+          <ul>
+            <li class="contextMenuOption" type="meubles">Porte</li>
+            <li class="contextMenuOption" type="ajusteMeubles">Tiroirs</li>
+            <li class="contextMenuOption" type="blocs">Etageres</li>
+            <li class="contextMenuOption" type="ajusteBlocs">Panneau</li>
+            <li class="contextMenuOption" type="etageres">Meuble</li>
+          </ul>
+        </div>
       </div>
+ 
       <div id="canvas"></div>
     </div>
     <div>
@@ -144,18 +173,23 @@
               <div class="dropDownRightArrow" cible="menuPoignees">▼</div>
             </div>
             <div id="menuPoignees" class="dropDownContent">
-              <ul>
-                <li>marbre</li>
-                <li>noyer</li>
-                <li>ardoise</li>
-              </ul>
             </div>
           </div>
           <!-- <select id="listPoigneesSelect"></select> -->
           <div id="slidersAspect"></div>
-          <p>Couleurs</p>
           <div class="lineColor">
-            <label for="colors">Meuble</label>
+            <p>Matières</p>
+            <p>Couleurs</p>
+          </div>
+          <div class="lineColor">
+            <div class="dropDown" cible="menuTexturesMeuble" id="dropDownMeuble">
+              <div class="dropDownTitle" cible="menuTexturesMeuble">
+                <div class="popupTitle" cible="menuTexturesMeuble">Meuble</div>
+                <div class="dropDownRightArrow" cible="menuTexturesMeuble">▼</div>
+              </div>
+              <div class="dropDownContent" id="menuTexturesMeuble">
+              </div>
+            </div>
             <input type="color" value="#ffffff" list="colorMeubleList" id="colorMeuble" />
             <datalist id="colorMeubleList">
               <option value="#800000"></option>
@@ -165,7 +199,14 @@
             </datalist>
           </div>
           <div class="lineColor">
-            <label for="colors">Tiroirs</label>
+            <div class="dropDown" cible="menuTexturesTiroirs" id="dropDownTiroirs">
+              <div class="dropDownTitle" cible="menuTexturesTiroirs">
+                <div class="popupTitle" cible="menuTexturesTiroirs">Tiroirs</div>
+                <div class="dropDownRightArrow" cible="menuTexturesTiroirs">▼</div>
+              </div>
+              <div class="dropDownContent" id="menuTexturesTiroirs">
+              </div>
+            </div>
             <input type="color" list="colorDrawerList" id="colorDrawer" />
             <datalist id="colorDrawerList">
               <option value="#800000"></option>
@@ -175,7 +216,15 @@
             </datalist>
           </div>
           <div class="lineColor">
-            <label for="colors">Plateau</label>
+            
+          <div class="dropDown" cible="menuTexturesPlateau" id="dropDownPlateau">
+            <div class="dropDownTitle" cible="menuTexturesPlateau">
+              <div class="popupTitle" cible="menuTexturesPlateau">Plateau</div>
+              <div class="dropDownRightArrow" cible="menuTexturesPlateau">▼</div>
+            </div>
+            <div id="menuTexturesPlateau" class="dropDownContent">
+            </div>
+          </div>
             <input type="color" list="colorPlateauList" id="colorPlateau" />
             <datalist id="colorPlateauList">
               <option value="#800000"></option>
@@ -185,69 +234,28 @@
             </datalist>
           </div>
           <div class="lineColor">
-            <label for="colors">Cadre</label>
-            <input type="color" list="colorCadreList" id="colorCadre" />
-            <datalist id="colorPadreList">
-              <option value="#800000"></option>
-              <option value="#8B0000"></option>
-              <option value="#A52A2A"></option>
-              <option value="#DC143C"></option>
-            </datalist>
-          </div>
-          <p>Matières</p>
-          <div class="dropDown" cible="menuTexturesMeuble" id="dropDownMeuble">
-            <div class="dropDownTitle" cible="menuTexturesMeuble">
-              <div class="popupTitle" cible="menuTexturesMeuble">Meuble</div>
-              <div class="dropDownRightArrow" cible="menuTexturesMeuble">▼</div>
-            </div>
-            <div class="dropDownContent" id="menuTexturesMeuble">
-              <ul>
-                <li>marbre</li>
-                <li>noyer</li>
-                <li>ardoise</li>
-              </ul>
-            </div>
-          </div>
-          <div class="dropDown" cible="menuTexturesTiroirs" id="dropDownTiroirs">
-            <div class="dropDownTitle" cible="menuTexturesTiroirs">
-              <div class="popupTitle" cible="menuTexturesTiroirs">Tiroirs</div>
-              <div class="dropDownRightArrow" cible="menuTexturesTiroirs">▼</div>
-            </div>
-            <div class="dropDownContent" id="menuTexturesTiroirs">
-              <ul>
-                <li><img src="src/126_chene_de_montreal_thumb.jpg">Chêne de montréal</li>
-                <li><img src="src/355_bronze_thumb.jpg">Bronze</li>
-                <li><img src="src/781_venato_bianco_thumb.jpg">Venato Bianco</li>
-              </ul>
-            </div>
-          </div>
-          <div class="dropDown" cible="menuTexturesPlateau" id="dropDownPlateau">
-            <div class="dropDownTitle" cible="menuTexturesPlateau">
-              <div class="popupTitle" cible="menuTexturesPlateau">Plateau</div>
-              <div class="dropDownRightArrow" cible="menuTexturesPlateau">▼</div>
-            </div>
-            <div id="menuTexturesPlateau" class="dropDownContent">
-              <ul>
-                <li>marbre</li>
-                <li>noyer</li>
-                <li>ardoise</li>
-              </ul>
-            </div>
-          </div>
+            
           <div class="dropDown" cible="menuTexturesCadre" id="dropDownCadre">
             <div class="dropDownTitle" cible="menuTexturesCadre">
               <div class="popupTitle" cible="menuTexturesCadre">Cadre</div>
               <div class="dropDownRightArrow" cible="menuTexturesCadre">▼</div>
             </div>
             <div class="dropDownContent" id="menuTexturesCadre">
-              <ul>
-                <li>marbre</li>
-                <li>noyer</li>
-                <li>ardoise</li>
-              </ul>
             </div>
           </div>
+          <input type="color" list="colorCadreList" id="colorCadre" />
+            <datalist id="colorPadreList">
+              <option value="#800000"></option>
+              <option value="#8B0000"></option>
+              <option value="#A52A2A"></option>
+              <option value="#DC143C"></option>
+            </datalist>
         </div>
+            
+          </div>
+          
+
+
         <div id="enregistrement">
           <p>Préconfiguration</p>
           <div class="deuxBoutons boutons">
