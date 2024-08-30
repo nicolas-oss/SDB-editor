@@ -22,25 +22,80 @@ class configurationClass {
   }
 }
 
+class Element {
+  constructor(bloc,i) {
+    this.numero = i;
+    this.unherited = true;
+    this.bloc=bloc;
+    this.numeroBloc=bloc.numero;
+
+    console.log("bloc n°", this.bloc.numero," element n°",this.numero," created.");
+    this.xPredefini=undefined;
+    this.yPredefini=undefined;
+  }
+
+  get type() {
+    if (this.unherited) return this.bloc.type
+    else return this.localType;
+  }
+
+  set type(value) {
+    this.unherited=false;
+    this.localType=value;
+  }
+
+  get y() {
+    console.log("get y etagere n°",this.numero," bloc",this.bloc.numero);
+    if (this.yPredefini) return this.yPredefini;
+    var step = (this.bloc.h - 2 * epaisseur) / (this.bloc.etageres + 1);
+    return step * (0.5 + this.numero - this.bloc.etageres / 2);
+  }
+
+  set y(value) {
+    this.yPredefini = value;
+    console.log("y etagere n°",this.numero," set.");
+  }
+
+  get x() {
+    if (this.xPredefini) return this.bloc.xPredefini;
+    var step = (this.bloc.l - 2 * epaisseur) / (this.bloc.etageres + 1);
+    return step * (0.5 + this.numero - this.bloc.etageres / 2);
+  }
+
+  set x(value) {
+    this.xPredefini = value;
+  }
+
+  reset() {
+    this.unherited = true;
+    this.xPredefini = undefined;
+    this.yPredefini = undefined;
+  }
+
+}
+
 class Bloc {
-  constructor (meuble,i) {
+  constructor(meuble, i) {
     //super();
     this.taille = 40;
     this.etageres = 3;
     //this.type=undefined;
     //this.type="Etageres";
-    this.ouverturePorte="gauche";
-    this.nombrePortes="1";
-    this.etageresVerticales=false;
-    this.isRentrant=false;
-    this.numero=i;
-    this.etagereY=[];
+    this.ouverturePorte = "gauche";
+    this.nombrePortes = "1";
+    this.etageresVerticales = false;
+    this.isRentrant = false;
+    this.numero = i;
+    //this.etagereY = [];
     this.createBlocRoot();
-    this.p=meuble.profondeur;
-    this.meuble=meuble;
+    this.p = meuble.profondeur;
+    this.meuble = meuble;
     this.updateLHP();
-    this.localType="Portes";
-    this.unherited=true;
+    this.localType = "Portes";
+    this.unherited = true;
+    this.elements = [];
+    for (var i=0; i<this.etageres; i++) {this.elements[i] = new Element(this,i)}
+    console.log("bloc n° ",this.numero," created");
   }
 
   get type() {
@@ -49,9 +104,9 @@ class Bloc {
   }
 
   set type(value) {
-    console.log ("set type bloc");
+    //console.log ("set type bloc");
     this.unherited=false;
-    console.log (this.type);
+    //console.log (this.type);
     this.localType=value;
   }
 
@@ -64,7 +119,6 @@ createBlocRoot() {
   this.blocRoot.name = "Bloc "+this.numero;
   this.blocRoot.shortName = "Bloc";
   this.blocRoot.numero=this.numero;
-  console.log("bloc root created");
 }
 
   updateLHP() {
@@ -155,52 +209,35 @@ createBlocRoot() {
   }
   
   getEtageresBloc() {
-    var etagere=[];
-    var etageresRoot=new THREE.Object3D();
-    etageresRoot.name="etageresRoot"+this.numero;
-    etageresRoot.shortName="etageresRoot";
-      if (this.etageresVerticales) {
-        var step = (this.l - 2 * epaisseur) / (this.etageres + 1);
-        for (var i = 0; i < this.etageres; i++) {
-          geometry = new THREE.BoxGeometry(epaisseur, this.h-2*epaisseur, this.p - epaisseur);
-          etagere[i] = new THREE.Mesh(geometry, material);
-          etagere[i].name = "etagere " + i;
-          etagere[i].shortName = "etagere";
-          etagere[i].numero = i;
-          etagere[i].numeroBloc = this.numero;
-          var yPredefini = this.etagereY[i];
-          if (!yPredefini) {
-            var position = step * (0.5 + i - this.etageres / 2);
-          }
-          else {position=yPredefini;}
-          etagere[i].position.set(position, 0, 0);
-          etageresRoot.add(etagere[i]);
-          //blocRoot.add(etagere[i]);
-        }
+    console.log("getEtagerBloc bloc n°",this.numero);
+    var etagere = [];
+    var etageresRoot = new THREE.Object3D();
+    etageresRoot.name = "etageresRoot" + this.numero + "_bloc"+this.numero+"_meuble"+this.meuble.numero;
+    etageresRoot.shortName = "etageresRoot";
+    if (this.etageresVerticales) {
+      geometry = new THREE.BoxGeometry(epaisseur, this.h - 2 * epaisseur, this.p - epaisseur);
+    }
+    else {
+      geometry = new THREE.BoxGeometry(this.l - 2 * epaisseur, epaisseur, this.p - epaisseur);
+    }
+    for (var i = 0; i < this.etageres; i++) {
+      if (!this.elements[i]) {
+        this.elements[i] = new Element(this, i);
+        console.log ("bloc n°",this.numero);
       }
-      else {
-        var step = (this.h - 2 * epaisseur) / (this.etageres + 1);
-        for (var i = 0; i < this.etageres; i++) {
-          //geometry = getElementBase(this.largeur - 2 * epaisseur, epaisseur, this.profondeur - epaisseur,style);
-          geometry = new THREE.BoxGeometry(this.l - 2 * epaisseur, epaisseur, this.p - epaisseur);
-          etagere[i] = new THREE.Mesh(geometry, material);
-          etagere[i].name = "etagere " + i;
-          etagere[i].shortName = "etagere";
-          etagere[i].numero = i;
-          etagere[i].numeroBloc = this.numero;
-
-          var yPredefini = this.etagereY[i];
-          if (!yPredefini) {
-            var position = step * (0.5 + i - this.etageres / 2);
-          }
-          else {position=yPredefini;}
-
-          etagere[i].position.set(0, position, 0);
-          etageresRoot.add(etagere[i]);
-          //blocRoot.add(etagere[i]);
-        }
-      }
-      return etageresRoot;
+      //geometry = new THREE.BoxGeometry(epaisseur, this.h-2*epaisseur, this.p - epaisseur);
+      etagere[i] = new THREE.Mesh(geometry, material);
+      etagere[i].name = "etagere " + i;
+      etagere[i].shortName = "etagere";
+      etagere[i].element = this.elements[i];
+      etagere[i].bloc = this;
+      if (this.etageresVerticales) { etagere[i].position.set(this.elements[i].x, 0, 0) }
+      else { etagere[i].position.set(0, this.elements[i].y, 0) }
+      ////console.log(this.elements[i].x, this.elements[i].y, this.elements[i]);
+      etageresRoot.add(etagere[i]);
+    }
+    //console.log (etageresRoot);
+    return etageresRoot;
   }
 
   getTiroirsBloc() {
@@ -218,7 +255,6 @@ createBlocRoot() {
       if (!yPredefiniEtagerePrecedent) { var yPredefiniEtagerePrecedent = step * (0.5 + (i - 1) - this.etageres / 2); }
       var yPredefiniEtagereSuivant = this.etagereY[i + 1];
       if (!yPredefiniEtagereSuivant) { var yPredefiniEtagereSuivant = step * (0.5 + (i + 1) - this.etageres / 2); }
-
       let yl = positionYEtagere - yPredefiniEtagerePrecedent;
       let yPos = positionYEtagere - yl / 2;
       let xl = this.l - 0.25 * epaisseur - 2 * offset;
@@ -233,7 +269,7 @@ createBlocRoot() {
       poigneeB.name = "poignee";
       tiroir[i].add(poigneeB);
       let posY = yl * (this.meuble.offsetPoignees / 250);
-      console.log(0, posY, epaisseur / 2 + offsetSuedois);
+      //console.log(0, posY, epaisseur / 2 + offsetSuedois);
       poigneeB.position.set(0, posY, epaisseur / 2 + offsetSuedois);
       var positionZ = this.p / 2;
       tiroir[i].position.set(0, yPos, positionZ - offset);
@@ -309,6 +345,7 @@ createBlocRoot() {
   }
 
   initializeBloc() {
+    console.log("initializeBloc n°",this.numero);
     if (!this.blocRoot) this.createBlocRoot();
     this.updateLHP();
     //cadre bloc
@@ -324,6 +361,7 @@ createBlocRoot() {
     //etageres
     if (this.type == "Etageres" || (this.type == "Tiroirs" && !isPreviewOn)) {
       this.blocRoot.add(this.getEtageresBloc());
+      //console.log("blocRoot after etager add",this.blocRoot);
     }
 
     //tiroirs
@@ -769,6 +807,7 @@ intersectX(indiceMeubleB) {
   }
   
   updateGeometry() {
+    console.log("update geometry meuble",this.numero);
     let geometries = this.root.getObjectByName("geometries");
     geometries.children = [];
     geometry.dispose();
@@ -790,9 +829,9 @@ intersectX(indiceMeubleB) {
     blocs.name = "blocs";
     geometries.add(blocs);
     for (var i = 0; i < this.nbBlocs; i++) {
-      let blocRoot = this.bloc[i].initializeBloc(this);
+      let blocRoot = this.bloc[i].initializeBloc();
       blocs.add(blocRoot);
-      //console.log("here");
+      //console.log("blocs after bloc add",blocs);
       this.bloc[i].disposeGeometry();
      //positionnement bloc dans meuble
     if (this.disposition=="horizontal") {
@@ -1184,8 +1223,6 @@ function checkRaycastMeubles() {
       intersectedMeuble = intersectsMeuble[0].object;
       if (selectionMode == "meubles") {intersectedMeuble.visible = true;} //showChildren(intersectedMeuble);}
       raycastedBoiteMeuble = intersectsMeuble[0].object;
-      console.log(raycastedBoiteMeuble);
-      console.log("raycastedBoiteMeuble=",raycastedBoiteMeuble.name);
     }
   }
   else {
@@ -1659,16 +1696,12 @@ function initDragEtagere() {
   dragEtagereControls.addEventListener('dragstart', function (event) {
     controls.enabled=false;
     rayCastEnabled=false;
-    let id=event.object.numero;
+    let id=event.object.element.numero;
     let blocId=event.object.numeroBloc;
-    //console.log("etager id=",id);
-    //console.log("bloc id=",blocId);
     let parent=event.object.parent;
-    //console.log("parent=",parent);
-    let hasEtagerePrecedente = parent.getObjectByName("etagere "+(id-1));
+    let hasEtagerePrecedente = parent.getObjectByName("etagere "+(id-1));   //marche pas
+    console.log(hasEtagerePrecedente);
     let hasEtagereSuivante = parent.getObjectByName("etagere "+(id+1));
-    //console.log(hasEtagerePrecedente);
-    //console.log(hasEtagereSuivante);
 
     if (!selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales) {
       if (hasEtagerePrecedente) { var yMin = hasEtagerePrecedente.position.y }
@@ -1684,42 +1717,47 @@ function initDragEtagere() {
       else { var xMax = selectedMeuble.bloc[indiceCurrentBloc].hauteur / 2 - epaisseur / 2 }
     }
 
-      //console.log("yMin, yMax = ",yMin,yMax);
-      event.object.yMin=yMin+epaisseur;
-      event.object.yMax=yMax-epaisseur;
-      event.object.xMin=xMin+epaisseur;
-      event.object.xMax=xMax-epaisseur;
-      event.object.blocId=blocId;
+    event.object.yMin = yMin + epaisseur;
+    event.object.yMax = yMax - epaisseur;
+    event.object.xMin = xMin + epaisseur;
+    event.object.xMax = xMax - epaisseur;
+    event.object.blocId = blocId;
   });
 
   dragEtagereControls.addEventListener('drag', function (event) {
-    var obj1=event.object;
-    var num=obj1.numero;
-    var blocId=obj1.blocId;
+    var selectedEtagere = event.object;
+    console.log("etagere selectionnée ",selectedEtagere.element.numero);
+    console.log("bloc n°",selectedEtagere.bloc.numero);
+
     if (!selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales) {
-    let y=obj1.position.y;
-    y= y>event.object.yMax ? event.object.yMax : y;
-    y= y<event.object.yMin ? event.object.yMin : y;
-    obj1.position.set(0,y,0);
-    selectedMeuble.bloc[blocId].etagereY[event.object.numero] = event.object.position.y;
-  }
-  else {
-    //console.log("test");
-    let x=obj1.position.x;
-    x= x>event.object.xMax ? event.object.xMax : x;
-    x= x<event.object.xMin ? event.object.xMin : x;
-    obj1.position.set(x,0,0);
-    selectedMeuble.bloc[blocId].etagereY[event.object.numero] = event.object.position.x;
-  }
-    selectedMeuble.updateMeuble();
+      let y = selectedEtagere.position.y;
+      y = y > event.object.yMax ? event.object.yMax : y;
+      y = y < event.object.yMin ? event.object.yMin : y;
+      selectedEtagere.position.set(0, y, 0);
+      //selectedEtagere.element.y = y;
+    }
+    else {
+      let x = selectedEtagere.position.x;
+      x = x > event.object.xMax ? event.object.xMax : x;
+      x = x < event.object.xMin ? event.object.xMin : x;
+      selectedEtagere.position.set(x, 0, 0);
+      //selectedEtagere.element.x = x;
+      console.log(selectedEtagere.element);
+    }
+    //selectedMeuble.updateMeuble();
   });
 
   dragEtagereControls.addEventListener('dragend', function (event) {
     //event.object.material.emissive.set(0x000000);
+    var selectedEtagere = event.object;
+    let y = selectedEtagere.position.y;
+    selectedEtagere.element.y = y;
+    let x = selectedEtagere.position.x;
+    selectedEtagere.element.x = x;
     resetRaycast();
-
-    controls.enabled=true;
-    rayCastEnabled=true;
+    selectedMeuble.updateMeuble();
+    controls.enabled = true;
+    rayCastEnabled = true;
   });
 }
 
@@ -3265,8 +3303,8 @@ function updateButtonFixationGroup() {
 }
 
 function updateInterfaceLargeur() {
-  large.querySelector("#slider").value = selectedMeuble.largeur;
-  large.querySelector("#number").value = selectedMeuble.largeur;
+  largeurDiv.querySelector("#slider").value = selectedMeuble.largeur;
+  largeurDiv.querySelector("#number").value = selectedMeuble.largeur;
 }
 
 function updateInterfaceHauteur() {
