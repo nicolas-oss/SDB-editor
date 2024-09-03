@@ -24,7 +24,6 @@ class Element {
     this.isSelected=false;
     this.selectionBox=undefined;
     this.isRentrantLocal = undefined;
-    //console.log("element n°",this.numero,"created");
   }
 
   get style() {if (this.localStyle) {return this.localStyle}
@@ -39,10 +38,8 @@ class Element {
     else return this.bloc.type;}
 
   get y() {
-    //console.log("yPredefini : ",this.yPredefini);
     if (this.yPredefini) return this.yPredefini;
     var step = (this.bloc.h ) / (this.bloc.etageres + 1);
-    //return -1;
     return step * (-0.5 + this.numero - this.bloc.etageres / 2);}
 
   get x() {if (this.xPredefini) return this.bloc.xPredefini;
@@ -60,10 +57,6 @@ class Element {
      if (this.isRentrantLocal!=undefined) {return this.isRentrantLocal}
     else return this.bloc.isRentrant; 
   }
-
- /*  set yTiroir(value) {
-    this.yTiroirPredefini = value;
-  } */
 
   reset() {
     this.unherited = true;
@@ -103,7 +96,6 @@ class Element {
   }
 
   getTiroir() {
-    //this.updateOffsetTiroir;
     console.log("bloc n°",this.bloc.numero);
     console.log(this.bloc.elements[this.numero+1].y);
     let ySuivant = this.bloc.elements[this.numero+1].y;
@@ -134,17 +126,12 @@ class Element {
       tiroir.shortName = "tiroir";
       tiroirRoot.add(tiroir);
 
-     /*  //etagere pour manipulation
-      if (this.numero==1) tiroirRoot.add(this.getEtagere()); */
-
       //poignees
       let poigneeB = poigneeGroup.clone(true);
       poigneeB.name = "poignee";
       tiroir.add(poigneeB);
       let yPoignee = yl * (this.bloc.meuble.offsetPoignees / 250);
       poigneeB.position.set(0, yPoignee, epaisseur / 2 + offsetSuedois);
-      //console.log("getTiroir tiroir created");
-
     }
     let zTiroir = this.bloc.p / 2;
 
@@ -153,8 +140,6 @@ class Element {
   }
   
   getElement() {
-    //console.log("get Element",this.type);
-    //if (this.type=="Tiroirs")
     var elementRoot = new THREE.Object3D();
     elementRoot.name="elementRoot";
     elementRoot.attach(this.getTiroir());
@@ -163,8 +148,6 @@ class Element {
       let etagere=this.getEtagere();
       if (etagere) elementRoot.attach(etagere); }
     return elementRoot;
-    //if (this.type=="Etageres")
-    //  return this.getEtagere();
   }
 }
 
@@ -440,10 +423,10 @@ createBlocRoot() {
   }
 
   initializeBloc() {
-    //console.log("initializeBloc n°",this.numero);
     if (!this.blocRoot) this.createBlocRoot();
     this.updateLHP();
     this.createElementsBloc();
+
     //cadre bloc
     this.blocRoot.add(this.getCadre());
     offsetSuedois=((this.style=="Suédois 2")*epaisseurSuedois/4);
@@ -453,17 +436,6 @@ createBlocRoot() {
 
     //portes
     if (this.type == "Portes") {this.blocRoot.add(this.getPortes())}
-
-    /* //etageres
-    if (this.type == "Etageres" || (this.type == "Tiroirs" && !isPreviewOn)) {
-      this.blocRoot.add(this.getEtageres()); 
-      //console.log("blocRoot after etager add",this.blocRoot);
-    } */
-
-     /*//tiroirs
-    if (this.type == "Tiroirs") {
-      this.blocRoot.add(this.getTiroirs());
-    } */
 
      //elements
      if (this.type == "Tiroirs" || this.type == "Etageres") {
@@ -501,7 +473,6 @@ createBlocRoot() {
     })
 
     //boite de sélection
-    //geometry = new THREE.BoxGeometry( this.largeur+epsilon, this.hauteur+epsilon, this.profondeur+epsilon );
     geometry = RoundEdgedBox(this.l + epsilon, this.h + epsilon, this.p + epsilon, 2, 1, 1, 1, 1);
     boiteSelectionBloc = new THREE.Mesh(geometry, materialSelectionBloc);
     boiteSelectionBloc.name = "boiteSelectionBloc" + this.numero;
@@ -538,7 +509,7 @@ class Meuble {
     this.disposition = "horizontal";
     for (var i=0; i<this.nbBlocs; i++) {this.bloc[i] = new Bloc(this,i)}
     this.updateTaille();
-    this.hasPlateau=false;  //////////////////////////////initialiser bouton et menus couleurs
+    this.hasPlateau=false;
     this.hasCadre=false;
     this.hasSocle=false;
     this.hasPied=false;
@@ -546,7 +517,6 @@ class Meuble {
     this.offsetPoignees=0;
     this.isSousMeuble=false;
     this.createGeometryRoot();
-    //this.style="Basique";
     this.meuble=this;
     this.type="Tiroirs";
 
@@ -558,7 +528,6 @@ class Meuble {
     this.selectionBox = undefined;
 
     //commun à la classe bloc
-    //this.etageres = 3;
     this.ouverturePorte = "gauche";
     this.nombrePortes = "1";
     this.etageresVerticales = false;
@@ -1305,7 +1274,7 @@ let raycaster;
 let intersectedBloc;
 let intersectedMeuble;
 let intersectedEtagere;
-let intersectedHandleBloc;
+let intersectedHandle;
 let intersectedHandleMeuble;
 let intersectedElement;
 var intersectedBox;
@@ -1316,6 +1285,7 @@ var raycastedHandleBloc=undefined;
 var raycastedHandleMeuble=undefined;
 var raycastedElement=undefined;
 var raycastedObject=undefined;
+var raycastedHandle=undefined;
 var rayCastEnabled=true;
 raycaster = new THREE.Raycaster();
 
@@ -1326,7 +1296,6 @@ canvas.addEventListener('click', onCanvasClick);
 //canvas.addEventListener('dragstart', onCanvasDrag, false);
 canvas.addEventListener('contextmenu', onOpenContextMenu);
 canvas.addEventListener('mouseleave', function leaving() {
-  //console.log("leaving canvas"); resetRaycast();
 });
 
 window.addEventListener('keydown',onKeyDown);
@@ -1362,69 +1331,15 @@ if (!rayCastEnabled) return;
   return raycastedObject;
 }
 
-
-function checkRaycastElements() {
-  //if (!rayCastEnabled) return;
-  //raycaster.setFromCamera(pointer, camera, 0, 1000);
-  
-  //check intersect with elements
-  //const intersects = raycaster.intersectObjects(selectableElements, true);
-
-  if (selectionMode=="elements") raycastedElement=checkRaycastObject(selectableElements,"element");
-  /* if (intersects.length > 0 && selectionMode=="elements") {
-    if (intersectedElement != intersects[0].object) {
-      if (intersectedElement && !intersectedElement.element.selected) intersectedElement.visible = false;
-      intersectedElement = intersects[0].object;
-      intersectedElement.visible = true;
-      raycastedElement = intersects[0].object.element;
-    }
-  }
-  else {
-    if (intersectedElement && !intersectedElement.element.selected) intersectedElement.visible = false;
-    intersectedElement = null;
-    raycastedElement = undefined;
-  } */
-}
-
-
-
-
-
-
-
-function checkRaycastBlocs() {
-/*   if (!rayCastEnabled) return;
-  raycaster.setFromCamera(pointer, camera, 0, 1000);
-  //check intersect with blocs
-  const intersects = raycaster.intersectObjects(selectableBloc, true);
-  if (intersects.length > 0) {
-    if (intersectedBloc != intersects[0].object) {
-      if (intersectedBloc && selectionMode == "blocs") intersectedBloc.visible = false;
-      intersectedBloc = intersects[0].object;
-      if (selectionMode == "blocs") intersectedBloc.visible = true;
-      raycastedBloc = intersects[0].object.bloc;
-    }
-  }
-  else {
-    if (intersectedBloc) intersectedBloc.visible = false;
-    intersectedBloc = null;
-    raycastedBloc = undefined;
-  } */
-    if (selectionMode=="blocs") raycastedElement=checkRaycastObject(selectableBloc,"bloc");
-
-}
-
 function checkRaycastMeubles() {
-  //check intersect with meubles
   if (!rayCastEnabled) return;
-
   const intersectsMeuble = raycaster.intersectObjects(selectableMeuble, true);
   //console.log(selectableMeuble);
   if (intersectsMeuble.length > 0) {
     if (intersectedMeuble != intersectsMeuble[0].object) {
       if (intersectedMeuble && selectionMode == "meubles" && intersectedMeuble.shortName=="boiteSelectionMeuble") intersectedMeuble.visible = false;
       intersectedMeuble = intersectsMeuble[0].object;
-      if (selectionMode == "meubles") {intersectedMeuble.visible = true;} //showChildren(intersectedMeuble);}
+      if (selectionMode == "meubles") {intersectedMeuble.visible = true;}
       raycastedMeuble = intersectsMeuble[0].object;
     }
   }
@@ -1437,10 +1352,9 @@ function checkRaycastMeubles() {
 
 function checkRaycastEtageres() {
   if (!rayCastEnabled) return;
-
+  raycaster.setFromCamera(pointer, camera, 0, 1000);
   const intersectsEtagere = raycaster.intersectObjects(selectableEtagere, false);
   if (intersectsEtagere[0]) console.log(intersectsEtagere[0].name);
-
   if (intersectsEtagere.length > 0) {
     if (intersectedEtagere != intersectsEtagere[0].object) {
       if (intersectedEtagere && selectionMode == "etageres") {
@@ -1464,93 +1378,46 @@ function checkRaycastEtageres() {
   }
 }
 
-function checkRaycastHandleBlocs() {
+function checkRaycastHandle(selectableList) {
   if (!rayCastEnabled) return;
-  const intersectsHandleBloc = raycaster.intersectObjects(selectableHandleBloc, true);
+  raycaster.setFromCamera(pointer, camera, 0, 1000);
 
-  if (intersectsHandleBloc.length > 0 && selectionMode == "ajusteBlocs") {
-    if (intersectedHandleBloc != intersectsHandleBloc[0].object) {
-      if (intersectedHandleBloc && (intersectedHandleBloc.shortName=="handleBloc" || intersectedHandleBloc.shortName=="handleMeuble")) {
-        intersectedHandleBloc.material.depthTest = true;
-        intersectedHandleBloc.visible = false;
-        intersectedHandleBloc.renderOrder = 1;
+  const intersectsHandleBloc = raycaster.intersectObjects(selectableList, false);
+  if (intersectsHandleBloc.length > 0 ) {
+    if (intersectedHandle != intersectsHandleBloc[0].object) {
+      if (intersectedHandle && (intersectedHandle.shortName=="handleBloc" || intersectedHandle.shortName=="handleMeuble")) {
+        intersectedHandle.material.depthTest = true;
+        intersectedHandle.visible = false;
+        intersectedHandle.renderOrder = 1;
       }
-      intersectedHandleBloc = intersectsHandleBloc[0].object;
-      //console.log(intersectedHandleBloc.shortName);
-      intersectedHandleBloc.visible = true;
-      intersectedHandleBloc.material.depthTest = false;
-      intersectedHandleBloc.renderOrder = 1;
-      raycastedHandleBloc = intersectsHandleBloc[0].object.bloc;
+      intersectedHandle = intersectsHandleBloc[0].object;
+      //console.log(intersectedHandle.shortName);
+      intersectedHandle.visible = true;
+      intersectedHandle.material.depthTest = false;
+      intersectedHandle.renderOrder = 1;
+      raycastedHandle = intersectsHandleBloc[0].object.bloc;
     }
   }
   else {
-    if (intersectedHandleBloc && (intersectedHandleBloc.shortName=="handleBloc" || intersectedHandleBloc.shortName=="handleMeuble")) {
-      intersectedHandleBloc.visible = false;
-      intersectedHandleBloc.material.depthTest = true;
-      intersectedHandleBloc.renderOrder = 0;
+    if (intersectedHandle && (intersectedHandle.shortName=="handleBloc" || intersectedHandle.shortName=="handleMeuble")) {
+      intersectedHandle.visible = false;
+      intersectedHandle.material.depthTest = true;
+      intersectedHandle.renderOrder = 0;
     }
-    intersectedHandleBloc = null;
-    raycastedHandleBloc = undefined;
+    intersectedHandle = null;
+    raycastedHandle = undefined;
   }
-}
-
-function checkRaycastHandleMeubles() {
-  if (!rayCastEnabled) return;
-
-  //check intersect with handle meuble
-  const intersectsHandleMeuble = raycaster.intersectObjects(selectableHandleMeuble, true);
-  if (intersectsHandleMeuble.length > 0 && selectionMode == "ajusteMeubles") {
-    if (intersectedHandleMeuble != intersectsHandleMeuble[0].object) {
-      if (intersectedHandleMeuble) {
-        //intersectedHandleMeuble.material.depthTest = true;
-        var test = intersectedHandleMeuble.hasOwnProperty("shortName");
-        if (test && intersectedHandleMeuble.shortName=="handleMeuble") intersectedHandleMeuble.visible = false;
-        intersectedHandleMeuble.renderOrder = 1;
-      }
-      intersectedHandleMeuble = intersectsHandleMeuble[0].object;
-      intersectedHandleMeuble.visible = true;
-      //intersectedHandleMeuble.material.depthTest = false;
-      intersectedHandleMeuble.renderOrder = 1;
-      raycastedHandleMeuble = intersectsHandleMeuble[0].object;
-    }
-  }
-  else {
-    if (intersectedHandleMeuble) {
-      let test = intersectedHandleMeuble.hasOwnProperty("shortName");
-      if (test) {
-        if (intersectedHandleMeuble.shortName=="handleMeuble") intersectedHandleMeuble.visible = false;
-        //intersectedHandleMeuble.material.depthTest = true;
-        intersectedHandleMeuble.renderOrder = 0;
-        //console.log("here");
-      } 
-    }
-    intersectedHandleMeuble = null;
-    raycastedHandleMeuble = undefined;
-  }
+  return raycastedHandle;
 }
 
 function checkRaycast() {
   if (!rayCastEnabled) return;
-  if (selectionMode=="elements") { raycastedElement=checkRaycastObject(selectableElements,"element");
-  }
-  if (selectionMode=="blocs") raycastedBloc=checkRaycastObject(selectableBloc,"bloc");
-  if (selectionMode=="meubles") {
-    raycastedMeuble=checkRaycastObject(selectableMeuble,"meuble");
-    //console.log(checkRaycastObject(selectableMeuble,"meuble"));
-  }
-/*   if (selectionMode=="etageres") {
-    raycastedEtagere=checkRaycastObject(selectableEtagere,"element");
-    if (raycastedEtagere) {raycastedEtagere
-
-    }
-  } */
-
-  //checkRaycastElements();
-  //checkRaycastMeubles();
-  //checkRaycastBlocs();
+  if (selectionMode=="elements") {raycastedElement=checkRaycastObject(selectableElements,"element");}
+  if (selectionMode=="blocs") {raycastedBloc=checkRaycastObject(selectableBloc,"bloc");}
+  if (selectionMode=="meubles") {raycastedMeuble=checkRaycastObject(selectableMeuble,"meuble");}
+  if (selectionMode=="ajusteMeubles") {raycastedHandleMeuble=checkRaycastHandle(selectableHandleMeuble);}
+  if (selectionMode=="ajusteBlocs") {raycastedHandleBloc=checkRaycastHandle(selectableHandleBloc);}
   if (selectionMode=="etageres") checkRaycastEtageres();
-  //checkRaycastHandleBlocs();
-  //checkRaycastHandleMeubles();
 }
 
 //raycast sur les objets 3d lors d'un changement de souris ou de camera
@@ -1632,7 +1499,6 @@ function hideRaycastedBox(raycastedBox) {
   }
 }
 
-
 function hideAllRaycastedBoxes() {
   hideRaycastedBox(raycastedMeuble);
   hideRaycastedBox(raycastedElement);
@@ -1660,7 +1526,7 @@ function clearRaycast() {
     }
   } */
  
- /*  if (intersectedHandleBloc != null) { intersectedHandleBloc.visible = false; intersectedHandleBloc = null; }
+ /*  if (intersectedHandle != null) { intersectedHandle.visible = false; intersectedHandle = null; }
   if (intersectedHandleMeuble != null) { intersectedHandleMeuble.visible = false; intersectedHandleMeuble = null; }
   if (intersectedEtagere != null) { intersectedEtagere.visible = false; intersectedEtagere = null; }
   if (intersectedElement != null) { intersectedElement.visible = false; intersectedElement = null; } */
@@ -2577,7 +2443,6 @@ var YDiv,YDivSlider,YDivInput;
 var styleMenu;
 var slidersAspect;
 var checkboxVertical;
-//var divSwitchVertical;
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
 var menuPoignees;
 var menuTexturesPlateau,menuTexturesCadre,menuTexturesMeuble,menuTexturesTiroirs;
@@ -2618,7 +2483,6 @@ function initializeScene() {
     addListenerMenuPoignees(menuPoignees);
     frameCamera();
     renderer.setAnimationLoop( animate );
-
     initDragHandleBloc();
     initDragHandleMeuble();
     setSelectionMode("meubles");   
@@ -2659,7 +2523,6 @@ function getHTMLElements () {
   listPoigneesName = document.getElementById("listPoigneesName");
   styleMenu = document.getElementById("style");
   slidersAspect = document.getElementById("slidersAspect");
-  //divSwitchVertical = document.getElementById("divSwitchVertical");
   checkboxVertical = document.getElementById("checkboxVertical");
   colorDrawer = document.getElementById("colorDrawer");
   colorMeuble = document.getElementById("colorMeuble");
@@ -2773,12 +2636,7 @@ function initializeInterface() {
   document.getElementById("switchSousMeuble").addEventListener("click", switchSousMeuble);
 
   //functions blocs
-  function switchPorte() {
-    setSelectionType("Portes");
-   /*  selectedMeuble.bloc[indiceCurrentBloc].type = "Portes";
-    refreshInterfaceBlocs();
-    selectedMeuble.updateMeuble(); */
-  }
+  function switchPorte() {setSelectionType("Portes");}
 
 function setSelectionType(value) {
   for (var i=selectedObjects.length; i>0; i--)
@@ -2891,9 +2749,12 @@ function updateSelection() {
     frameCamera();
   }, false);
 
-  function changeStyle(event) { setValueOnSelection("style",event.target.value);
-    console.log("style ",event.target.value);
-    console.log("style selection",selectedObjects[0].style);
+  function changeStyle(event) { 
+    if (selectedObjects.length>0) {setValueOnSelection("style",event.target.value)}
+    else {
+      globalStyle=event.target.value;
+      updateScene();
+    }
   }
 
   styleMenu.addEventListener("change", function setStyle(event) { changeStyle(event)}, false);
@@ -2991,86 +2852,29 @@ function setSelectionMode(value) {
   clearSelectionList();
   updateAllSelectable();
   refreshSelectButtons();
-  //clearRaycast();
 }
 
 function refreshSelectButtons() {
-  if (selectionMode=="meubles") {
-    buttonSelectMeuble.className="buttonOn";
-    /* dragMeubleControls.activate();
-    dragBlocControls.deactivate();
-    dragEtagereControls.deactivate();
-    dragElementControls.deactivate();
-
-    if (dragHandleBlocControls) dragHandleBlocControls.deactivate();
-    if (dragHandleMeubleControls) dragHandleMeubleControls.deactivate(); */
-  }
+  if (selectionMode=="meubles") {buttonSelectMeuble.className="buttonOn";}
   else {buttonSelectMeuble.className="buttonOff"}
 
-  if (selectionMode=="ajusteMeubles") {
-    buttonAdjustMeuble.className="buttonOn";
-    /* dragMeubleControls.deactivate();
-    dragBlocControls.deactivate();
-    dragEtagereControls.deactivate();
-    dragElementControls.deactivate();
-
-    if (dragHandleBlocControls) dragHandleBlocControls.deactivate();
-    if (dragHandleMeubleControls) dragHandleMeubleControls.activate(); */
-
-  }
+  if (selectionMode=="ajusteMeubles") {buttonAdjustMeuble.className="buttonOn";}
   else {buttonAdjustMeuble.className="buttonOff"}
 
-  if (selectionMode=="blocs") {
-    buttonSelectBloc.className="buttonOn";
-    /* dragMeubleControls.deactivate();
-    dragBlocControls.activate();
-    dragEtagereControls.deactivate();
-    dragElementControls.deactivate();
-
-    if (dragHandleBlocControls) dragHandleBlocControls.deactivate();
-    if (dragHandleMeubleControls) dragHandleMeubleControls.deactivate(); */
-  }
+  if (selectionMode=="blocs") {buttonSelectBloc.className="buttonOn";}
   else {buttonSelectBloc.className="buttonOff"}
 
-  if (selectionMode=="ajusteBlocs") {
-    buttonAdjustBloc.className="buttonOn";
-    /* dragMeubleControls.deactivate();
-    dragBlocControls.deactivate();
-    dragEtagereControls.deactivate();
-    dragElementControls.deactivate();
-
-    if (dragHandleBlocControls) dragHandleBlocControls.activate();
-    if (dragHandleMeubleControls) dragHandleMeubleControls.deactivate(); */
-  }
+  if (selectionMode=="ajusteBlocs") {buttonAdjustBloc.className="buttonOn";}
   else {buttonAdjustBloc.className="buttonOff"
     
-  if (selectionMode=="etageres") {
-    buttonAdjustEtagere.className="buttonOn";
-   /*  dragMeubleControls.deactivate();
-    dragBlocControls.deactivate();
-    dragEtagereControls.activate()
-    dragElementControls.deactivate();
-
-    if (dragHandleBlocControls) dragHandleBlocControls.deactivate();
-    if (dragHandleMeubleControls) dragHandleMeubleControls.deactivate(); */
-  }
+  if (selectionMode=="etageres") {buttonAdjustEtagere.className="buttonOn";}
   else {buttonAdjustEtagere.className="buttonOff"}
 
 
-  if (selectionMode=="elements") {
-    buttonSelectElement.className="buttonOn";
-   /*  dragMeubleControls.deactivate();
-    dragBlocControls.deactivate();
-    dragEtagereControls.deactivate();
-    dragElementControls.activate();
-    if (dragHandleBlocControls) dragHandleBlocControls.deactivate();
-    if (dragHandleMeubleControls) dragHandleMeubleControls.deactivate(); */
-  }
+  if (selectionMode=="elements") {buttonSelectElement.className="buttonOn";}
   else {buttonSelectElement.className="buttonOff"}
 }
 }
-
-
 
 function dropMenu(event) {
  let elt=document.getElementById(event.target.attributes["cible"].value);
@@ -3299,7 +3103,6 @@ function getPlancheSuedoise(x, y, z, largeur, epaisseurS) {
   pieceA.translate(largeur / 2 - x / 2, 0, 0);
   pieceB.translate(-largeur / 2 + x / 2, 0, 0);
   let pieceC = new THREE.BufferGeometry;
-  //let offset=0.7;
   let offset = -0.70;
   pieceC = RoundEdgedBox(x - 2 * largeur - offset, largeur, epaisseurS, 0.5, 1, 1, 1, 1);
   let pieceD = pieceC.clone(true);
@@ -3524,8 +3327,6 @@ function onMaterialAnimationFinish (num) {
   boiteSelectionMeuble.material = materialSelectionMeuble;
   mixerMaterial.removeEventListener('finished', onMaterialAnimationFinish, false);
   mixerMaterial=undefined;
-//console.log("show children boite");
-//console.log(boiteSelectionMeuble);
   showChildren(boiteSelectionMeuble);
 }
 
@@ -3675,7 +3476,6 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     selectedMeuble.computeBlocsSize();
     updateInterfaceBlocs();
     selectedMeuble.updateMeuble();
-    //meubles[num].placeMeuble();
     YDivSlider.value = selectedMeuble.y;
     YDivInput.value = YDivSlider.value;
     frameCamera();
