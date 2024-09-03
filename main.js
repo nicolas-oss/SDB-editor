@@ -14,12 +14,9 @@ class Element {
     this.unherited = true;
     this.bloc=bloc;
     this.meuble=this.bloc.meuble;
-    //this.numeroBloc=bloc.numero;
     this.xPredefini=undefined;
     this.yPredefini=undefined;
     this.yTiroirPredefini=undefined;
-    this.offsetTiroir=0;
-    this.updateOffsetTiroir();
 
     //commun aux autres classes
     this.localType=undefined;
@@ -27,11 +24,10 @@ class Element {
     this.isSelected=false;
     this.selectionBox=undefined;
     this.isRentrantLocal = undefined;
-    this.isRentrant=false;
-    console.log("element n°",this.numero,"created");
+    //console.log("element n°",this.numero,"created");
   }
 
-  get style() {if (this.localStyle) {return this.meuble.localStyle}
+  get style() {if (this.localStyle) {return this.localStyle}
     else return this.bloc.style;}
 
   set style(value) {this.localStyle=value;}
@@ -55,14 +51,14 @@ class Element {
 
   get yTiroir() {if (this.numero<this.bloc.etageres) {
       if (this.bloc.elements[this.numero-1].yPredefini) return this.bloc.elements[this.numero-1].yPredefini}
-    var step = (this.bloc.h - 0.25 * epaisseur - this.offsetTiroir) / (this.bloc.etageres + 1);
+    var step = (this.bloc.h - 0.25 * epaisseur - this.offsetTiroir()) / (this.bloc.etageres + 1);
     return step * (0.5 + this.numero  - this.bloc.etageres / 2);}
 
   set isRentrant(value) {this.isRentrantLocal = value;}
 
-  get isRentrant() {return this.isRentrantLocal;
-    /* if (this.isRentrantLocal) {return this.isRentrantLocal}
-    else return this.bloc.isRentrant; */
+  get isRentrant() {//return this.isRentrantLocal;
+     if (this.isRentrantLocal!=undefined) {return this.isRentrantLocal}
+    else return this.bloc.isRentrant; 
   }
 
  /*  set yTiroir(value) {
@@ -79,12 +75,10 @@ class Element {
     this.localStyle = undefined;
   }
 
-  updateOffsetTiroir() {
-    console.log(this.isRentrantLocal);
-    console.log(this.isRentrant);
-    if (this.isRentrant) {this.offsetTiroir=epaisseur}
-    else {this.offsetTiroir=0}
-    console.log(this.offsetTiroir);
+  offsetTiroir() {
+    if (this.isRentrant) {var offsetTiroir=epaisseur}
+    else {var offsetTiroir=0}
+    return offsetTiroir;
   }
 
   getEtagere() {
@@ -109,19 +103,19 @@ class Element {
   }
 
   getTiroir() {
-    this.updateOffsetTiroir;
+    //this.updateOffsetTiroir;
     console.log("bloc n°",this.bloc.numero);
     console.log(this.bloc.elements[this.numero+1].y);
     let ySuivant = this.bloc.elements[this.numero+1].y;
     let yl = ySuivant-this.y;
     let yTiroir = this.y + yl / 2;
-    let xl = this.bloc.l - 0.25 * epaisseur - 2 * this.offsetTiroir;
+    let xl = this.bloc.l - 0.25 * epaisseur - 2 * this.offsetTiroir();
     let zl = epaisseur;
 
     let tiroirRoot=new THREE.Object3D();
 
     //boite de selection element
-    geometry = new THREE.BoxGeometry(xl+0.05, yl+0.05, this.bloc.meuble.profondeur + this.offsetTiroir + offsetSuedois + 0.1 + epaisseur);
+    geometry = new THREE.BoxGeometry(xl+0.05, yl+0.05, this.bloc.meuble.profondeur + this.offsetTiroir() + offsetSuedois + 0.1 + epaisseur);
     let boiteSelectionElement = new THREE.Mesh(geometry, materialSelectionEtagere);
     boiteSelectionElement.name = "boiteSelectionElement " + this.numero;
     boiteSelectionElement.shortName = "boiteSelectionElement";
@@ -154,7 +148,7 @@ class Element {
     }
     let zTiroir = this.bloc.p / 2;
 
-    tiroirRoot.position.set(0, yTiroir, zTiroir - this.offsetTiroir);
+    tiroirRoot.position.set(0, yTiroir, zTiroir - this.offsetTiroir());
     return tiroirRoot;
   }
   
@@ -187,23 +181,18 @@ class Bloc {
     this.etageresLocal = 3;
     for (var i=0; i<this.etageres+2; i++) {this.elements[i] = new Element(this,i)} // -1/+1 pour étageres 0 et n+1
     this.selectionBox = undefined;
-    //commun autres autres classes
+    
+    //commun aux autres classes
     this.localType = undefined;
     this.localStyle = undefined;
     this.isSelected = false;
-    this.isRentrantLocal = false;
-    //this.isRentrant=false;
-    //commun à la classe meuble
-    //this.etageres=3;
-    
+    this.isRentrantLocal = undefined;
     this.ouverturePorteLocal = undefined;
     this.nombrePortesLocal = undefined;
     this.etageresVerticalesLocal = undefined;
   }
 
    get etageres() {
-    //console.log(this.etageresLocal);
-    //return 3;
     if (this.etageresLocal) {return this.etageresLocal}
     else return this.meuble.etageres;
   }
@@ -228,27 +217,18 @@ class Bloc {
   set nombrePortes(value) { this.nombrePortesLocal=value }
   //set etageresVerticales(value) { this.etageresVerticalesLocal=value }
 
-  get style() {
-    if (this.localStyle) {return this.meuble.localStyle}
-    else return this.meuble.style;
-  }
+  get style() { if (this.localStyle) {return this.localStyle;}
+    else return this.meuble.style;}
 
-  get type() { 
-    if (this.localType) {
-      return this.localType;}
-    else {
-      //console.log("this.meuble.type",this.meuble.type);
-      return this.meuble.type;}
-  }
+  get type() { if (this.localType) {return this.localType;}
+    else { return this.meuble.type;}}
 
   set type(value) { this.localType = value; }
   set isRentrant(value) { this.isRentrantLocal = value; }
   set style(value) { this.localStyle = value; } 
 
-  get isRentrant() {
-    if (this.isRentrantLocal) {return this.isRentrantLocal}
-    else return this.meuble.isRentrant;
-  }
+  get isRentrant() { if (this.isRentrantLocal!=undefined) {return this.isRentrantLocal}
+    else return this.meuble.isRentrant;}
 
   reset () {
     this.unherited=true;
@@ -288,14 +268,12 @@ createBlocRoot() {
     cadreBlocRoot.name="cadreBlocRoot"+this.numero;
     cadreBlocRoot.shortName="cadreBlocRoot";
     cadreBlocRoot.add(plancheBas,plancheHaut,plancheDroite,plancheGauche);
-    //scene.add(cadreBlocRoot);
-    //this.blocRoot.add(plancheBas,plancheHaut,plancheDroite,plancheGauche);
     return cadreBlocRoot;
   }
 
   getPortes() {
     var porte = [];
-      var offset = this.isRentrant * epaisseur;
+      var offset = epaisseur * this.isRentrant ;
       if (this.nombrePortes == "1") {
         geometry = createPlanche(this.l - 0.25 * epaisseur - 2 * offset, this.h - 0.25 * epaisseur - 2 * offset, epaisseur, this.style);
         porte[0] = new THREE.Mesh(geometry, materialTiroirs);
@@ -375,7 +353,6 @@ createBlocRoot() {
     tiroirsRoot.name = "tiroirsRoot" + this.numero;
     tiroirsRoot.shortName = "tiroirsRoot";
     for (var i = 0; i < this.etageres+1; i++) {
-      //console.log("tiroir n°",i);
       tiroirsRoot.add(this.elements[i].getTiroir());
     }
     return tiroirsRoot;
@@ -576,7 +553,7 @@ class Meuble {
     this.isRentrant = false;
 
     //commun aux autres classes
-    this.localStyle = "Arrondi";
+    this.localStyle = undefined;
     this.isSelected = false;
     this.selectionBox = undefined;
 
@@ -1357,12 +1334,9 @@ window.addEventListener('keyup',onKeyUp);
 
 function checkRaycastObject(selectableList,objectName) {
 if (!rayCastEnabled) return;
-//var raycastedObject;
   raycaster.setFromCamera(pointer, camera, 0, 1000);
   const intersects = raycaster.intersectObjects(selectableList, true);
-  //if (intersects.length > 0 && selectionMode=="elements") {
   if (intersects.length > 0) {
-    //console.log(intersects[0].object);
     if (intersectedBox != intersects[0].object) {
       if (intersectedBox && intersectedBox[objectName] && !intersectedBox[objectName].isSelected) {
         intersectedBox.visible = false;
@@ -1370,26 +1344,21 @@ if (!rayCastEnabled) return;
       intersectedBox = intersects[0].object;
       intersectedBox.visible = true;
       raycastedObject = intersectedBox[objectName];
-      //console.log(raycastedObject);
     }
   }
   else {
-    //if (intersectedBox) console.log(intersectedBox,intersectedBox[objectName]);
     if (intersectedBox) {
       if (intersectedBox[objectName] && !intersectedBox[objectName].isSelected) {
         intersectedBox.visible = false; 
         }
     intersectedBox = null;
     raycastedObject = undefined;
-    //console.log(raycastedObject);
    }
   }
   if (intersectedBox && intersectedBox[objectName] && intersectedBox[objectName].isSelected) {
     intersectedBox.visible = true;
     raycastedObject = intersectedBox[objectName];
-    //console.log(raycastedObject);
   }
-  //if (intersectedBox) console.log(intersectedBox);//,intersectedBloc[objectName])}
   return raycastedObject;
 }
 
@@ -1468,15 +1437,11 @@ function checkRaycastMeubles() {
 
 function checkRaycastEtageres() {
   if (!rayCastEnabled) return;
-  //console.log(selectableEtagere);
 
-  //check intersect with etageres
   const intersectsEtagere = raycaster.intersectObjects(selectableEtagere, false);
   if (intersectsEtagere[0]) console.log(intersectsEtagere[0].name);
 
   if (intersectsEtagere.length > 0) {
-    //console.log(intersectedEtagere);
-
     if (intersectedEtagere != intersectsEtagere[0].object) {
       if (intersectedEtagere && selectionMode == "etageres") {
         intersectedEtagere.material.depthTest = false;
@@ -1484,8 +1449,6 @@ function checkRaycastEtageres() {
         intersectedEtagere.renderOrder = 1;
       }
       intersectedEtagere = intersectsEtagere[0].object;
-      //console.log("etagere raycasted");
-
       if (selectionMode == "etageres") intersectedEtagere.material = materialSelectionEtagere;
       raycastedEtagere = intersectsEtagere[0].object.numero;
     }
@@ -1503,8 +1466,6 @@ function checkRaycastEtageres() {
 
 function checkRaycastHandleBlocs() {
   if (!rayCastEnabled) return;
-
-  //check intersect with handle bloc
   const intersectsHandleBloc = raycaster.intersectObjects(selectableHandleBloc, true);
 
   if (intersectsHandleBloc.length > 0 && selectionMode == "ajusteBlocs") {
@@ -2872,46 +2833,14 @@ function updateSelection() {
     }
 }
 
-  function switchTiroirs() { 
-    setSelectionType("Tiroirs");
-    refreshInterfaceBlocs();
-    console.log("tiroirs");
-    updateSelection();
-  }
-  
-  function switchEtageres() { 
-    setSelectionType("Etageres");
-    refreshInterfaceBlocs();
-    selectedMeuble.updateMeuble();
-  }
-
-  function switchPanneau() { 
-    setSelectionType("Panneau");
-    refreshInterfaceBlocs();
-    selectedMeuble.updateMeuble();
-  }
-
-  function switchSousMeuble() {
-    selectedMeuble.bloc[indiceCurrentBloc].type="SousMeuble"; 
-    refreshInterfaceBlocs();
-    selectedMeuble.updateMeuble();
-  }
-
-  function switchUnePorte() {
-    setValueOnSelection("nombrePortes","1");
-  }
-
-  function switchDeuxPortes() {
-    setValueOnSelection("nombrePortes","2");
-  }
-
-  function switchPorteGauche() {
-    setValueOnSelection("ouverturePorte","gauche");
-  }
-
-  function switchPorteDroite() {
-    setValueOnSelection("ouverturePorte","droite");
-  }
+  function switchTiroirs() { setValueOnSelection("type","Tiroirs"); }
+  function switchEtageres() { setValueOnSelection("type","Etageres"); }
+  function switchPanneau() { setValueOnSelection("type","Panneau"); }
+  function switchSousMeuble() { setValueOnSelection("type","SousMeuble"); }
+  function switchUnePorte() { setValueOnSelection("nombrePortes","1"); }
+  function switchDeuxPortes() { setValueOnSelection("nombrePortes","2"); }
+  function switchPorteGauche() { setValueOnSelection("ouverturePorte","gauche"); }
+  function switchPorteDroite() { setValueOnSelection("ouverturePorte","droite"); }
 
   buttonUnePorte.addEventListener("click", switchUnePorte, false);
   buttonDeuxPortes.addEventListener("click", switchDeuxPortes, false);
@@ -2926,8 +2855,8 @@ function updateSelection() {
   }
 
   function switchRentrant() {
-    selectedMeuble.bloc[indiceCurrentBloc].isRentrant=!selectedMeuble.bloc[indiceCurrentBloc].isRentrant;
-    selectedMeuble.updateMeuble();
+    let valueOnLast = selectedObjects[selectedObjects.length-1].isRentrant;
+    setValueOnSelection("isRentrant",!valueOnLast);
   } 
 
   selectListMeubles.addEventListener("change", function eventListMeublesPopup(event) { 
@@ -2961,10 +2890,14 @@ function updateSelection() {
     updateSelectableBlocs();
     frameCamera();
   }, false);
-  styleMenu.addEventListener("change", function changeStyle(event) { 
-    globalStyle = event.target.value;
-    updateScene(); 
-  }, false);
+
+  function changeStyle(event) { setValueOnSelection("style",event.target.value);
+    console.log("style ",event.target.value);
+    console.log("style selection",selectedObjects[0].style);
+  }
+
+  styleMenu.addEventListener("change", function setStyle(event) { changeStyle(event)}, false);
+
   colorMeuble.addEventListener("input", function eventColorMeubleChange(event) {
     material.color=new THREE.Color(event.target.value);
   }, false);
@@ -3636,7 +3569,6 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     if (i==indiceCurrentMeuble) o.selected="selected";
     selectListMeubles.append(o);
   }
-//listMeublesName.value=meuble.name;  // keep
   hauteurDiv=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
   meubleSliders.append(hauteurDiv);
   hauteurDivSlider=hauteurDiv.querySelector("#slider");
@@ -3768,9 +3700,9 @@ function updateButtonDelete() {
     buttonDeleteMeuble.disabled = true;
   }
 }
+
 function updateButtonPlateau() { if (selectedMeuble.hasPlateau) {buttonPlateau.className="buttonOn"} else {buttonPlateau.className="buttonOff"}}
 function updateButtonCadre() {if (selectedMeuble.hasCadre) {buttonCadre.className="buttonOn"} else {buttonCadre.className="buttonOff"}}
-
 function updateButtonSocle() { if (selectedMeuble.hasSocle) {buttonSocle.className="buttonOn"} else {buttonSocle.className="buttonOff"}}
 function updateButtonPied() { if (selectedMeuble.hasPied) {buttonPied.className="buttonOn"} else {buttonPied.className="buttonOff"} }
 function updateButtonSuspendu() {  if (selectedMeuble.IsSuspendu) {buttonSuspendu.className="buttonOn"} else {buttonSuspendu.className="buttonOff"}}
@@ -3871,6 +3803,9 @@ function refreshInterfaceBlocs() {
 
   if (object.etageresVerticales) {buttonEtageresVerticales.checked=true;} else {buttonEtageresVerticales.checked=false;}
   if (object.isRentrant) {checkboxRentrant.checked=true;} else {checkboxRentrant.checked=false;}
+  console.log("object.isRentrant=",object.isRentrant);
+  console.log("object.meuble.isRentrant=",object.meuble.isRentrant);
+
 }
 
 function updateInterfaceBlocs() {
