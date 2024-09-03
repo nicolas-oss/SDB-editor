@@ -96,8 +96,6 @@ class Element {
   }
 
   getTiroir() {
-    console.log("bloc n°",this.bloc.numero);
-    console.log(this.bloc.elements[this.numero+1].y);
     let ySuivant = this.bloc.elements[this.numero+1].y;
     let yl = ySuivant-this.y;
     let yTiroir = this.y + yl / 2;
@@ -143,7 +141,6 @@ class Element {
     var elementRoot = new THREE.Object3D();
     elementRoot.name="elementRoot";
     elementRoot.attach(this.getTiroir());
-    console.log("getEtagere");
     if (this.type=="Etageres" || this.type=="Tiroirs") {
       let etagere=this.getEtagere();
       if (etagere) elementRoot.attach(etagere); }
@@ -342,18 +339,13 @@ createBlocRoot() {
   }
 
   getElements() {
-    //console.log('getElements');
     var elementsRoot = new THREE.Object3D();
     elementsRoot.name = "elementsRoot" + this.numero;
     elementsRoot.shortName = "elementsRoot";
     for (var i = 0; i < this.etageres+1; i++) {
-      console.log("etagere ",i);
-      console.log("etagere ",this.elements[i]);
       let element = this.elements[i].getElement();
       if (element) elementsRoot.add(element);
     }
-    //console.log("ELEMENT ROOT");
-
     return elementsRoot;
   }
 
@@ -983,23 +975,12 @@ intersectX(indiceMeubleB) {
   getNewBoiteManipulationHandles () {
     let handleMeubleRoot=new THREE.Object3D();
     handleMeubleRoot.name="handleMeubleRoot";
-    /* geometry = new THREE.BoxGeometry(
-      this.largeur + epaisseur+0.05,
-      epaisseurHandleBlocs,
-      this.profondeur + epaisseur+0.05); */
-    //geometry
-   /*  geometry = RoundEdgedBox(
-        this.largeur + 2*epaisseur+0.05,
-        epaisseurHandleBlocs,
-        this.profondeur + 2*epaisseur+0.05,
-        2,1,1,1,1); */
     geometry = new THREE.BoxGeometry(
       this.largeur + 4*epaisseur+0.05,
         epaisseurHandleBlocs,
         this.profondeur + 4*epaisseur+0.05);
     let handleMeubleHaut = new THREE.Mesh(geometry, materialSelectionMeuble);
     handleMeubleHaut.position.set(0, this.hauteur / 2, 0);
-    //console.log("here");
     handleMeubleHaut.visible=false;
     handleMeubleHaut.name = "handleMeubleHaut";
     handleMeubleHaut.shortName = "handleMeuble";
@@ -1015,13 +996,6 @@ intersectX(indiceMeubleB) {
     handleMeubleRoot.add(handleMeubleHaut);
 
     //to keep poignee inf
-    /*let handleMeubleBas = new THREE.Mesh(geometry, materialSelectionMeuble);
-    handleMeubleBas.position.set(0, -this.hauteur / 2 - epaisseurHandleBlocs / 2, 0);
-    handleMeubleBas.visible=false;
-    handleMeubleBas.name = "handleMeubleBas";
-    handleMeubleBas.shortName = "handleMeuble";
-    blocs.add(handleMeubleBas);*/
-
     geometry = new THREE.BoxGeometry(
       epaisseurHandleBlocs,
       this.hauteur + 4 * epaisseur - 0.05,
@@ -1069,16 +1043,11 @@ intersectX(indiceMeubleB) {
   }
 
   updateMeuble() {
-    //console.log("updateMeuble");
     this.updateGeometry();
-    //let blocs = this.root.getObjectByName("blocs");
-    //let geometries = this.root.getObjectByName("geometries");
     let handlesMeuble = this.root.getObjectByName("handlesMeuble");
-    
     handlesMeuble.children=[];
     geometry.dispose();
     material.dispose();
-
     if (!isPreviewOn) {
       //boite de sélection
       let boiteSelectionMeuble = this.getNewBoiteSelectionMeuble();
@@ -1334,7 +1303,6 @@ if (!rayCastEnabled) return;
 function checkRaycastMeubles() {
   if (!rayCastEnabled) return;
   const intersectsMeuble = raycaster.intersectObjects(selectableMeuble, true);
-  //console.log(selectableMeuble);
   if (intersectsMeuble.length > 0) {
     if (intersectedMeuble != intersectsMeuble[0].object) {
       if (intersectedMeuble && selectionMode == "meubles" && intersectedMeuble.shortName=="boiteSelectionMeuble") intersectedMeuble.visible = false;
@@ -1354,7 +1322,6 @@ function checkRaycastEtageres() {
   if (!rayCastEnabled) return;
   raycaster.setFromCamera(pointer, camera, 0, 1000);
   const intersectsEtagere = raycaster.intersectObjects(selectableEtagere, false);
-  if (intersectsEtagere[0]) console.log(intersectsEtagere[0].name);
   if (intersectsEtagere.length > 0) {
     if (intersectedEtagere != intersectsEtagere[0].object) {
       if (intersectedEtagere && selectionMode == "etageres") {
@@ -1381,7 +1348,6 @@ function checkRaycastEtageres() {
 function checkRaycastHandle(selectableList) {
   if (!rayCastEnabled) return;
   raycaster.setFromCamera(pointer, camera, 0, 1000);
-
   const intersectsHandleBloc = raycaster.intersectObjects(selectableList, false);
   if (intersectsHandleBloc.length > 0 ) {
     if (intersectedHandle != intersectsHandleBloc[0].object) {
@@ -1391,11 +1357,10 @@ function checkRaycastHandle(selectableList) {
         intersectedHandle.renderOrder = 1;
       }
       intersectedHandle = intersectsHandleBloc[0].object;
-      //console.log(intersectedHandle.shortName);
       intersectedHandle.visible = true;
       intersectedHandle.material.depthTest = false;
       intersectedHandle.renderOrder = 1;
-      raycastedHandle = intersectsHandleBloc[0].object.bloc;
+      raycastedHandle = intersectsHandleBloc[0].object;
     }
   }
   else {
@@ -1443,7 +1408,6 @@ if (event.key=="Escape") {
   clearSelectionList();
 }
 pressedKey=event.key;
-//console.log((pressedKey));
 }
 
 function onKeyUp(event) {
@@ -1490,46 +1454,29 @@ function resetRaycast() {
   initializeRaycast();
 }
 
-function hideRaycastedBox(raycastedBox) {
-  if (raycastedBox) {
-    if (!raycastedBox.isSelected) {
-      raycastedBox.selectionBox.visible = false
-      raycastedBox = undefined
+function hideRaycastedBox(raycastedObject) {
+  if (raycastedObject) {
+    if (!raycastedObject.isSelected) {
+      raycastedObject.selectionBox.visible = false
+      raycastedObject = undefined
     }
   }
 }
 
 function hideAllRaycastedBoxes() {
+
   hideRaycastedBox(raycastedMeuble);
   hideRaycastedBox(raycastedElement);
   hideRaycastedBox(raycastedBloc);
-  hideRaycastedBox(raycastedHandleBloc);
-  hideRaycastedBox(raycastedHandleMeuble);
-  hideRaycastedBox(raycastedMeuble);
-  //hideRaycastedBox(raycastedEtagere);
+  if (raycastedHandleBloc) {raycastedHandleBloc.visible=false;}
+  if (raycastedHandleMeuble) {raycastedHandleMeuble.visible=false;}
 }
 
 function clearRaycast() {
-  //console.log("clearRaycast");
-  //console.log("intersectedElement, raycastedElement", intersectedElement, raycastedElement);
-  //console.log("intersectedMeuble, raycastedMeuble", intersectedMeuble, raycastedMeuble);
-
   controls.removeEventListener('change', checkRaycast);
   intersectedBox = undefined;
-
+  intersectedHandle = undefined;
   hideAllRaycastedBoxes();
- // if (intersectedBloc != null) { intersectedBloc.visible = false; intersectedBloc = null; }
-/*   if (raycastedMeuble) {
-    if (!raycastedMeuble.isSelected) {
-      raycastedMeuble.selectionBox.visible = false
-      raycastedMeuble = undefined
-    }
-  } */
- 
- /*  if (intersectedHandle != null) { intersectedHandle.visible = false; intersectedHandle = null; }
-  if (intersectedHandleMeuble != null) { intersectedHandleMeuble.visible = false; intersectedHandleMeuble = null; }
-  if (intersectedEtagere != null) { intersectedEtagere.visible = false; intersectedEtagere = null; }
-  if (intersectedElement != null) { intersectedElement.visible = false; intersectedElement = null; } */
 }
 
  function showChildren(obj) {
@@ -1549,9 +1496,7 @@ function hideChildren(obj) {
 function hideAllBoxes() {
   let allBoxes=[];
   scene.getObjectsByProperty("category","boiteSelection",allBoxes);
-  //console.log(allBoxes);
   for (var i=0; i<allBoxes.length;i++) {
-    //console.log(allBoxes[i]);
     allBoxes[i].visible=false;
   }
 }
@@ -1560,37 +1505,29 @@ function hideAllBoxes() {
 function clearSelectionList() {
   for (var i=selectedObjects.length; i>0; i--)
   {
-    //console.log("clear selection :");
     let object=selectedObjects[0];
-    //console.log(selectedObjects[0].name);
     object.isSelected=false;
     if (object.selectionBox) {
-      //console.log(object.selectionBox);
       object.selectionBox.visible=false;}
       selectedObjects.splice(0,1);
   }
   hideAllRaycastedBoxes();
-  //hideAllBoxes();
 }
 
 function addToSelection(object) {
-  //console.log(object);
   object.isSelected=true;
-  //console.log(object);
   object.selectionBox.visible=true;
   const isInSelectedObjects = (objectInList) => objectInList==object;
   let index=selectedObjects.findIndex(isInSelectedObjects);
   if (index>-1) {console.log("object already in list !!!")}
   else {
     selectedObjects.push(object);
-    //console.log("object ",object,"added");
   }
 }
 
 function removeFromSelection(object) {
   object.isSelected=false;
   object.selectionBox.visible=false;
-  //console.log("remove from selection");
   const isInSelectedObjects = (objectInList) => objectInList==object;
   let index=selectedObjects.findIndex(isInSelectedObjects);
   if (index<0) {console.log("object not in list !!!")}
@@ -1601,7 +1538,6 @@ function removeFromSelection(object) {
 
 function select(object) {
   if (!pressedKey || pressedKey != "Shift") {clearSelectionList()}
-
     object.isSelected = !object.isSelected;
     if (object.isSelected) { addToSelection(object) }
     else { removeFromSelection(object) }
@@ -1611,26 +1547,17 @@ function select(object) {
 var newHelper;
 var dragElementControls;
 function initDragElements() {
-  //drag elements
   dragElementControls = new DragControls(selectableElements, camera, renderer.domElement);
-  //console.log("drag element init");
   dragElementControls.addEventListener('dragstart',function (event) {
     if (selectionMode!="elements") return;
-    //controls.enabled = false;
-    //rayCastEnabled = false;
-    //console.log("drag element");
     let clickedElement=event.object.element;//.bloc.element;
-    
     select(clickedElement);
-    //console.log(clickedElement.isSelected);
-
     event.object.xInitial = event.object.position.x;
     event.object.yInitial = event.object.position.y;
     event.object.zInitial = event.object.position.z;
   });
 
   dragElementControls.addEventListener('drag',function (event) {
-    //console.log("raycast end");
     event.object.position.x=event.object.xInitial;
     event.object.position.y=event.object.yInitial;
     event.object.position.z=event.object.zInitial;
@@ -1639,45 +1566,34 @@ function initDragElements() {
   });
 
   dragElementControls.addEventListener('dragEnd',function (event) {
-    //console.log("raycast end");
     rayCastEnabled = true;
     controls.enabled = true;
   });
 }
 
-
 var dragHandleBlocControls;
 function initDragHandleBloc() {
   //drag handle bloc
   dragHandleBlocControls = new DragControls(selectableHandleBloc, camera, renderer.domElement);
-  
   dragHandleBlocControls.addEventListener('dragstart', function (event) {
-
     if (selectionMode!="ajusteBlocs") return;
     controls.enabled = false;
     rayCastEnabled = false;
-    //event.object.material.emissive.set(0xaaaaaa);
-
     let clickedMeuble=event.object.bloc.meuble;
-    //console.log(clickedMeuble.name);
     if (selectedMeuble!=clickedMeuble) changeCurrentMeubleFromClick(clickedMeuble);
-
     let blocId = event.object.bloc.numero;
     let parent = event.object.parent.parent;
     let blocPrecedent = parent.getObjectByName("Bloc " + (blocId - 1));
     let blocSuivant = parent.getObjectByName("Bloc " + (blocId + 1));
-
     var dragLimit=selectedMeuble.getMaxAllowedSpaceOnSides();
     event.object.deltaMaxGauche=dragLimit[0];
     event.object.deltaMaxDroite=dragLimit[1];
-
     if (selectedMeuble.disposition=="horizontal") {
     if (blocPrecedent) {
       var xMin = event.object.position.x - selectedMeuble.bloc[blocId - 1].taille / 2;}
     else {var xMin = event.object.x-dragLimit[0]}
     if (blocSuivant) { var xMax = event.object.position.x + selectedMeuble.bloc[blocId + 1].taille / 2 }
     else { if (event.object.name == "handleBlocDroit") { xMax = event.object.x+dragLimit[1] } }
-
     event.object.xMin = xMin;
     event.object.xMax = xMax;
     event.object.xInitial = event.object.position.x;
@@ -1712,11 +1628,9 @@ function initDragHandleBloc() {
 
   dragHandleBlocControls.addEventListener('drag', function (event) {
     if (selectionMode!="ajusteBlocs") return;
-    //event.object.material.emissive.set(0xaaaaaa);
     var obj1 = event.object;
     var blocId = obj1.bloc.numero;
     scene.add(newHelper);
-
     if (selectedMeuble.disposition == "horizontal") {
       let x = obj1.position.x;
       x = x > event.object.xMax ? event.object.xMax : x;
@@ -1750,9 +1664,7 @@ function initDragHandleBloc() {
       }
       selectedMeuble.bloc[blocId].taille = fact * (x + obj1.xInitial);
       obj1.position.set(x, 0, 0);
-
       newHelper.position.x=obj1.newHelperXInit+delta;
-      //console.log(newHelper.visible);
     }
 
     else { //vertical
@@ -1766,7 +1678,6 @@ function initDragHandleBloc() {
     }
     selectedMeuble.updateTaille();
     selectedMeuble.updateMeuble();
-    //selectedMeuble.placeMeuble();
     updateInterfaceMeuble();
     updateInterfaceBlocs();
   });
@@ -1777,28 +1688,21 @@ function initDragHandleBloc() {
     material.dispose();
     if (selectionMode!="ajusteBlocs") return;
     isPreviewOn=false;
-
     //event.object.material.emissive.set(0x000000);
-    
     selectedMeuble.updateMeuble();
     resetRaycast();
     updateAllSelectable();
     controls.enabled = true;
     rayCastEnabled = true;
   });
-
 }
 
 var dragHandleMeubleControls;
 function initDragHandleMeuble() {
   //drag handle bloc
   dragHandleMeubleControls = new DragControls(selectableHandleMeuble, camera, renderer.domElement);
-  
   dragHandleMeubleControls.addEventListener('dragstart', function (event) {
-    if (selectionMode!="ajusteMeubles") {
-      //console.log("abort");
-      return;
-    }
+    if (selectionMode!="ajusteMeubles") {return;}
     controls.enabled = false;
     rayCastEnabled = false;
     changeCurrentMeubleFromClick(event.object.meuble);
@@ -1821,8 +1725,6 @@ function initDragHandleMeuble() {
     if (selectionMode!="ajusteMeubles") return;
     //event.object.material.emissive.set(0xaaaaaa);
     var obj1 = event.object;
-    //var meubleId = obj1.meubleId;
-
     //ajuste sur max size si collision
     if (obj1.name == "handleMeubleHaut") {
       let y = obj1.position.y;
@@ -1872,15 +1774,11 @@ function initDragHandleMeuble() {
 
 var dragBlocControls;
 function initDragBloc() {
-  
   //drag blocs
   dragBlocControls = new DragControls(selectableBloc, camera, renderer.domElement);
-
   dragBlocControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="blocs") return;
-
     let clickedBloc = event.object.bloc;
-    
     select(clickedBloc);
     updateInterfaceBlocs();
     controls.enabled=false;
@@ -1897,12 +1795,6 @@ function initDragBloc() {
     var num=event.object.numero;
     event.object.position.set(0,0,0);
     if ((!raycastedBloc) || (raycastedBloc.bloc==raycastedBlocBox.bloc)) {console.log("nothing happens")}
-     /*  else {
-        //let bloc=meubles[selectableBloc[raycastedBloc].numeroMeuble].bloc;
-        let bloc=meubles[selectableBloc[raycastedBloc].numeroMeuble].bloc;
-        [bloc[num],bloc[raycastedBloc]]=[bloc[raycastedBloc],bloc[num]];
-        updateScene();
-      } */
   });
 
 }
@@ -1922,7 +1814,6 @@ function initDragEtagere() {
     let blocId=clickedEtagereElement.bloc.numero;
     let parent=event.object.parent;
     let hasEtagerePrecedente = parent.getObjectByName("etagere "+(id-1));   //marche pas
-    //console.log(hasEtagerePrecedente);
     let hasEtagereSuivante = parent.getObjectByName("etagere "+(id+1));
 
     if (!selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales) {
@@ -1948,11 +1839,7 @@ function initDragEtagere() {
 
   dragEtagereControls.addEventListener('drag', function (event) {
     if (selectionMode!="etageres") return;
-
     var selectedEtagere = event.object;
-    //console.log("etagere selectionnée ",selectedEtagere.element.numero);
-    //console.log("bloc n°",selectedEtagere.bloc.numero);
-
     if (!selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales) {
       let y = selectedEtagere.position.y;
       y = y > event.object.yMax ? event.object.yMax : y;
@@ -1966,7 +1853,6 @@ function initDragEtagere() {
       x = x < event.object.xMin ? event.object.xMin : x;
       selectedEtagere.position.set(x, 0, 0);
       selectedEtagere.element.x = x;
-      //console.log(selectedEtagere.element);
     }
     selectedMeuble.updateMeuble();
   });
@@ -2011,7 +1897,6 @@ function initDragMeuble() {
     posInitiale = [...boxMeuble.position];
     boxMeuble.posInitiale = posInitiale;
     let geometries=meuble.root.getObjectByName("geometries");
-    console.log("geometries.visible",geometries.visible);
     boxMeuble.attach(geometries);  //on détache pour éviter les references circulaires dans les calculs de coordonnées
     geometries.position.set(0,0,0);
     let cadreA = meuble.hasCadre*epaisseurCadre;
@@ -2111,20 +1996,13 @@ function initDragMeuble() {
 
   dragMeubleControls.addEventListener('dragend', function (event) {
     resetRaycast();
-    //if (selectionMode!="meubles") return;
     controls.enabled = true;
     rayCastEnabled = true;
     //event.object.material.emissive.set(0x000000);
     var boxMeuble = event.object;
     var meuble = boxMeuble.meuble;
-    //var num = meuble.numero;
     let geometries = boxMeuble.getObjectByName("geometries");
     let root=meuble.root;
-    //let root=[];
-    //meuble.getObjectsByProperty("shortName","root",root);
-    console.log("root=",root.name);
-    console.log("root visible=",root.visible);
-    //let parent = boxMeuble.parent.parent;
     root.attach(geometries); // on rattache une fois fini
     geometries.position.set(0, 0, 0);
     boxMeuble.position.set(0, 0, 0);
@@ -2644,7 +2522,6 @@ function setSelectionType(value) {
       let object=selectedObjects[i-1];
       object.type=value;
       object.meuble.updateMeuble();
-      console.log(object.type);
     }
     updateInterfaceBlocs();
 }
@@ -2685,7 +2562,6 @@ function setValueOnSelection(key,value) {
 function updateSelection() {
   for (var i=selectedObjects.length; i>0; i--)
     {
-      console.log("updateSelection");
       let object=selectedObjects[i-1];
       object.meuble.updateMeuble();
     }
@@ -3306,7 +3182,6 @@ function changeCurrentMeuble(meuble) {
   updateInterfaceBlocs();
   updateInterfaceAspect();  
   updateAllSelectable();
-  console.log(selectedObjects);
 }
 
 function changeCurrentMeubleFromClick(meuble) {
@@ -3345,8 +3220,6 @@ function startMaterialAnimationMeuble(num) {
   boiteSelectionMeuble.material = materialSelectionMeubleAnim;
   hideChildren(boiteSelectionMeuble);
   boiteSelectionMeuble.visible = true;
-  //console.log("boiteSelectionMeuble=",boiteSelectionMeuble);
-
   mixerMaterial = new THREE.AnimationMixer( materialSelectionMeubleAnim );
   clipActionMaterial = mixerMaterial.clipAction( clipMaterial );
   clipActionMaterial.setLoop(0,1);
@@ -3568,11 +3441,9 @@ function rebuildInterfaceBlocs() {
 function refreshInterfaceBlocs() {
   if (selectedObjects.length==0) return;
   var object=selectedObjects[selectedObjects.length-1];
-  console.log(object.type);
   if (object.type == "Portes") {
     buttonPorte.className = "buttonOn";
     divPortes.style.display = "inline";
-    console.log("type porte");
   }
   else {
     buttonPorte.className = "buttonOff";
@@ -3603,9 +3474,6 @@ function refreshInterfaceBlocs() {
 
   if (object.etageresVerticales) {buttonEtageresVerticales.checked=true;} else {buttonEtageresVerticales.checked=false;}
   if (object.isRentrant) {checkboxRentrant.checked=true;} else {checkboxRentrant.checked=false;}
-  console.log("object.isRentrant=",object.isRentrant);
-  console.log("object.meuble.isRentrant=",object.meuble.isRentrant);
-
 }
 
 function updateInterfaceBlocs() {
