@@ -97,8 +97,8 @@ class Element {
 
   getTiroir() {
     let ySuivant = this.bloc.elements[this.numero+1].y;
-    let yl = ySuivant-this.y;
-    let yTiroir = this.y + yl / 2;
+    let yl = ySuivant-this.y -  this.offsetTiroir();
+    let yTiroir = this.y + yl / 2 + this.offsetTiroir()/2;
     let xl = this.bloc.l - 0.25 * epaisseur - 2 * this.offsetTiroir();
     let zl = epaisseur;
 
@@ -153,8 +153,8 @@ class Bloc {
     this.numero = i;
     this.taille = 40;
     this.createBlocRoot();
-    this.p = meuble.profondeur;
     this.meuble = meuble;
+    this.p = this.meuble.profondeur;
     this.updateLHP();
     this.unherited = true;
     this.elements = [];
@@ -173,8 +173,10 @@ class Bloc {
   }
 
    get etageres() {
-    if (this.etageresLocal) {return this.etageresLocal}
-    else return this.meuble.etageres;
+    if (this.etageresLocal) {
+      return this.etageresLocal;}
+    else {
+      return this.meuble.etageres;}
   }
 
   get ouverturePorte() {
@@ -192,7 +194,7 @@ class Bloc {
     else return this.meuble.etageresVerticales;
   } */
 
-  //set etageres(value) { this.etageresLocal=value }
+  set etageres(value) { this.etageresLocal=value }
   set ouverturePorte(value) { this.ouverturePorteLocal=value }
   set nombrePortes(value) { this.nombrePortesLocal=value }
   //set etageresVerticales(value) { this.etageresVerticalesLocal=value }
@@ -224,7 +226,8 @@ createBlocRoot() {
 
   updateLHP() {
     if (this.meuble.disposition=="horizontal") {this.l=this.taille; this.h=this.meuble.hauteur;}
-    if (this.meuble.disposition=="vertical") {this.l=this.meuble.largeur; this.h=this.taille ;} 
+    if (this.meuble.disposition=="vertical") {this.l=this.meuble.largeur; this.h=this.taille ;}
+    this.p=this.meuble.profondeur; 
   }
 
   getCadre() {
@@ -342,7 +345,8 @@ createBlocRoot() {
     var elementsRoot = new THREE.Object3D();
     elementsRoot.name = "elementsRoot" + this.numero;
     elementsRoot.shortName = "elementsRoot";
-    for (var i = 0; i < this.etageres+1; i++) {
+    console.log("this.etageres+1",1+Number(this.etageres));
+    for (var i = 0; i < +this.etageres+1; i++) {
       let element = this.elements[i].getElement();
       if (element) elementsRoot.add(element);
     }
@@ -485,6 +489,45 @@ createBlocRoot() {
     material.dispose;
     delete this.blocRoot;
   }
+
+  setEtageresNumber(num) {
+    console.log(num);
+    /*     for (var i=num; i<elements.length(); i++) {
+          console.log(i);
+          if (this.elements[i]) {this.elements[i]=undefined;}
+        } */
+    for (var i = this.etageres+1; i < num+2; i++) {
+      //console.log(i);
+      console.log(typeof this.elements[i]);
+      if (!this.elements[i]) {
+        this.elements[i] = new Element(this, i);
+      }
+      
+      /*     if (indiceCurrentBloc>(this.nbBlocs-1)) {indiceCurrentBloc=this.nbBlocs-1;}
+          this.nbBlocs=num;console.log("this.nbBlocs=",this.nbBlocs); */
+    }
+    this.etageresLocal = num;
+  }
+
+
+  setTaille(num) {
+    console.log(num);
+    /*     for (var i=num; i<elements.length(); i++) {
+          console.log(i);
+          if (this.elements[i]) {this.elements[i]=undefined;}
+        } */
+    for (var i = this.etageres+1; i < num+2; i++) {
+      //console.log(i);
+      console.log(typeof this.elements[i]);
+      if (!this.elements[i]) {
+        this.elements[i] = new Element(this, i);
+      }
+      
+      /*     if (indiceCurrentBloc>(this.nbBlocs-1)) {indiceCurrentBloc=this.nbBlocs-1;}
+          this.nbBlocs=num;console.log("this.nbBlocs=",this.nbBlocs); */
+    }
+    this.etageresLocal = num;
+  }
 }
 
 class Meuble {
@@ -552,8 +595,10 @@ class Meuble {
     else {
       var largeurTemp = 0;
       for (var i = 0; i < this.nbBlocs; i++) {
+        console.log(i,this.bloc[i].taille);
         largeurTemp += this.bloc[i].taille;
       }
+      console.log("largeur = ",largeurTemp);
       return (largeurTemp);
     }
   }
@@ -715,31 +760,31 @@ class Meuble {
     return [minYGlobal,maxYGlobal];
   }
 
-intersectY(indiceMeubleB) {
-  var cadreA = this.hasCadre*epaisseurCadre;
-  var cadreB = meubles[indiceMeubleB].hasCadre*epaisseurCadre;
-  var socleA = this.hasSocle*hauteurSocle;
-  var socleB = meubles[indiceMeubleB].hasSocle*hauteurSocle;
-  var piedA = this.hasPied*hauteurPied;
-  var piedB = meubles[indiceMeubleB].hasPied*hauteurPied;
-  var aY = this.y + this.hauteur / 2 + cadreA + socleA/2 + piedA/2;
-  var bY = meubles[indiceMeubleB].y + meubles[indiceMeubleB].hauteur / 2 + cadreB + socleB/2 + piedB/2;
-  var hA = this.hauteur+cadreA+socleA+piedA;
-  var hB = meubles[indiceMeubleB].hauteur+cadreB+socleB+piedB;
-  var intersectY = (Math.abs(aY - bY) * 2 < (hA + hB));
-  return intersectY;
-}
+  intersectY(indiceMeubleB) {
+    var cadreA = this.hasCadre * epaisseurCadre;
+    var cadreB = meubles[indiceMeubleB].hasCadre * epaisseurCadre;
+    var socleA = this.hasSocle * hauteurSocle;
+    var socleB = meubles[indiceMeubleB].hasSocle * hauteurSocle;
+    var piedA = this.hasPied * hauteurPied;
+    var piedB = meubles[indiceMeubleB].hasPied * hauteurPied;
+    var aY = this.y + this.hauteur / 2 + cadreA + socleA / 2 + piedA / 2;
+    var bY = meubles[indiceMeubleB].y + meubles[indiceMeubleB].hauteur / 2 + cadreB + socleB / 2 + piedB / 2;
+    var hA = this.hauteur + cadreA + socleA + piedA;
+    var hB = meubles[indiceMeubleB].hauteur + cadreB + socleB + piedB;
+    var intersectY = (Math.abs(aY - bY) * 2 < (hA + hB));
+    return intersectY;
+  }
 
-intersectX(indiceMeubleB) {
-  var cadreA = this.hasCadre*epaisseurCadre;
-  var cadreB = meubles[indiceMeubleB].hasCadre*epaisseurCadre;
-  var xA=this.x;
-  var xB=meubles[indiceMeubleB].x;
-  var lA=this.largeur;
-  var lB=meubles[indiceMeubleB].largeur;
-  var intersectX = (Math.abs(xA - xB - cadreB) * 2 < (lA + lB + cadreA + cadreB));
-  return intersectX;
-}
+  intersectX(indiceMeubleB) {
+    var cadreA = this.hasCadre * epaisseurCadre;
+    var cadreB = meubles[indiceMeubleB].hasCadre * epaisseurCadre;
+    var xA = this.x;
+    var xB = meubles[indiceMeubleB].x;
+    var lA = this.largeur;
+    var lB = meubles[indiceMeubleB].largeur;
+    var intersectX = (Math.abs(xA - xB - cadreB) * 2 < (lA + lB + cadreA + cadreB));
+    return intersectX;
+  }
 
   createGeometryRoot() {
     this.root = new THREE.Object3D();
@@ -1061,16 +1106,15 @@ intersectX(indiceMeubleB) {
     this.placeMeuble();
   }
 
-
   destroyBloc(numBloc) {
     this.root.getObjectByName("blocs").remove(this.blocRoot[numBloc]);
     geometry.dispose();
     material.dispose();
-    this.blocRoot[numBloc]=undefined;
-    scene.remove( this.blocRoot[numBloc] );
+    this.blocRoot[numBloc] = undefined;
+    scene.remove(this.blocRoot[numBloc]);
     geometry.dispose();
     material.dispose();
-}
+  }
 
   computeBlocsSize() {
     if (this.disposition == "horizontal") {
@@ -1095,12 +1139,62 @@ intersectX(indiceMeubleB) {
     }
   }
   
-  changeBlocsQuantity () {
-    for (var i=0; i<maxBlocs; i++) {
-      if (((typeof this.bloc[i]))=="undefined") {this.bloc[i] = new Bloc(i)}
-       else {if (i>(this.nbBlocs-1)) {this.destroyBloc(i)}}
+  setBlocsQuantity (num) {
+    //console.log(num);
+
+
+
+
+    var tailleEnlevee=0;
+    if (num<this.nbBlocs) {
+      for (var i=num;i<this.nbBlocs;i++) {
+        //this.bloc[i].taille*=ratio;
+        tailleEnlevee+=this.bloc[i].taille;
+      }
+    }
+
+
+
+    for (var i=0; i<num; i++) {
+      console.log(i);
+      if (!this.bloc[i]) {
+        this.bloc[i] = new Bloc(this,i);
+        console.log(this.bloc[i].taille);}
+    }
+
+    for (var i=num; i<maxBlocs; i++) {
+      console.log(i);
+      if (this.bloc[i]) {this.bloc[i]=undefined;}
     }
     if (indiceCurrentBloc>(this.nbBlocs-1)) {indiceCurrentBloc=this.nbBlocs-1;}
+
+
+
+      var ratio = this.nbBlocs/num;
+      var newTaille=0;
+      var difference = num-this.nbBlocs;
+
+    if (num>this.nbBlocs) {
+      for (var i=0;i<this.nbBlocs;i++) {
+        this.bloc[i].taille*=ratio;
+        newTaille+=this.bloc[i].taille;
+      }
+      var tailleNewBlocs=this.meuble.largeur-newTaille/difference;
+      for (var i=this.nbBlocs;i<num;i++) {
+        this.bloc[i].taille=tailleNewBlocs;
+      }
+    }
+
+    if (num<this.nbBlocs) {
+      ratio=this.meuble.largeur/(this.meuble.largeur-tailleEnlevee);
+      for (var i=0;i<num;i++) {
+        this.bloc[i].taille*=ratio;
+      }
+    }
+
+
+
+    this.nbBlocs=num;console.log("this.nbBlocs=",this.nbBlocs);
   }
 
   changeTexture(event) {
@@ -1516,12 +1610,15 @@ function clearSelectionList() {
 
 function addToSelection(object) {
   object.isSelected=true;
+  console.log(object.constructor.name);
+  //if (object.constructor.name!= "Meuble")
   object.selectionBox.visible=true;
   const isInSelectedObjects = (objectInList) => objectInList==object;
   let index=selectedObjects.findIndex(isInSelectedObjects);
   if (index>-1) {console.log("object already in list !!!")}
   else {
     selectedObjects.push(object);
+    console.log("object added");
   }
 }
 
@@ -1537,6 +1634,7 @@ function removeFromSelection(object) {
 }
 
 function select(object) {
+  console.log("select",object.name);
   if (!pressedKey || pressedKey != "Shift") {clearSelectionList()}
     object.isSelected = !object.isSelected;
     if (object.isSelected) { addToSelection(object) }
@@ -1579,40 +1677,41 @@ function initDragHandleBloc() {
     if (selectionMode!="ajusteBlocs") return;
     controls.enabled = false;
     rayCastEnabled = false;
-    let clickedMeuble=event.object.bloc.meuble;
-    if (selectedMeuble!=clickedMeuble) changeCurrentMeubleFromClick(clickedMeuble);
+    let meuble=event.object.bloc.meuble;
+    //let clickedMeuble=event.object.bloc.meuble;
+    //if (selectedMeuble!=clickedMeuble) changeCurrentMeubleFromClick(clickedMeuble);
     let blocId = event.object.bloc.numero;
     let parent = event.object.parent.parent;
     let blocPrecedent = parent.getObjectByName("Bloc " + (blocId - 1));
     let blocSuivant = parent.getObjectByName("Bloc " + (blocId + 1));
-    var dragLimit=selectedMeuble.getMaxAllowedSpaceOnSides();
+    var dragLimit=meuble.getMaxAllowedSpaceOnSides();
     event.object.deltaMaxGauche=dragLimit[0];
     event.object.deltaMaxDroite=dragLimit[1];
-    if (selectedMeuble.disposition=="horizontal") {
+    if (meuble.disposition=="horizontal") {
     if (blocPrecedent) {
-      var xMin = event.object.position.x - selectedMeuble.bloc[blocId - 1].taille / 2;}
+      var xMin = event.object.position.x - meuble.bloc[blocId - 1].taille / 2;}
     else {var xMin = event.object.x-dragLimit[0]}
-    if (blocSuivant) { var xMax = event.object.position.x + selectedMeuble.bloc[blocId + 1].taille / 2 }
+    if (blocSuivant) { var xMax = event.object.position.x + meuble.bloc[blocId + 1].taille / 2 }
     else { if (event.object.name == "handleBlocDroit") { xMax = event.object.x+dragLimit[1] } }
     event.object.xMin = xMin;
     event.object.xMax = xMax;
     event.object.xInitial = event.object.position.x;
-    event.object.xMeubleInitial = selectedMeuble.x;
+    event.object.xMeubleInitial = meuble.x;
     isPreviewOn=true;
   }
 
   else { //vertical
-    if (blocSuivant) { var yMax = event.object.position.y + selectedMeuble.bloc[blocId + 1].taille / 2 }
+    if (blocSuivant) { var yMax = event.object.position.y + meuble.bloc[blocId + 1].taille / 2 }
     else {var yMax = 10e35;}
     event.object.yMax = yMax;
     event.object.yInitial = event.object.position.y;
-    event.object.yMeubleInitial = selectedMeuble.y;
-    event.object.hauteurMeubleInitial = selectedMeuble.hauteur;
+    event.object.yMeubleInitial = meuble.y;
+    event.object.hauteurMeubleInitial = meuble.hauteur;
 
-    event.object.maxDeltaY=selectedMeuble.getMaxAllowedHeight()-selectedMeuble.hauteur;
+    event.object.maxDeltaY=meuble.getMaxAllowedHeight()-meuble.hauteur;
   }
-    if (blocId > 0) event.object.tailleBlocPrecedent = selectedMeuble.bloc[blocId - 1].taille;
-    if (blocId < selectedMeuble.nbBlocs-1) event.object.tailleBlocSuivant = selectedMeuble.bloc[blocId + 1].taille;
+    if (blocId > 0) event.object.tailleBlocPrecedent = meuble.bloc[blocId - 1].taille;
+    if (blocId < meuble.nbBlocs-1) event.object.tailleBlocSuivant = meuble.bloc[blocId + 1].taille;
     event.object.blocId = blocId;
 
     //copie du helper
@@ -1629,9 +1728,11 @@ function initDragHandleBloc() {
   dragHandleBlocControls.addEventListener('drag', function (event) {
     if (selectionMode!="ajusteBlocs") return;
     var obj1 = event.object;
+    console.log(obj1);
+    var meuble = obj1.bloc.meuble;
     var blocId = obj1.bloc.numero;
     scene.add(newHelper);
-    if (selectedMeuble.disposition == "horizontal") {
+    if (meuble.disposition == "horizontal") {
       let x = obj1.position.x;
       x = x > event.object.xMax ? event.object.xMax : x;
       x = x < event.object.xMin ? event.object.xMin : x;
@@ -1639,7 +1740,7 @@ function initDragHandleBloc() {
 
       //poignee située entre 2 blocs :
       if (blocId > 0 && obj1.name != "handleBlocDroit") {
-        selectedMeuble.bloc[blocId - 1].taille = obj1.tailleBlocPrecedent + delta;
+        meuble.bloc[blocId - 1].taille = obj1.tailleBlocPrecedent + delta;
       }
       var fact = -1;
       //poignee située à gauche du meuble :
@@ -1649,7 +1750,7 @@ function initDragHandleBloc() {
           delta = -obj1.deltaMaxGauche;
           x = obj1.xInitial + delta;
         }
-        selectedMeuble.x = obj1.xMeubleInitial + delta / 2;
+        meuble.x = obj1.xMeubleInitial + delta / 2;
         fact = -1;
       }
       //poignée située à droite :
@@ -1660,9 +1761,9 @@ function initDragHandleBloc() {
           x = obj1.xInitial + delta;
         }
         fact = 1;
-        selectedMeuble.x = obj1.xMeubleInitial + delta / 2;
+        meuble.x = obj1.xMeubleInitial + delta / 2;
       }
-      selectedMeuble.bloc[blocId].taille = fact * (x + obj1.xInitial);
+      meuble.bloc[blocId].taille = fact * (x + obj1.xInitial);
       obj1.position.set(x, 0, 0);
       newHelper.position.x=obj1.newHelperXInit+delta;
     }
@@ -1671,13 +1772,13 @@ function initDragHandleBloc() {
       let y = obj1.position.y;
       delta=y-obj1.yInitial;
       delta = delta>obj1.maxDeltaY ? obj1.maxDeltaY : delta;
-        selectedMeuble.bloc[blocId].taille = 2*obj1.yInitial + delta;
-        if (blocId<selectedMeuble.nbBlocs-1) 
-          {selectedMeuble.bloc[blocId+1].taille = obj1.tailleBlocSuivant - delta}
+        meuble.bloc[blocId].taille = 2*obj1.yInitial + delta;
+        if (blocId<meuble.nbBlocs-1) 
+          {meuble.bloc[blocId+1].taille = obj1.tailleBlocSuivant - delta}
         newHelper.position.y=obj1.newHelperYInit+delta;
     }
-    selectedMeuble.updateTaille();
-    selectedMeuble.updateMeuble();
+    meuble.updateTaille();
+    meuble.updateMeuble();
     updateInterfaceMeuble();
     updateInterfaceBlocs();
   });
@@ -1689,7 +1790,7 @@ function initDragHandleBloc() {
     if (selectionMode!="ajusteBlocs") return;
     isPreviewOn=false;
     //event.object.material.emissive.set(0x000000);
-    selectedMeuble.updateMeuble();
+    event.object.bloc.meuble.updateMeuble();
     resetRaycast();
     updateAllSelectable();
     controls.enabled = true;
@@ -1705,19 +1806,21 @@ function initDragHandleMeuble() {
     if (selectionMode!="ajusteMeubles") {return;}
     controls.enabled = false;
     rayCastEnabled = false;
-    changeCurrentMeubleFromClick(event.object.meuble);
+    var meuble = event.object.meuble;
+    //select(event.object.meuble);
+    //changeCurrentMeubleFromClick(event.object.meuble);
     //event.object.material.emissive.set(0xaaaaaa);
-    let meubleId = event.object.indiceMeuble;
-    event.object.meubleId = meubleId;
-    var dragLimit=selectedMeuble.getMaxAllowedSpaceOnSides();
+    //let meubleId = event.object.indiceMeuble;
+    //event.object.meubleId = meubleId;
+    var dragLimit=meuble.getMaxAllowedSpaceOnSides();
     event.object.deltaMaxGauche=dragLimit[0];
     event.object.deltaMaxDroite=dragLimit[1];
     event.object.xInitial = event.object.position.x;
-    event.object.xMeubleInitial = selectedMeuble.x;
+    event.object.xMeubleInitial = meuble.x;
     event.object.yInitial = event.object.position.y;
-    event.object.yMeubleInitial = selectedMeuble.y;
-    event.object.largeurInitiale = selectedMeuble.largeur;
-    event.object.maxH=selectedMeuble.getMaxAllowedHeight();
+    event.object.yMeubleInitial = meuble.y;
+    event.object.largeurInitiale = meuble.largeur;
+    event.object.maxH=meuble.getMaxAllowedHeight();
     isPreviewOn=true;
   });
 
@@ -1725,17 +1828,19 @@ function initDragHandleMeuble() {
     if (selectionMode!="ajusteMeubles") return;
     //event.object.material.emissive.set(0xaaaaaa);
     var obj1 = event.object;
+    var meuble = obj1.meuble;
     //ajuste sur max size si collision
     if (obj1.name == "handleMeubleHaut") {
       let y = obj1.position.y;
       y = y > obj1.maxH/2 ? obj1.maxH/2 : y;
       obj1.position.set(0, y, 0);
-      selectedMeuble.hauteur=y*2;
+      meuble.hauteur=y*2;
     }
     if (obj1.name == "handleMeubleDroit") {var fact=-1} else {var fact=1}
     if (obj1.name == "handleMeubleGauche" || obj1.name == "handleMeubleDroit") {
       let x = obj1.position.x;
       var delta = x - obj1.xInitial;
+      //console.log("delta");
       if (obj1.name == "handleMeubleGauche") {
         if (-delta > (obj1.deltaMaxGauche / 2)) {
           delta = -obj1.deltaMaxGauche / 2;
@@ -1749,14 +1854,14 @@ function initDragHandleMeuble() {
         }
       }
       obj1.position.set(x, 0, 0);
-      selectedMeuble.largeur = obj1.largeurInitiale-fact*delta*2;
-      selectedMeuble.computeBlocsSize();
-      selectedMeuble.x = obj1.xMeubleInitial+delta;
-      let geo=selectedMeuble.root.getObjectByName("geometries");
+      meuble.largeur = obj1.largeurInitiale-fact*delta*2;
+      meuble.computeBlocsSize();
+      meuble.x = obj1.xMeubleInitial+delta;
+      let geo=meuble.root.getObjectByName("geometries");
     }
-    selectedMeuble.computeBlocsSize();
-    selectedMeuble.updateGeometry();
-    selectedMeuble.placeMeuble();
+    meuble.computeBlocsSize();
+    meuble.updateGeometry();
+    meuble.placeMeuble();
     updateInterfaceMeuble();
     updateInterfaceBlocs();
   });
@@ -1768,7 +1873,7 @@ function initDragHandleMeuble() {
     controls.enabled = true;
     rayCastEnabled = true;
     isPreviewOn=false;
-    selectedMeuble.updateMeuble();
+    event.object.meuble.updateMeuble();
   });
 }
 
@@ -1780,6 +1885,8 @@ function initDragBloc() {
     if (selectionMode!="blocs") return;
     let clickedBloc = event.object.bloc;
     select(clickedBloc);
+    //changeCurrentMeubleFromClick(clickedBloc.meuble);
+    console.log(selectedObjects);
     updateInterfaceBlocs();
     controls.enabled=false;
     //event.object.material.emissive.set(0xaaaaaa);
@@ -1792,6 +1899,7 @@ function initDragBloc() {
     //event.object.material.emissive.set(0x000000);
     //on permute les blocs si ils sont différents
     var raycastedBlocBox=event.object;
+    changeCurrentBlocFromClick(raycastedBloc);
     var num=event.object.numero;
     event.object.position.set(0,0,0);
     if ((!raycastedBloc) || (raycastedBloc.bloc==raycastedBlocBox.bloc)) {console.log("nothing happens")}
@@ -1995,7 +2103,6 @@ function initDragMeuble() {
   }
 
   dragMeubleControls.addEventListener('dragend', function (event) {
-    resetRaycast();
     controls.enabled = true;
     rayCastEnabled = true;
     //event.object.material.emissive.set(0x000000);
@@ -2006,8 +2113,12 @@ function initDragMeuble() {
     root.attach(geometries); // on rattache une fois fini
     geometries.position.set(0, 0, 0);
     boxMeuble.position.set(0, 0, 0);
+    /* boxMeuble.visible=false;*/
+    meuble.isSelected=false; 
     meuble.updateMeuble();
     meuble.placeMeuble();
+    //resetRaycast();
+    checkRaycast();
     frameCamera();
   });
 }
@@ -2746,7 +2857,6 @@ function refreshSelectButtons() {
   if (selectionMode=="etageres") {buttonAdjustEtagere.className="buttonOn";}
   else {buttonAdjustEtagere.className="buttonOff"}
 
-
   if (selectionMode=="elements") {buttonSelectElement.className="buttonOn";}
   else {buttonSelectElement.className="buttonOff"}
 }
@@ -2939,6 +3049,7 @@ function createNewMeuble() {
   selectedMeuble=meubles[indiceCurrentMeuble];
   placeNewMeuble(indiceCurrentMeuble);
   selectedMeuble.updateMeuble();
+  select(meubles[indiceCurrentMeuble]);
   frameCamera();
 }
 
@@ -3175,8 +3286,9 @@ function clearInterfaceMeuble() {
 function changeCurrentMeuble(meuble) {
   indiceCurrentMeuble = meuble.numero;
   selectedMeuble=meuble;
-  selectedObjects=[];
-  selectedObjects.push(selectedMeuble);
+  //selectedObjects=[];
+  //selectedObjects.push(selectedMeuble);
+  select(meuble);
   updateCheckboxVertical();
   updateInterfaceMeuble();
   updateInterfaceBlocs();
@@ -3286,12 +3398,32 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     frameCamera();
   }
   
-  let nbBlocsDiv = createSlider(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
-  nbBlocsDiv.querySelector("#slider").addEventListener("input",function eventnbBlocsDivInput() {onChangeBlocsQuantity()},false);
-  nbBlocsDiv.querySelector("#number").addEventListener("change",function eventnbBlocsDivChange() {onChangeBlocsQuantity()},false);
+
+
+
+
+
+  let retour = createSliderWithoutListener(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
+  let nbBlocsDiv = retour[0];
+  nbBlocsDiv.querySelector("#slider").addEventListener("input",function eventnbBlocsDivInput(event) {
+    onChangeBlocsQuantity(event.target.value);
+    nbBlocsDiv.querySelector("#number").value=Number(event.target.value); //refresh
+
+  },false);
+  nbBlocsDiv.querySelector("#number").addEventListener("change",function eventnbBlocsDivChange(event) {
+    console.log (event.target.value);
+    onChangeBlocsQuantity(event.target.value);
+    nbBlocsDiv.querySelector("#slider").value=Number(event.target.value); //refresh
+  },false);
   meubleSliders.append(nbBlocsDiv);
 
-  let retour = createSliderWithoutListener(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
+
+
+
+
+
+  
+  retour = createSliderWithoutListener(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
   XDiv=retour[0];
   XDivSlider=retour[1];
   XDivInput=retour[2];
@@ -3408,7 +3540,7 @@ function updateInterfaceY() {
 
 function changeCurrentBlocFromClick(bloc) {
   indiceCurrentBloc = bloc.numero;
-  selectedObjects.push(bloc);
+  //selectedObjects.push(bloc);
   updateInterfaceBlocs();
   //flash input box
   selectListBlocs.classList.remove("animationBlocsName");
@@ -3418,9 +3550,10 @@ function changeCurrentBlocFromClick(bloc) {
   updateSelectableHandleBloc();
 }
 
-function onChangeBlocsQuantity() {
-  selectedMeuble.changeBlocsQuantity();
+function onChangeBlocsQuantity(num) {
+  selectedMeuble.setBlocsQuantity(num);
   selectedMeuble.updateTaille();
+  selectedMeuble.updateMeuble();
   updateInterfaceBlocs();
   updateInterfaceLargeur();
   updateInterfaceHauteur();
@@ -3514,8 +3647,32 @@ function startMaterialAnimationBloc(num) {
 function createSlidersBlocs() {
   let numBloc=indiceCurrentBloc;
   let meuble = selectedMeuble;
-  let slideLargeurBloc = createSlider(meuble.bloc[numBloc], "taille", "Taille du bloc", meuble.bloc[numBloc].taille, 0, 10, 200);
+  let retour = createSliderWithoutListener(meuble.bloc[numBloc], "taille", "Taille du bloc", meuble.bloc[numBloc].taille, 0, 10, 200);
+  let slideLargeurBloc = retour[0];
+
+
+  //slideLargeurBloc.addEventListener("input",function () {slideLargeurBloc.value=},false);
+  //slideLargeurBloc.addEventListener("change",function () {eventTailleInputBox()},false);
+
+
+
+
+
+  slideLargeurBloc.querySelector("#slider").addEventListener("input", function (event) {
+    setTailleOnSelection(Number(event.target.value));
+    slideLargeurBloc.querySelector("#number").value=Number(event.target.value); //refresh
+  }, false);
+
+  slideLargeurBloc.querySelector("#number").addEventListener("change", function (event) {
+    setTailleOnSelection(Number(event.target.value));
+    slideLargeurBloc.querySelector("#slider").value=Number(event.target.value); //refresh
+  }, false);
+
   blocsSliders.append(slideLargeurBloc);
+
+
+
+/*   
   slideLargeurBloc.querySelector("#slider").addEventListener("input", function () {
     meuble.updateTaille();
     updateInterfaceLargeur();
@@ -3530,18 +3687,53 @@ function createSlidersBlocs() {
     selectedMeuble.updateMeuble();
     frameCamera();
   }
-    , false);
-  let sliderEtageres = createSlider(meuble.bloc[numBloc], "etageres", "Nombre d'étagères", meuble.bloc[numBloc].etageres, 0, 0, maxEtageres);
-  sliderEtageres.querySelector("#slider").addEventListener("input", function () {
-    meuble.bloc[numBloc].etagereY=[]; //raz des positions prédéfinies si changement de nb d'étageres;
-    selectedMeuble.updateMeuble();
-    frameCamera();
+    , false); */
+
+  retour = createSliderWithoutListener(meuble.bloc[numBloc], "etageres", "Nombre d'étagères", meuble.bloc[numBloc].etageres, 0, 0, maxEtageres);
+  let sliderEtageres=retour[0];
+
+  sliderEtageres.querySelector("#slider").addEventListener("input", function (event) {
+    //raz des positions prédéfinies si changement de nb d'étageres ?;
+    setEtageresNumberOnSelection(Number(event.target.value));
   }, false);
-  sliderEtageres.querySelector("#number").addEventListener("change", function () {
-    selectedMeuble.updateMeuble();
-    frameCamera();
+
+  sliderEtageres.querySelector("#number").addEventListener("change", function (event) {
+    setEtageresNumberOnSelection(Number(event.target.value));
   }, false);
+
   blocsSliders.append(sliderEtageres);
+}
+
+function setEtageresNumberOnSelection(num) {
+  console.log("selectedObjects=",selectedObjects);
+  for (var i=0; i<selectedObjects.length; i++) {
+    let bloc = selectedObjects[i];
+    console.log ("meuble n°",bloc.meuble.numero);
+    bloc.setEtageresNumber(Number(num));
+  }
+  updateScene();
+  frameCamera();
+}
+
+function setTailleOnSelection(num) {
+  console.log("selectedObjects=",selectedObjects);
+  for (var i=0; i<selectedObjects.length; i++) {
+    let bloc = selectedObjects[i];
+    console.log ("meuble n°",bloc.meuble.numero);
+    bloc.taille=Number(num);
+    bloc.meuble.updateMeuble();
+  }
+  //updateScene();
+  
+  //updateInterfaceBlocs();
+  //meuble.updateTaille();
+  updateInterfaceLargeur();
+  updateInterfaceHauteur();
+  frameCamera();
+
+
+
+  frameCamera();
 }
 
 function updateInterfaceAspect() {
