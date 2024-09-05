@@ -24,6 +24,12 @@ class Element {
     this.isSelected=false;
     this.selectionBox=undefined;
     this.isRentrantLocal = undefined;
+
+    this.ySuivant = undefined;
+    this.yl = undefined;
+    //this.yTiroir = undefined;
+    this.xl = undefined;
+    this.zl = undefined;
   }
 
   get style() {if (this.localStyle) {return this.localStyle}
@@ -39,16 +45,18 @@ class Element {
 
   get y() {
     if (this.yPredefini) return this.yPredefini;
-    var step = (this.bloc.h ) / (this.bloc.etageres + 1);
-    return step * (-0.5 + this.numero - this.bloc.etageres / 2);}
+    var step = (this.bloc.h - this.offsetTiroir() ) / (this.bloc.etageres + 1);
+    let y=step * (-0.5 + this.numero - this.bloc.etageres / 2);
+    //if (this.numero==0) y+=this.offsetTiroir();
+    return y;}
 
   get x() {if (this.xPredefini) return this.bloc.xPredefini;
     var step = (this.bloc.l - 2 * epaisseur) / (this.bloc.etageres + 1);
     return step * (0.5 + this.numero - this.bloc.etageres / 2);}
 
-  get yTiroir() {if (this.numero<this.bloc.etageres) {
-      if (this.bloc.elements[this.numero-1].yPredefini) return this.bloc.elements[this.numero-1].yPredefini}
-    var step = (this.bloc.h - 0.25 * epaisseur - this.offsetTiroir()) / (this.bloc.etageres + 1);
+  get yTiroir() {if (this.numero<this.bloc.etageres && this.numero>0) {
+      if (this.bloc.elements[this.numero-1].yPredefini!=undefined) return this.bloc.elements[this.numero-1].yPredefini}
+    var step = (this.bloc.h - 0.25 * epaisseur - 2*this.offsetTiroir()) / (this.bloc.etageres + 1);
     return step * (0.5 + this.numero  - this.bloc.etageres / 2);}
 
   set isRentrant(value) {this.isRentrantLocal = value;}
@@ -75,7 +83,7 @@ class Element {
   }
 
   getEtagere() {
-    if (this.numero<1 || this.numero>this.bloc.etageres) return;
+    if (this.numero < 1 || this.numero > this.bloc.etageres) return;
     let geometry;
     if (this.etageresVerticales) {
       geometry = new THREE.BoxGeometry(epaisseur, this.bloc.h - 2 * epaisseur, this.bloc.p - epaisseur);
@@ -84,41 +92,56 @@ class Element {
       geometry = new THREE.BoxGeometry(this.bloc.l - 2 * epaisseur, epaisseur, this.bloc.p - epaisseur);
     }
     let etagere = new THREE.Mesh(geometry, material);
-  
+
     if (this.bloc.etageresVerticales) { etagere.position.set(this.x, 0, 0) }
     else { etagere.position.set(0, this.y, 0) }
-  
+
     etagere.name = "etagere " + this.numero;
     etagere.shortName = "etagere";
-    etagere.element=this;
-  
+    etagere.element = this;
+
     return etagere;
   }
 
-  getTiroir() {
-    let ySuivant = this.bloc.elements[this.numero+1].y;
-    let yl = ySuivant-this.y -  this.offsetTiroir();
-    let yTiroir = this.y + yl / 2 + this.offsetTiroir()/2;
-    let xl = this.bloc.l - 0.25 * epaisseur - 2 * this.offsetTiroir();
-    let zl = epaisseur;
+updateData() {
+  if (this.numero<this.bloc.etageres) {
+    this.ySuivant = this.bloc.elements[this.numero+1].y;
+  }
+  else this.ySuivant=this.meuble.hauteur/2-this.offsetTiroir()/2;
+  //if (this.numero==0) this.ySuivant+=this.offsetTiroir();
+    this.yl = this.ySuivant-this.y -  this.offsetTiroir();
+    //this.yTiroir = this.y + yl / 2 + this.offsetTiroir()/2;
+    this.xl = this.bloc.l - 0.25 * epaisseur - 2 * this.offsetTiroir();
+    this.zl = epaisseur;
+}
 
-    let tiroirRoot=new THREE.Object3D();
-
+  getSelectionBox() {
+    let selectionBoxRoot = new THREE.Object3D();
+    selectionBoxRoot.name = "selectionBoxRoot";
     //boite de selection element
-    geometry = new THREE.BoxGeometry(xl+0.05, yl+0.05, this.bloc.meuble.profondeur + this.offsetTiroir() + offsetSuedois + 0.1 + epaisseur);
+    geometry = new THREE.BoxGeometry(this.xl + 0.05, this.yl + 0.05, this.bloc.meuble.profondeur + this.offsetTiroir() + offsetSuedois + 0.1 + epaisseur);
     let boiteSelectionElement = new THREE.Mesh(geometry, materialSelectionEtagere);
     boiteSelectionElement.name = "boiteSelectionElement " + this.numero;
     boiteSelectionElement.shortName = "boiteSelectionElement";
     boiteSelectionElement.category = "boiteSelection";
-    tiroirRoot.add(boiteSelectionElement);
+    selectionBoxRoot.add(boiteSelectionElement);
     boiteSelectionElement.position.set(0, 0, -this.bloc.meuble.profondeur / 2);
     if (!this.isSelected) boiteSelectionElement.visible = false;
     boiteSelectionElement.element = this;
-    this.selectionBox=boiteSelectionElement;
+    this.selectionBox = boiteSelectionElement;
+    let yTiroir = this.y + this.yl / 2 + this.offsetTiroir()/2;
+    let zTiroir = this.bloc.p / 2;
+    selectionBoxRoot.position.set(0, yTiroir, zTiroir - this.offsetTiroir());
+    return selectionBoxRoot;
+  }
+
+  getTiroir() {
+    let tiroirRoot = new THREE.Object3D();
+    tiroirRoot.name = "tiroirRoot";
 
     if (this.type == "Tiroirs") {
       //tiroir
-      geometry = createPlanche(xl, yl, zl, this.style);
+      geometry = createPlanche(this.xl, this.yl, this.zl, this.style);
       let tiroir = new THREE.Mesh(geometry, materialTiroirs);
       tiroir.name = "tiroir " + this.numero;
       tiroir.shortName = "tiroir";
@@ -128,9 +151,10 @@ class Element {
       let poigneeB = poigneeGroup.clone(true);
       poigneeB.name = "poignee";
       tiroir.add(poigneeB);
-      let yPoignee = yl * (this.bloc.meuble.offsetPoignees / 250);
+      let yPoignee = this.yl * (this.bloc.meuble.offsetPoignees / 250);
       poigneeB.position.set(0, yPoignee, epaisseur / 2 + offsetSuedois);
     }
+    let yTiroir = this.y + this.yl / 2 + this.offsetTiroir()/2;
     let zTiroir = this.bloc.p / 2;
 
     tiroirRoot.position.set(0, yTiroir, zTiroir - this.offsetTiroir());
@@ -138,14 +162,44 @@ class Element {
   }
   
   getElement() {
+    this.updateData();
     var elementRoot = new THREE.Object3D();
-    elementRoot.name="elementRoot";
+    elementRoot.name = "elementRoot";
+    elementRoot.attach(this.getSelectionBox());
     elementRoot.attach(this.getTiroir());
-    if (this.type=="Etageres" || this.type=="Tiroirs") {
-      let etagere=this.getEtagere();
-      if (etagere) elementRoot.attach(etagere); }
+    if (this.type == "Etageres" || this.type == "Tiroirs") {
+      let etagere = this.getEtagere();
+      if (etagere) elementRoot.attach(etagere);
+    }
+    if (this.type == "SousMeuble") {
+      let sousMeuble = this.getSousMeuble();
+      if (sousMeuble) elementRoot.attach(sousMeuble);
+    }
     return elementRoot;
   }
+
+  getSousMeuble() {
+    let sousMeubleRoot = new THREE.Object3D();
+    let sousMeuble=new Meuble(this.numero);
+    sousMeuble.largeur=this.xl;
+    sousMeuble.hauteur=this.yl;
+    sousMeuble.x=this.x;
+    sousMeuble.y=this.y;
+    sousMeuble.etageres=0;
+    sousMeuble.type="Etageres";
+    sousMeuble.nbBlocs=3;
+    sousMeuble.calculTailleBlocs();
+    sousMeuble.createGeometryRoot();
+    sousMeuble.updateGeometry();
+    let root=sousMeuble.root;
+    sousMeubleRoot.attach(root);
+    let yTiroir = this.y + this.yl / 2 + this.offsetTiroir()/2;
+    let zTiroir = 0;//this.bloc.p / 2;
+
+    sousMeubleRoot.position.set(0, yTiroir, zTiroir - this.offsetTiroir());
+    return sousMeubleRoot;
+  }
+
 }
 
 class Bloc {
@@ -158,7 +212,7 @@ class Bloc {
     this.updateLHP();
     this.unherited = true;
     this.elements = [];
-    this.etageresLocal = 3;
+    this.etageresLocal = undefined;
     for (var i=0; i<this.etageres+2; i++) {this.elements[i] = new Element(this,i)} // -1/+1 pour étageres 0 et n+1
     this.selectionBox = undefined;
     
@@ -174,6 +228,8 @@ class Bloc {
 
    get etageres() {
     if (this.etageresLocal) {
+      console.log("this.etageresLocal");
+
       return this.etageresLocal;}
     else {
       return this.meuble.etageres;}
@@ -561,6 +617,7 @@ class Meuble {
     this.localStyle = undefined;
     this.isSelected = false;
     this.selectionBox = undefined;
+    this.etageres=3;
 
     //commun à la classe bloc
     this.ouverturePorte = "gauche";
@@ -576,6 +633,12 @@ class Meuble {
   set style(value) {
     this.localStyle=value;
   } 
+
+calculTailleBlocs() {
+  for (var i=0;i<this.nbBlocs;i++) {
+    this.bloc[i].taille=this.largeur/this.nbBlocs;
+  }
+}
 
   updateTaille () {
     this.updateLargeur();
@@ -3670,10 +3733,6 @@ function setEtageresNumberOnSelection(num) {
   updateScene();
   frameCamera();
 }
-
-/* function getMaximumTailleBloc(num) {
-let lMax=getMaxAllowedWidth(num)
-} */
 
 function setTailleOnSelection(num) {
   for (var i=0; i<selectedObjects.length; i++) {
