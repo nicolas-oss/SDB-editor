@@ -691,13 +691,13 @@ class Meuble {
   }
 
   getMaxAllowedWidth() {
-    var bY;
+    //var bY;
     //var aY = meubles[num].y + meubles[num].hauteur / 2;
     var deltaX;
     var maxWidth = 10e34;
     for (var i = 0; i < meubles.length; i++) {
       if (i != this.numero) {
-        bY = meubles[i].y + meubles[i].hauteur / 2;
+        //bY = meubles[i].y + meubles[i].hauteur / 2;
         if (this.intersectY(i)) {
           if (this.x > meubles[i].x) {
             deltaX = (this.x) - (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*epaisseurCadre + this.hasCadre*epaisseurCadre);
@@ -1140,11 +1140,6 @@ class Meuble {
   }
   
   setBlocsQuantity (num) {
-    //console.log(num);
-
-
-
-
     var tailleEnlevee=0;
     if (num<this.nbBlocs) {
       for (var i=num;i<this.nbBlocs;i++) {
@@ -1152,8 +1147,6 @@ class Meuble {
         tailleEnlevee+=this.bloc[i].taille;
       }
     }
-
-
 
     for (var i=0; i<num; i++) {
       console.log(i);
@@ -1168,11 +1161,9 @@ class Meuble {
     }
     if (indiceCurrentBloc>(this.nbBlocs-1)) {indiceCurrentBloc=this.nbBlocs-1;}
 
-
-
-      var ratio = this.nbBlocs/num;
-      var newTaille=0;
-      var difference = num-this.nbBlocs;
+    var ratio = this.nbBlocs / num;
+    var newTaille = 0;
+    var difference = num - this.nbBlocs;
 
     if (num>this.nbBlocs) {
       for (var i=0;i<this.nbBlocs;i++) {
@@ -1191,8 +1182,6 @@ class Meuble {
         this.bloc[i].taille*=ratio;
       }
     }
-
-
 
     this.nbBlocs=num;console.log("this.nbBlocs=",this.nbBlocs);
   }
@@ -3398,31 +3387,21 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     frameCamera();
   }
   
-
-
-
-
-
   let retour = createSliderWithoutListener(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
-  let nbBlocsDiv = retour[0];
-  nbBlocsDiv.querySelector("#slider").addEventListener("input",function eventnbBlocsDivInput(event) {
-    onChangeBlocsQuantity(event.target.value);
-    nbBlocsDiv.querySelector("#number").value=Number(event.target.value); //refresh
 
+  let nbBlocsDiv = retour[0];
+  nbBlocsDiv.querySelector("#slider").addEventListener("input",function (event) {
+    onChangeBlocsQuantity(Number(event.target.value));
+  nbBlocsDiv.querySelector("#number").value=Number(event.target.value); //refresh
   },false);
-  nbBlocsDiv.querySelector("#number").addEventListener("change",function eventnbBlocsDivChange(event) {
-    console.log (event.target.value);
-    onChangeBlocsQuantity(event.target.value);
-    nbBlocsDiv.querySelector("#slider").value=Number(event.target.value); //refresh
+
+  nbBlocsDiv.querySelector("#number").addEventListener("change",function (event) {
+    onChangeBlocsQuantity(Number(event.target.value));
+  nbBlocsDiv.querySelector("#slider").value=Number(event.target.value); //refresh
   },false);
+
   meubleSliders.append(nbBlocsDiv);
 
-
-
-
-
-
-  
   retour = createSliderWithoutListener(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
   XDiv=retour[0];
   XDivSlider=retour[1];
@@ -3650,14 +3629,7 @@ function createSlidersBlocs() {
   let retour = createSliderWithoutListener(meuble.bloc[numBloc], "taille", "Taille du bloc", meuble.bloc[numBloc].taille, 0, 10, 200);
   let slideLargeurBloc = retour[0];
 
-
-  //slideLargeurBloc.addEventListener("input",function () {slideLargeurBloc.value=},false);
-  //slideLargeurBloc.addEventListener("change",function () {eventTailleInputBox()},false);
-
-
-
-
-
+  //Largeur
   slideLargeurBloc.querySelector("#slider").addEventListener("input", function (event) {
     setTailleOnSelection(Number(event.target.value));
     slideLargeurBloc.querySelector("#number").value=Number(event.target.value); //refresh
@@ -3670,35 +3642,19 @@ function createSlidersBlocs() {
 
   blocsSliders.append(slideLargeurBloc);
 
-
-
-/*   
-  slideLargeurBloc.querySelector("#slider").addEventListener("input", function () {
-    meuble.updateTaille();
-    updateInterfaceLargeur();
-    updateInterfaceHauteur();
-    selectedMeuble.updateMeuble();
-    frameCamera();
-  }, false);
-  slideLargeurBloc.querySelector("#number").addEventListener("change", function () {
-    meuble.updateTaille();
-    updateInterfaceLargeur();
-    updateInterfaceHauteur();
-    selectedMeuble.updateMeuble();
-    frameCamera();
-  }
-    , false); */
-
   retour = createSliderWithoutListener(meuble.bloc[numBloc], "etageres", "Nombre d'étagères", meuble.bloc[numBloc].etageres, 0, 0, maxEtageres);
   let sliderEtageres=retour[0];
 
+  //Nombre d'étageres
   sliderEtageres.querySelector("#slider").addEventListener("input", function (event) {
     //raz des positions prédéfinies si changement de nb d'étageres ?;
     setEtageresNumberOnSelection(Number(event.target.value));
+    sliderEtageres.querySelector("#number").value=Number(event.target.value); //refresh
   }, false);
 
   sliderEtageres.querySelector("#number").addEventListener("change", function (event) {
     setEtageresNumberOnSelection(Number(event.target.value));
+    sliderEtageres.querySelector("#slider").value=Number(event.target.value); //refresh
   }, false);
 
   blocsSliders.append(sliderEtageres);
@@ -3715,24 +3671,22 @@ function setEtageresNumberOnSelection(num) {
   frameCamera();
 }
 
+/* function getMaximumTailleBloc(num) {
+let lMax=getMaxAllowedWidth(num)
+} */
+
 function setTailleOnSelection(num) {
-  console.log("selectedObjects=",selectedObjects);
   for (var i=0; i<selectedObjects.length; i++) {
     let bloc = selectedObjects[i];
     console.log ("meuble n°",bloc.meuble.numero);
+    //let lMax=getMaxAllowedWidth(num)
+
     bloc.taille=Number(num);
+
     bloc.meuble.updateMeuble();
   }
-  //updateScene();
-  
-  //updateInterfaceBlocs();
-  //meuble.updateTaille();
   updateInterfaceLargeur();
   updateInterfaceHauteur();
-  frameCamera();
-
-
-
   frameCamera();
 }
 
