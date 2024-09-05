@@ -3629,7 +3629,7 @@ function createSlidersBlocs() {
   let retour = createSliderWithoutListener(meuble.bloc[numBloc], "taille", "Taille du bloc", meuble.bloc[numBloc].taille, 0, 10, 200);
   let slideLargeurBloc = retour[0];
 
-  //Largeur
+  //Taille bloc
   slideLargeurBloc.querySelector("#slider").addEventListener("input", function (event) {
     setTailleOnSelection(Number(event.target.value));
     slideLargeurBloc.querySelector("#number").value=Number(event.target.value); //refresh
@@ -3679,10 +3679,15 @@ function setTailleOnSelection(num) {
   for (var i=0; i<selectedObjects.length; i++) {
     let bloc = selectedObjects[i];
     console.log ("meuble n°",bloc.meuble.numero);
-    //let lMax=getMaxAllowedWidth(num)
-
-    bloc.taille=Number(num);
-
+    num=Number(num);
+    let lMax=bloc.meuble.getMaxAllowedWidth();
+    let deltaMax=lMax-bloc.meuble.largeur;
+    console.log(deltaMax);
+    let deltaTaille = num-bloc.taille;
+    let newTaille = (deltaTaille>deltaMax) ? bloc.taille+deltaMax: num;
+    bloc.taille=newTaille;
+    console.log(num,deltaTaille,deltaMax,newTaille);
+    bloc.meuble.updateTaille();
     bloc.meuble.updateMeuble();
   }
   updateInterfaceLargeur();
