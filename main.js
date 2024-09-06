@@ -24,6 +24,8 @@ class Element {
     this.isSelected=false;
     this.selectionBox=undefined;
     this.isRentrantLocal = undefined;
+    this.ouverturePorteLocal = undefined;
+    this.nombrePortesLocal = undefined;
 
     this.ySuivant = undefined;
     this.yl = undefined;
@@ -50,13 +52,10 @@ class Element {
     let hUtile;
     if (this.bloc.isRentrant) {hUtile = this.bloc.hauteurInterieure}
     else hUtile = this.bloc.h;
-    console.log('hUtile=',hUtile);
-    console.log('this.h=',this.h);
 
     var step = (hUtile) / (this.bloc.etageres + 1);
     let y=step * (-0.5 + this.numero - this.bloc.etageres / 2);
     //if (this.numero==0) y+=this.offsetTiroir();
-    console.log("y=",y);
     return y;}
 
   get x() {if (this.xPredefini) return this.bloc.xPredefini;
@@ -78,6 +77,18 @@ class Element {
      if (this.isRentrantLocal!=undefined) {return this.isRentrantLocal}
     else return this.bloc.isRentrant; 
   }
+
+  get ouverturePorte() {
+    if (this.ouverturePorteLocal) {return this.ouverturePorteLocal}
+    else return this.bloc.ouverturePorte;
+  }
+
+  get nombrePortes() {
+    if (this.nombrePortesLocal) {return this.nombrePortesLocal}
+    else return this.bloc.nombrePortes;
+  }
+  set ouverturePorte(value) { this.ouverturePorteLocal=value }
+  set nombrePortes(value) { this.nombrePortesLocal=value }
 
   reset() {
     this.unherited = true;
@@ -204,14 +215,21 @@ class Element {
     elementRoot.name = "elementRoot";
     elementRoot.attach(this.getSelectionBox());
     elementRoot.attach(this.getTiroir());
-    if (this.type == "Etageres" || this.type == "Tiroirs" || this.type=="SousMeuble") {
+    if (this.type == "Etageres" || this.type == "Tiroirs" || this.type=="SousMeuble" || this.type=="Portes") {
       let etagere = this.getEtagere();
       if (etagere) elementRoot.attach(etagere);
     }
     if (this.type == "SousMeuble") {
       let sousMeuble = this.getSousMeuble();
       if (sousMeuble) //scene.add(elementsRoot);
-        elementRoot.attach(sousMeuble);
+      elementRoot.attach(sousMeuble);
+    }
+    if (this.type == "Portes") {
+      let porte=createPortes(this.xl,this.yl,this.bloc.p,this.nombrePortes,this.ouverturePorte,this.style,this.isRentrant,this.numero);
+      let porteRoot=new THREE.Object3D();
+      porteRoot.attach(porte);
+      porteRoot.position.set(0,this.y+this.yl/2,0);
+      elementRoot.attach(porteRoot);
     }
     return elementRoot;
   }
@@ -411,6 +429,19 @@ class Bloc {
       }
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
   createElementBloc(i) {
     if (!this.elements[i]) this.elements[i] = new Element(this, i);
   }
@@ -534,10 +565,10 @@ class Bloc {
     if (!isPreviewOn) { this.blocRoot.add(this.getHandleBlocs()) }
 
     //portes
-    if (this.type == "Portes") {this.blocRoot.add(this.getPortes())}
+    if (this.type == "Portes") {this.blocRoot.add(createPortes(this.l,this.h,this.p,this.nombrePortes,this.ouverturePorte,this.style,this.isRentrant,this.numero))}
 
-     //elements
-     if (this.type == "Tiroirs" || this.type == "Etageres") {
+    //elements
+    if (this.type == "Tiroirs" || this.type == "Etageres") {
       this.blocRoot.add(this.getElements());
     } 
 
@@ -1402,6 +1433,71 @@ class Meuble {
     this.name="Meuble "+(this.numero+1);
   }
 }
+
+  function createPortes(l,h,p,nombrePortes,ouverturePorte,style,isRentrant,numero) {
+  var porte = [];
+    var offset = epaisseur * isRentrant ;
+    if (nombrePortes == "1") {
+      geometry = createPlanche(l - 0.25 * epaisseur - 2 * offset, h - 0.25 * epaisseur - 2 * offset, epaisseur, style);
+      porte[0] = new THREE.Mesh(geometry, materialTiroirs);
+      porte[0].name = "porte 0";
+      //poignee
+      let poigneeB = poigneeGroup.clone(true);
+      poigneeB.name = "poignee";
+      porte[0].add(poigneeB);
+      let deltaX = l / 2 - 4 * taillePoignees;
+      if (deltaX < 0) deltaX = 0;
+      if (ouverturePorte == "droite") { deltaX *= -1; poigneeB.rotateZ(Math.PI / 2); }
+      else poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
+      poigneeB.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
+      porte[0].position.set(0, 0, p / 2 - offset);
+      return porte[0]
+    }
+    else {
+      //porte gauche
+      geometry = createPlanche(l / 2 - 0.25 * epaisseur - offset / 2, h - 0.25 * epaisseur - 2 * offset, epaisseur, style);
+      porte[0] = new THREE.Mesh(geometry, materialTiroirs);
+      porte[0].name = "porte 0";
+
+      //poignee gauche
+      let poigneeB = poigneeGroup.clone(true);
+      poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
+      poigneeB.name = "poignee";
+      porte[0].add(poigneeB);
+      let deltaX = l / 4 - 4 * taillePoignees;
+      if (4 * taillePoignees > l / 4) deltaX = 0;
+      poigneeB.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
+      porte[0].position.set(-l / 4 + offset / 2, 0, p / 2 - offset);
+
+      //porte droite
+      porte[1] = new THREE.Mesh(geometry, materialTiroirs);
+      porte[1].name = "porte 1";
+      //poignee droite
+      let poigneeC = poigneeGroup.clone(true);
+      poigneeC.rotateZ(Math.PI / 2);  // a soumettre à option
+      porte[1].add(poigneeC);
+      deltaX *= -1
+      poigneeC.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
+      poigneeC.name = "poignee";
+      porte[1].position.set(l / 4 - offset / 2, 0, p / 2 - offset);
+      let porteDoubleRoot=new THREE.Object3D();
+      porteDoubleRoot.name="porteDoubleRoot"+numero;
+      porteDoubleRoot.shortName="porteDoubleRoot";
+      porteDoubleRoot.add(porte[0],porte[1]);
+      return porteDoubleRoot;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 var globalStyle="Basique";
 
