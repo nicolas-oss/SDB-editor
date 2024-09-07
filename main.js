@@ -1759,6 +1759,7 @@ function onKeyDown(event) {
 if (event.key=="Escape") {
   hideAllContextMenu();
   clearSelectionList();
+  refreshInterfaceBlocs();
 }
 pressedKey=event.key;
 }
@@ -1865,6 +1866,7 @@ function clearSelectionList() {
       selectedObjects.splice(0,1);
   }
   hideAllRaycastedBoxes();
+  refreshInterfaceBlocs();
 }
 
 function addToSelection(object) {
@@ -1878,6 +1880,7 @@ function addToSelection(object) {
   else {
     selectedObjects.push(object);
     console.log("object added");
+    refreshInterfaceBlocs();
   }
 }
 
@@ -2700,6 +2703,7 @@ var YDiv,YDivSlider,YDivInput;
 var styleMenu;
 var slidersAspect;
 var checkboxVertical;
+var checkboxSimple;
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
 var menuPoignees;
 var menuTexturesPlateau,menuTexturesCadre,menuTexturesMeuble,menuTexturesTiroirs;
@@ -2707,8 +2711,10 @@ var dropDownPoignees, dropDownMeuble, dropDownTiroirs, dropDownPlateau, dropDown
 var buttonSelectMeuble,buttonSelectBloc,buttonSelectElement;
 var buttonAdjustBloc,buttonAdjustMeuble,buttonAdjustEtagere;
 var buttonSousMeuble;
-var titleMeuble, titleBloc;
+var expandDimensions, expandBloc, expandMeubleData, expandAspect, expandEtageres, expandContenu, expandEnregistrement;
+var blocsData,contenuData,meubleData,etageresData,aspectData,enregistrementData;
 var contextMenuGeneral,contextMenuMeuble,contextMenuBloc,contextMenuEtagere;
+var warningInterfaceBloc;
 
 function initializeScene() {
     buildEnvironnement();
@@ -2723,6 +2729,7 @@ function initializeScene() {
     createNewMeuble();
     selectedMeuble=meubles[0];
     indiceCurrentMeuble=0;
+    select(selectedMeuble);
     createInterfaceMeuble();
     updateInterfaceBlocs();
     updateInterfaceAspect();
@@ -2742,7 +2749,8 @@ function initializeScene() {
     renderer.setAnimationLoop( animate );
     initDragHandleBloc();
     initDragHandleMeuble();
-    setSelectionMode("meubles");   
+    setSelectionMode("meubles"); 
+    refreshInterfaceBlocs();
 }
 
 function getHTMLElements () {
@@ -2775,12 +2783,15 @@ function getHTMLElements () {
   buttonEtageresVerticales = document.getElementById("checkBoxEtageresVerticales");
   meubleSliders = document.getElementById("meubleSliders");
   blocsSliders = document.getElementById("blocsSliders");
+  blocsData = document.getElementById("blocsData");
+  contenuData = document.getElementById("contenuData");
   checkboxRentrant = document.getElementById("checkboxRentrant");
   listPoigneesPopup = document.getElementById("listPoigneesPopup");
   listPoigneesName = document.getElementById("listPoigneesName");
   styleMenu = document.getElementById("style");
   slidersAspect = document.getElementById("slidersAspect");
   checkboxVertical = document.getElementById("checkboxVertical");
+  checkboxSimple = document.getElementById("checkboxSimple");
   colorDrawer = document.getElementById("colorDrawer");
   colorMeuble = document.getElementById("colorMeuble");
   colorPlateau = document.getElementById("colorPlateau");
@@ -2802,8 +2813,23 @@ function getHTMLElements () {
   buttonAdjustEtagere = document.getElementById("buttonAdjustEtagere");
   buttonSelectElement = document.getElementById("buttonSelectElement");
   buttonSousMeuble = document.getElementById("buttonSousMeuble");
-  titleMeuble=document.getElementById("titleMeuble");
-  titleBloc=document.getElementById("titleBloc");
+  
+  expandDimensions=document.getElementById("expandDimensions");
+  expandBloc=document.getElementById("expandBloc");
+  expandContenu=document.getElementById("expandContenu");
+  expandEtageres=document.getElementById("expandEtageres");
+  expandAspect=document.getElementById("expandAspect");
+  expandEnregistrement=document.getElementById("expandEnregistrement");
+
+  meubleData=document.getElementById("meubleData");
+  expandMeubleData=document.getElementById("expandMeubleData");
+  etageresData=document.getElementById("etageresData");
+  contenuData=document.getElementById("contenuData");
+  aspectData=document.getElementById("aspectData");
+  enregistrementData=document.getElementById("enregistrementData");
+
+  warningInterfaceBloc=document.getElementById("warningInterfaceBloc");
+
   contextMenuGeneral = document.getElementById("contextMenuGeneral");
   contextMenuMeuble = document.getElementById("contextMenuMeuble");
   contextMenuBloc= document.getElementById("contextMenuBloc");
@@ -2816,6 +2842,7 @@ function initializeInterface() {
   // listeners
   //buttons meuble
   checkboxVertical.addEventListener("click", switchVertical);
+  checkboxSimple.addEventListener("click", switchSimple);
   buttonSocle.addEventListener("click",function() {switchSocle(indiceCurrentMeuble)});
   buttonPied.addEventListener("click",function() {switchPied(indiceCurrentMeuble)});
   buttonSuspendu.addEventListener("click",function() {switchSuspendu()});  //à virer
@@ -2835,6 +2862,13 @@ function initializeInterface() {
     selectedMeuble.computeBlocsSize();
     selectedMeuble.updateMeuble();
     frameCamera()
+  }
+
+  function switchSimple() {
+    selectedMeuble.isSimple = !selectedMeuble.isSimple;
+    //selectedMeuble.computeBlocsSize();
+    selectedMeuble.updateMeuble();
+    //frameCamera()
   }
 
   function switchSocle(num) {
@@ -3083,17 +3117,48 @@ function updateSelection() {
   dropDownPlateau.addEventListener("click",function (event) {dropMenu(event)},false);
   dropDownCadre.addEventListener("click",function (event) {dropMenu(event)},false);
 
-  meubleSliders.style.display="none";
-  titleMeuble.addEventListener("click",function expandInterfaceMeuble(event) {
-    if (meubleSliders.style.display=="none") {meubleSliders.style.display="block"}
-      else {meubleSliders.style.display="none"}
-  },false);
 
-  blocsSliders.style.display="none";
-  titleBloc.addEventListener("click",function expandInterfaceBlocs(event) {
-    if (blocsSliders.style.display=="none") {blocsSliders.style.display="block"}
-      else {blocsSliders.style.display="none"}
-  },false);
+function expand(divSwitch,divData) {
+  if (divSwitch.className=="expandOff") {
+    divData.style.display="block";
+    divSwitch.className="expandOn";
+  }
+    else {
+      divData.style.display="none";
+      divSwitch.className="expandOff";
+    }
+//console.log(divData.style.display);
+//console.log(divSwitch.className);
+}
+
+  meubleData.style.display="none";
+  expandMeubleData.addEventListener("click",function expandMeubleDataFn(event)
+  {expand(expandMeubleData,meubleData)});
+
+  meubleSliders.style.display="none";
+  expandDimensions.addEventListener("click",function expandDimensionsMeuble(event)
+  {expand(expandDimensions,meubleSliders)});
+
+  blocsData.style.display="none";
+  expandBloc.addEventListener("click",function expandFn(event)
+  {expand(expandBloc,blocsData)});
+
+  //blocsData.style.display="none";
+  expandEtageres.addEventListener("click",function expandFn(event)
+  {expand(expandEtageres,etageresData)});
+
+  contenuData.style.display="none";
+  warningInterfaceBloc.style.display="none";
+  expandContenu.addEventListener("click",function expandFn(event)
+  {expand(expandContenu,contenuData); refreshInterfaceBlocs()});
+
+  aspectData.style.display="none";
+  expandAspect.addEventListener("click",function expandFn(event)
+  {expand(expandAspect,aspectData)});
+
+  enregistrementData.style.display="none";
+  expandEnregistrement.addEventListener("click",function expandFn(event)
+  {expand(expandEnregistrement,enregistrementData)});
 }
 
 function setSelectionMode(value) {
@@ -3557,7 +3622,7 @@ function changeCurrentMeuble(meuble) {
   //selectedObjects=[];
   //selectedObjects.push(selectedMeuble);
   select(meuble);
-  updateCheckboxVertical();
+  updateCheckboxMeuble();
   updateInterfaceMeuble();
   updateInterfaceBlocs();
   updateInterfaceAspect();  
@@ -3665,22 +3730,10 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     updateInterfaceLargeur();
     frameCamera();
   }
-  
-  let retour = createSliderWithoutListener(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
 
-  let nbBlocsDiv = retour[0];
-  nbBlocsDiv.querySelector("#slider").addEventListener("input",function (event) {
-    onChangeBlocsQuantity(Number(event.target.value));
-  nbBlocsDiv.querySelector("#number").value=Number(event.target.value); //refresh
-  },false);
+let retour;
 
-  nbBlocsDiv.querySelector("#number").addEventListener("change",function (event) {
-    onChangeBlocsQuantity(Number(event.target.value));
-  nbBlocsDiv.querySelector("#slider").value=Number(event.target.value); //refresh
-  },false);
-
-  meubleSliders.append(nbBlocsDiv);
-
+  //placement horizontal
   retour = createSliderWithoutListener(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
   XDiv=retour[0];
   XDivSlider=retour[1];
@@ -3744,15 +3797,16 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     frameCamera();
   }
 
-  updateCheckboxVertical();
+  updateCheckboxMeuble();
   updateButtonPlateau();
   updateButtonCadre();
   updateButtonFixationGroup();
   updateButtonDelete();
 }
 
-function updateCheckboxVertical() {
+function updateCheckboxMeuble() {
   if (selectedMeuble.disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
+  if (selectedMeuble.isSimple) {checkboxSimple.checked=true} else {checkboxSimple.checked=false}
 }
 
 function updateButtonDelete() {
@@ -3830,8 +3884,22 @@ function rebuildInterfaceBlocs() {
 }
 
 function refreshInterfaceBlocs() {
-  if (selectedObjects.length==0) return;
+  if (expandContenu.className=="expandOff") {
+    warningInterfaceBloc.style.display="none";
+    return;
+  }
+  if (selectedObjects.length==0) {
+    contenuData.style.display="none";
+    warningInterfaceBloc.style.display="flex";
+    return;
+  }
+  warningInterfaceBloc.style.display="none";
+
+  contenuData.style.display="block";
+
   var object=selectedObjects[selectedObjects.length-1];
+  console.log(object.name);
+  console.log(object.type);
   if (object.type == "Portes") {
     buttonPorte.className = "buttonOn";
     divPortes.style.display = "inline";
@@ -3905,20 +3973,32 @@ function startMaterialAnimationBloc(num) {
 function createSlidersBlocs() {
   let numBloc=indiceCurrentBloc;
   let meuble = selectedMeuble;
-  let retour = createSliderWithoutListener(meuble.bloc[numBloc], "taille", "Taille du bloc", meuble.bloc[numBloc].taille, 0, 10, 200);
-  let slideLargeurBloc = retour[0];
+  let retour;
+
+  //nbBlocs
+  retour = createSliderWithoutListener(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
+  let nbBlocsDiv = retour[0];
+  nbBlocsDiv.querySelector("#slider").addEventListener("input",function (event) {
+    onChangeBlocsQuantity(Number(event.target.value));
+  nbBlocsDiv.querySelector("#number").value=Number(event.target.value); //refresh
+  },false);
+  nbBlocsDiv.querySelector("#number").addEventListener("change",function (event) {
+    onChangeBlocsQuantity(Number(event.target.value));
+  nbBlocsDiv.querySelector("#slider").value=Number(event.target.value); //refresh
+  },false);
+  blocsSliders.append(nbBlocsDiv);
 
   //Taille bloc
+  retour = createSliderWithoutListener(meuble.bloc[numBloc], "taille", "Taille du bloc", meuble.bloc[numBloc].taille, 0, 10, 200);
+  let slideLargeurBloc = retour[0];
   slideLargeurBloc.querySelector("#slider").addEventListener("input", function (event) {
     setTailleOnSelection(Number(event.target.value));
     slideLargeurBloc.querySelector("#number").value=Number(event.target.value); //refresh
   }, false);
-
   slideLargeurBloc.querySelector("#number").addEventListener("change", function (event) {
     setTailleOnSelection(Number(event.target.value));
     slideLargeurBloc.querySelector("#slider").value=Number(event.target.value); //refresh
   }, false);
-
   blocsSliders.append(slideLargeurBloc);
 
   retour = createSliderWithoutListener(meuble.bloc[numBloc], "etageres", "Nombre d'étagères", meuble.bloc[numBloc].etageres, 0, 0, maxEtageres);
