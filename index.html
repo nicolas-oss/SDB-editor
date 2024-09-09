@@ -18,98 +18,90 @@
 </head>
 
 <body id="body">
+
+  <!--<script src="constantes.js"></script>
+  <script type="module" src="lights et environnement.js"></script>
+   <script type="module" src="materials.js"></script>
+
+  <script type ="module" src="/element.js"></script>
+ -->
   <script type="module" src="/main.js"></script>
   <div id="globalContainer">
     <div class="overflow">
       <div id="interfaceGauche">
         <div id="meuble">
-          <div class="title" class="expand" target="meubleSliders">
-            <p id="titleMeuble">Meuble</p>
+          <div class="title">
+            <p class="expandOff" id="expandMeubleData">Meuble</p>
             <div class="buttonsSelectDiv">
               <input type="button" id="buttonAdjustMeuble" value="Ajust.">
               <input type="button" id="buttonSelectMeuble" value="Sélect.">
             </div>
           </div>
-          <select id="selectListMeubles">
-          </select>
-          <div id="buttonsMeubles" class="boutons">
-            <input type="button" id="buttonNewMeuble" value="Nouveau" class="buttonFlex">
-            <input type="button" id="buttonDupliquerMeuble" value="Dupliquer" class="buttonFlex">
-            <input type="button" id="buttonDeleteMeuble" value="Supprimer" class="buttonFlex">
+          <div id="meubleData">
+            <select id="selectListMeubles">
+            </select>
+            <div id="buttonsMeubles" class="boutons">
+              <input type="button" id="buttonNewMeuble" value="Nouveau" class="buttonFlex">
+              <input type="button" id="buttonDupliquerMeuble" value="Dupliquer" class="buttonFlex">
+              <input type="button" id="buttonDeleteMeuble" value="Supprimer" class="buttonFlex">
+            </div>
+            <div id="meubleHiddenIfEmpty">
+            <div id="switchMeuble">
+              <label class="switch">
+                <input type="checkbox" id="checkboxVertical" checked="false">
+                <span class="slider round">Vertical</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxSimple" checked="true">
+                <span class="slider round">Divisions blocs simples</span>
+              </label>
+            </div>
+            <div class="boutons">
+              <input type="button" id="buttonPied" value="Sur pieds" class="buttonFlex">
+              <input type="button" id="buttonSocle" value="Sur socle" class="buttonFlex">
+              <input type="button" id="buttonSuspendu" value="Fixé / Posé" class="buttonFlex">
+            </div>
+            <div class="boutons">
+              <input type="button" id="buttonCadre" value="Cadre" class="buttonFlex">
+              <input type="button" id="buttonPlateau" value="Plateau" class="buttonFlex">
+            </div>
+            <div class="expandOff" target="meubleSliders" id="expandDimensions">Dimensions</div>
+            <div id="meubleSliders" class="expandContent"></div>
           </div>
-          <div id="divSwitchVertical">
-            <label class="switch">
-              <input type="checkbox" id="checkboxVertical" checked="false">
-              <span class="slider round">Vertical</span>
-            </label>
-          </div>
-          <div class="boutons">
-            <input type="button" id="buttonPied" value="Sur pieds" class="buttonFlex">
-            <input type="button" id="buttonSocle" value="Sur socle" class="buttonFlex">
-            <input type="button" id="buttonSuspendu" value="Fixé / Posé" class="buttonFlex">
-          </div>
-          <div class="boutons">
-            <input type="button" id="buttonCadre" value="Cadre" class="buttonFlex">
-            <input type="button" id="buttonPlateau" value="Plateau" class="buttonFlex">
-          </div>
-          <div id="meubleSliders" class="expandContent"></div>
+        </div>
+          <div id="warningMeuble" class="warning">La sélection est vide</div> 
 
         </div>
         <div id="blocs">
           <div class="title">
-            <p id="titleBloc">Blocs</p>
+            <p id="expandBloc" class="expandOff">Blocs</p>
             <div class="buttonsSelectDiv">
               <input type="button" id="buttonAdjustBloc" value="Ajust.">
               <input type="button" id="buttonSelectBloc" value="Sélect.">
             </div>
           </div>
-          <select id="selectListBlocs">
-          </select>
-          <div id="blocsSliders"></div>
-          <div id="buttonsBlocs" class="boutons">
-            <input type="button" id="buttonPorte" value="Portes" class="buttonFlex">
-            <input type="button" id="buttonTiroirs" value="Tiroirs" class="buttonFlex">
-            <input type="button" id="buttonEtageres" value="Étagères" class="buttonFlex">
+          <div id="blocsData">
+            <select id="selectListBlocs">
+            </select>
+            <div id="blocsSliders"></div>
           </div>
-          <div id="buttonsBlocs" class="boutons">
-            <input type="button" id="buttonPlein" value="Panneau" class="buttonFlex">
+          <div id="warningBloc" class="warning">La sélection est vide</div>
 
-            <input type="button" id="buttonSousMeuble" value="Meuble" class="buttonFlex">
-          </div>
-          <div id="divPortes">
-            <div id="nbPortes">
-              Nombre de portes
-              </br>
-              <div class="boutons">
-                <input type="button" id="buttonUnePorte" value="1" class="buttonFlex">
-                <input type="button" id="buttonDeuxPortes" value="2" class="buttonFlex">
-              </div>
-            </div>
-            <div id="sensOuverture">
-              Sens d'ouverture
-              </br>
-              <div class="boutons">
-                <input type="button" id="buttonOuverturePorteGauche" value="Gauche" class="buttonFlex">
-                <input type="button" id="buttonOuverturePorteDroite" value="Droite" class="buttonFlex">
-              </div>
-            </div>
-          </div>
-          <div id="divEtageres">
-            <input type="checkbox" id="checkBoxEtageresVerticales">
-            Étagères verticales
-          </div>
-          <div id="buttonsEtageres"></div>
-          <div id="buttonsOptionsBlocs">
-            <input type="checkbox" id="checkboxRentrant">
-            Rentrant
-          </div>
         </div>
         <div id="etageres">
           <div class="title">
-            <p>Étagères</p>
-            <input type="button" id="buttonSelectEtagere" value="Sélect.">
+            <p class="expandOff" id="expandEtageres">Étagères</p>
+            <div class="buttonsSelectDiv">
+              <input type="button" id="buttonAdjustEtagere" value="Ajust.">
+              <input type="button" id="buttonSelectElement" value="Select.">
+            </div>
           </div>
-          
+          <div id="etageresData">
+            <div id="etageresSliders"></div>
+            <input type="button" id="buttonResetEtageres" value="Reset">
+          </div>
+          <div id="warningEtageres" class="warning">La sélection est vide</div>
+
         </div>
       </div>
     </div>
@@ -150,115 +142,157 @@
           </ul>
         </div>
       </div>
- 
+
       <div id="canvas"></div>
     </div>
     <div>
       <div id="interfaceDroite">
+        <div id="contenu">
+          <div class="title">
+            <p id="expandContenu" class="expandOff">Contenu</p>
+          </div>
+          <div id="contenuData">
+            <div id="buttonsBlocs" class="boutons">
+              <input type="button" id="buttonPorte" value="Portes" class="buttonFlex">
+              <input type="button" id="buttonTiroirs" value="Tiroirs" class="buttonFlex">
+              <input type="button" id="buttonEtageres" value="Étagères" class="buttonFlex">
+            </div>
+            <div id="buttonsBlocs" class="boutons">
+              <input type="button" id="buttonPlein" value="Panneau" class="buttonFlex">
+              <input type="button" id="buttonSousMeuble" value="Meuble" class="buttonFlex">
+            </div>
+            <div id="divPortes">
+              <div id="nbPortes">
+                Nombre de portes
+                </br>
+                <div class="boutons">
+                  <input type="button" id="buttonUnePorte" value="1" class="buttonFlex">
+                  <input type="button" id="buttonDeuxPortes" value="2" class="buttonFlex">
+                </div>
+              </div>
+              <div id="sensOuverture">
+                Sens d'ouverture
+                </br>
+                <div class="boutons">
+                  <input type="button" id="buttonOuverturePorteGauche" value="Gauche" class="buttonFlex">
+                  <input type="button" id="buttonOuverturePorteDroite" value="Droite" class="buttonFlex">
+                </div>
+              </div>
+            </div>
+            <div id="divEtageres">
+              <input type="checkbox" id="checkBoxEtageresVerticales">
+              Étagères verticales
+            </div>
+            <div id="buttonsEtageres"></div>
+            <div id="buttonsOptionsBlocs">
+              <input type="checkbox" id="checkboxRentrant">
+              Rentrant
+            </div>
+          </div>
+          <div id="warningContenu" class="warning">La sélection est vide</div>
+        </div>
+
         <div id="aspect">
           <div class="title">
-          <p>Aspect</p>
+            <p id="expandAspect" class="expandOff">Aspect</p>
+          </div>
+          <div id="aspectData">
+            <p>Style</p>
+            <select id="style">
+              <option>Basique</option>
+              <option>Arrondi</option>
+              <option>Suédois 1</option>
+              <option>Suédois 2</option>
+            </select>
+            <p>Poignees</p>
+            <div class="dropDown" cible="menuPoignees" id="dropDownPoignees">
+              <div class="dropDownTitle" cible="menuPoignees">
+                <div class="popupTitle" cible="menuPoignees">Poignées</div>
+                <div class="dropDownRightArrow" cible="menuPoignees">▼</div>
+              </div>
+              <div id="menuPoignees" class="dropDownContent">
+              </div>
+            </div>
+            <!-- <select id="listPoigneesSelect"></select> -->
+            <div id="slidersAspect"></div>
+            <div class="lineColor">
+              <p>Matières</p>
+              <p>Couleurs</p>
+            </div>
+            <div class="lineColor">
+              <div class="dropDown" cible="menuTexturesMeuble" id="dropDownMeuble">
+                <div class="dropDownTitle" cible="menuTexturesMeuble">
+                  <div class="popupTitle" cible="menuTexturesMeuble">Meuble</div>
+                  <div class="dropDownRightArrow" cible="menuTexturesMeuble">▼</div>
+                </div>
+                <div class="dropDownContent" id="menuTexturesMeuble">
+                </div>
+              </div>
+              <input type="color" value="#ffffff" list="colorMeubleList" id="colorMeuble" />
+              <datalist id="colorMeubleList">
+                <option value="#800000"></option>
+                <option value="#8B0000"></option>
+                <option value="#A52A2A"></option>
+                <option value="#DC143C"></option>
+              </datalist>
+            </div>
+            <div class="lineColor">
+              <div class="dropDown" cible="menuTexturesTiroirs" id="dropDownTiroirs">
+                <div class="dropDownTitle" cible="menuTexturesTiroirs">
+                  <div class="popupTitle" cible="menuTexturesTiroirs">Tiroirs</div>
+                  <div class="dropDownRightArrow" cible="menuTexturesTiroirs">▼</div>
+                </div>
+                <div class="dropDownContent" id="menuTexturesTiroirs">
+                </div>
+              </div>
+              <input type="color" list="colorDrawerList" id="colorDrawer" />
+              <datalist id="colorDrawerList">
+                <option value="#800000"></option>
+                <option value="#8B0000"></option>²
+                <option value="#A52A2A"></option>
+                <option value="#DC143C"></option>
+              </datalist>
+            </div>
+            <div class="lineColor">
+              <div class="dropDown" cible="menuTexturesPlateau" id="dropDownPlateau">
+                <div class="dropDownTitle" cible="menuTexturesPlateau">
+                  <div class="popupTitle" cible="menuTexturesPlateau">Plateau</div>
+                  <div class="dropDownRightArrow" cible="menuTexturesPlateau">▼</div>
+                </div>
+                <div id="menuTexturesPlateau" class="dropDownContent">
+                </div>
+              </div>
+              <input type="color" list="colorPlateauList" id="colorPlateau" />
+              <datalist id="colorPlateauList">
+                <option value="#800000"></option>
+                <option value="#8B0000"></option>
+                <option value="#A52A2A"></option>
+                <option value="#DC143C"></option>
+              </datalist>
+            </div>
+            <div class="lineColor">
+              <div class="dropDown" cible="menuTexturesCadre" id="dropDownCadre">
+                <div class="dropDownTitle" cible="menuTexturesCadre">
+                  <div class="popupTitle" cible="menuTexturesCadre">Cadre</div>
+                  <div class="dropDownRightArrow" cible="menuTexturesCadre">▼</div>
+                </div>
+                <div class="dropDownContent" id="menuTexturesCadre">
+                </div>
+              </div>
+              <input type="color" list="colorCadreList" id="colorCadre" />
+              <datalist id="colorPadreList">
+                <option value="#800000"></option>
+                <option value="#8B0000"></option>
+                <option value="#A52A2A"></option>
+                <option value="#DC143C"></option>
+              </datalist>
+            </div>
+          </div>
         </div>
-          <p>Style</p>
-          <select id="style">
-            <option>Basique</option>
-            <option>Arrondi</option>
-            <option>Suédois 1</option>
-            <option>Suédois 2</option>
-          </select>
-          <p>Poignees</p>
-          <div class="dropDown" cible="menuPoignees" id="dropDownPoignees">
-            <div class="dropDownTitle" cible="menuPoignees">
-              <div class="popupTitle" cible="menuPoignees">Poignées</div>
-              <div class="dropDownRightArrow" cible="menuPoignees">▼</div>
-            </div>
-            <div id="menuPoignees" class="dropDownContent">
-            </div>
-          </div>
-          <!-- <select id="listPoigneesSelect"></select> -->
-          <div id="slidersAspect"></div>
-          <div class="lineColor">
-            <p>Matières</p>
-            <p>Couleurs</p>
-          </div>
-          <div class="lineColor">
-            <div class="dropDown" cible="menuTexturesMeuble" id="dropDownMeuble">
-              <div class="dropDownTitle" cible="menuTexturesMeuble">
-                <div class="popupTitle" cible="menuTexturesMeuble">Meuble</div>
-                <div class="dropDownRightArrow" cible="menuTexturesMeuble">▼</div>
-              </div>
-              <div class="dropDownContent" id="menuTexturesMeuble">
-              </div>
-            </div>
-            <input type="color" value="#ffffff" list="colorMeubleList" id="colorMeuble" />
-            <datalist id="colorMeubleList">
-              <option value="#800000"></option>
-              <option value="#8B0000"></option>
-              <option value="#A52A2A"></option>
-              <option value="#DC143C"></option>
-            </datalist>
-          </div>
-          <div class="lineColor">
-            <div class="dropDown" cible="menuTexturesTiroirs" id="dropDownTiroirs">
-              <div class="dropDownTitle" cible="menuTexturesTiroirs">
-                <div class="popupTitle" cible="menuTexturesTiroirs">Tiroirs</div>
-                <div class="dropDownRightArrow" cible="menuTexturesTiroirs">▼</div>
-              </div>
-              <div class="dropDownContent" id="menuTexturesTiroirs">
-              </div>
-            </div>
-            <input type="color" list="colorDrawerList" id="colorDrawer" />
-            <datalist id="colorDrawerList">
-              <option value="#800000"></option>
-              <option value="#8B0000"></option>²
-              <option value="#A52A2A"></option>
-              <option value="#DC143C"></option>
-            </datalist>
-          </div>
-          <div class="lineColor">
-            
-          <div class="dropDown" cible="menuTexturesPlateau" id="dropDownPlateau">
-            <div class="dropDownTitle" cible="menuTexturesPlateau">
-              <div class="popupTitle" cible="menuTexturesPlateau">Plateau</div>
-              <div class="dropDownRightArrow" cible="menuTexturesPlateau">▼</div>
-            </div>
-            <div id="menuTexturesPlateau" class="dropDownContent">
-            </div>
-          </div>
-            <input type="color" list="colorPlateauList" id="colorPlateau" />
-            <datalist id="colorPlateauList">
-              <option value="#800000"></option>
-              <option value="#8B0000"></option>
-              <option value="#A52A2A"></option>
-              <option value="#DC143C"></option>
-            </datalist>
-          </div>
-          <div class="lineColor">
-            
-          <div class="dropDown" cible="menuTexturesCadre" id="dropDownCadre">
-            <div class="dropDownTitle" cible="menuTexturesCadre">
-              <div class="popupTitle" cible="menuTexturesCadre">Cadre</div>
-              <div class="dropDownRightArrow" cible="menuTexturesCadre">▼</div>
-            </div>
-            <div class="dropDownContent" id="menuTexturesCadre">
-            </div>
-          </div>
-          <input type="color" list="colorCadreList" id="colorCadre" />
-            <datalist id="colorPadreList">
-              <option value="#800000"></option>
-              <option value="#8B0000"></option>
-              <option value="#A52A2A"></option>
-              <option value="#DC143C"></option>
-            </datalist>
-        </div>
-            
-          </div>
-          
-
 
         <div id="enregistrement">
-          <p>Préconfiguration</p>
-          <div class="deuxBoutons boutons">
+          <p id="expandEnregistrement" class="expandOff">Préconfiguration</p>
+          <div class="deuxBoutons boutons" id="enregistrementData">
             <input type="button" id="charger" value="Charger" class="deuxBoutons">
             <input type="button" id="enregistrer" value="Enregistrer" class="deuxBoutons">
           </div>

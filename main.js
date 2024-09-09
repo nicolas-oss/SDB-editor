@@ -7,6 +7,7 @@ import { DragControls } from 'three/addons/controls/DragControls.js';
 import { poignees } from './poignees';
 import { initPoigneesList } from "./poignees.js";
 import { initListTexturesMeuble, imagesMeuble, image, imagesPath } from "./textures.js"
+import {roundEdgedBox} from "./roundEdgedBox.js";
 
 class Element {
   constructor(bloc,i) {
@@ -601,7 +602,7 @@ class Bloc {
     })
 
     //boite de sélection
-    geometry = RoundEdgedBox(this.l + epsilon, this.h + epsilon, this.p + epsilon, 2, 1, 1, 1, 1);
+    geometry = roundEdgedBox(this.l + epsilon, this.h + epsilon, this.p + epsilon, 2, 1, 1, 1, 1);
     boiteSelectionBloc = new THREE.Mesh(geometry, materialSelectionBloc);
     boiteSelectionBloc.name = "boiteSelectionBloc" + this.numero;
     boiteSelectionBloc.shortName="boiteSelectionBloc";
@@ -962,7 +963,7 @@ class Meuble {
         plateau = new THREE.Mesh(geometry, [materialPlateauCote, materialPlateauCote, materialPlateau, materialPlateau, materialPlateauAvant, materialPlateauAvant])
       }
       else {
-        geometry = RoundEdgedBox(sx, sy, sz, 0.5, 1, 1, 1, 1);
+        geometry = roundEdgedBox(sx, sy, sz, 0.5, 1, 1, 1, 1);
         plateau = new THREE.Mesh(geometry, materialPlateau);
       }
 
@@ -1185,7 +1186,7 @@ class Meuble {
     let x=this.largeur + delta + epsilon;
     let y=this.hauteur + delta + epsilon;
     let z=this.profondeur + delta + epsilon;
-    geometry = RoundEdgedBox(x, y, z, 3, 2, 2, 2, 2)
+    geometry = roundEdgedBox(x, y, z, 3, 2, 2, 2, 2)
     cube = new THREE.Mesh(geometry, materialSelectionMeuble);
     //cube.numero = this.numero;
     cube.name = "boiteSelectionMeuble" + this.numero;
@@ -1438,7 +1439,105 @@ class Meuble {
   }
 }
 
-  function createPortes(l,h,p,nombrePortes,ouverturePorte,style,isRentrant,numero) {
+//fonctions meuble
+
+function recomputeMeublesId() {
+  for (var i=0; i<meubles.length; i++)
+  {
+    meubles[i].numero=i;
+    updateAllSelectable();
+  }
+}
+
+function deleteMeuble(num) {
+  console.log("delete meuble",num);
+  let rootMeuble=scene.getObjectByName("meuble "+num);
+  scene.remove(rootMeuble);
+  meubles.splice(num,1);
+  geometry.dispose();
+  material.dispose();
+  //selectableMeuble.splice(num,1);
+  //meubleRoot.splice(num,1);
+  geometry.dispose();
+  material.dispose();
+  selectedObjects=[];
+  indiceCurrentBloc=-1;
+  indiceCurrentMeuble=-1;
+/*   if (meubles.length==0) {
+    indiceCurrentMeuble=-1;
+    selectedObjects=[];
+    indiceCurrentBloc=-1;
+  }
+  else if (meubles.length < (indiceCurrentMeuble+1)) {
+    indiceCurrentMeuble-=1;
+    select (meubles[indiceCurrentMeuble]);
+  } */
+  recomputeMeublesId();
+  renameAllMeubles();
+  updateScene();
+  updateAllSelectable();
+}
+
+function renameAllMeubles() {
+  for (var i=0;i<meubles.length;i++) {
+    meubles[i].rename();
+  }
+}
+
+function placeNewMeuble(num) {
+  var minX = -10e34;
+  if (num>0) {
+    for (var i=0; i<num; i++) {
+      let currentMinX = meubles[i].x+meubles[i].getLargeurReelle()/2+ meubles[num].getLargeurReelle()/2;
+      minX = Math.max(currentMinX,minX)
+    }
+    meubles[num].x=minX;
+    //meubles[num].y=0;
+  }
+}
+
+function createNewMeuble() {
+  indiceCurrentMeuble=meubles.length;
+  meubles[indiceCurrentMeuble] = new Meuble(indiceCurrentMeuble);
+  selectedMeuble=meubles[indiceCurrentMeuble];
+  placeNewMeuble(indiceCurrentMeuble);
+  selectedMeuble.updateMeuble();
+  select(meubles[indiceCurrentMeuble],true);
+  frameCamera();
+}
+
+function duplicatePropertiesValues(fromObj,toObj) {
+  Object.keys(fromObj,toObj).forEach(key => {
+    if (typeof toObj[key]=="object") {
+      duplicatePropertiesValues(fromObj[key],toObj[key]);
+    }
+    else {toObj[key]=fromObj[key]}
+  });
+}
+
+function duplicateMeuble(num) {
+  var indiceNewMeuble=meubles.length;
+  meubles[indiceNewMeuble] = new Meuble(indiceNewMeuble);
+  for (var i=0; i<meubles[num].nbBlocs; i++) {
+    meubles[indiceNewMeuble].bloc[i]=new Bloc(i);
+    duplicatePropertiesValues(meubles[num].bloc[i],meubles[indiceNewMeuble].bloc[i])
+  }
+  duplicatePropertiesValues(meubles[num],meubles[indiceNewMeuble])
+  meubles[indiceNewMeuble].numero = indiceNewMeuble;
+  meubles[indiceNewMeuble].name = "Meuble "+(indiceNewMeuble+1);
+  //meubles[indiceNewMeuble].createGeometryRoot();
+  //indiceCurrentMeuble = indiceNewMeuble;
+  meubles[indiceNewMeuble].updateMeuble();
+  placeNewMeuble(indiceNewMeuble);
+  scene.add(meubles[indiceNewMeuble].root);
+  changeCurrentMeuble(indiceNewMeuble,true);
+  updateScene();
+  frameCamera();
+}
+
+//fonctions creations geometries
+
+function createPortes(l,h,p,nombrePortes,ouverturePorte,style,isRentrant,numero) {
   var porte = [];
     var offset = epaisseur * isRentrant ;
     if (nombrePortes == "1") {
@@ -1492,27 +1591,61 @@ class Meuble {
     }
 }
 
+function getPlancheSuedoise(x, y, z, largeur, epaisseurS) {
+  let geo = new THREE.BufferGeometry;
+  let pieceA = new THREE.BufferGeometry;
+  pieceA = roundEdgedBox(largeur, y, epaisseurS, 0.5, 1, 1, 1, 1);
+  let pieceB = pieceA.clone(true);
+  pieceA.translate(largeur / 2 - x / 2, 0, 0);
+  pieceB.translate(-largeur / 2 + x / 2, 0, 0);
+  let pieceC = new THREE.BufferGeometry;
+  let offset = -0.70;
+  pieceC = roundEdgedBox(x - 2 * largeur - offset, largeur, epaisseurS, 0.5, 1, 1, 1, 1);
+  let pieceD = pieceC.clone(true);
+  pieceC.translate(0, -y / 2 + largeur/2, 0);
+  pieceD.translate(0, y / 2 - largeur/2, 0);
+  let cadre = new THREE.BoxGeometry(x - 2 * largeur, y - largeur, z);
+  let geometries = [];
+  geometries.push(pieceA, pieceB, pieceC, pieceD, cadre);
+  geo = BufferGeometryUtils.mergeGeometries(geometries);
+  pieceA.dispose();
+  pieceB.dispose();
+  pieceC.dispose();
+  pieceD.dispose();
+  return geo;
+}
 
+function createPlanche (x,y,z,styleParam) {
+  let geo = new THREE.BufferGeometry;
+  if (isPreviewOn || styleParam=="Basique") {
+    geo = new THREE.BoxGeometry( x,y,z );
+    return geo;
+  }
+  if (styleParam == "Arrondi") {geo = roundEdgedBox(x,y,z,0.5,1,1,1,1)}
+  if (styleParam=="Suédois 1") { 
+    geo = getPlancheSuedoise (x,y,z,largeurSuedois,epaisseurSuedois);
+  }
+  if (styleParam=="Suédois 2") { 
+    let geoTemp = getPlancheSuedoise (x,y,z,largeurSuedois/2,epaisseurSuedois);
+    let pieceCentre = new THREE.BufferGeometry;
+    pieceCentre = roundEdgedBox(x-2*largeurSuedois, y-2*largeurSuedois, epaisseurSuedois, 0.5, 1, 1, 1, 1);
+    let geometries=[];
+    geometries.push(geoTemp,pieceCentre);
+    geo = BufferGeometryUtils.mergeGeometries(geometries);
+  }
+  return geo;
+}
 
-
-
-
-
-
-
-
-
-
+//variables globales et constantes
 var globalStyle="Basique";
 
 var selectionMode="meubles";
 var selectedMeuble;
-//var selectedElement;
 var selectedObjects=[];
 
 var isPreviewOn = false;
 
-var indiceCurrentBloc = 0;
+var indiceCurrentBloc = -1;
 var indiceCurrentMeuble = 0;
 
 const epaisseurHandleBlocs = 6;
@@ -1560,6 +1693,134 @@ var selectableElements=[];
 
 var pressedKey=undefined;
 
+var scene,camera,renderer;
+var canvas,canvasSize,cameraTarget,boundingBoxCenter;
+var boundingBoxHeight, boundingBoxWidth;
+let controls;
+
+function initializeCamera() {
+  //new scene and camera
+  scene = new THREE.Scene();
+  canvas = document.getElementById("canvas");
+  canvasSize = canvas.getBoundingClientRect();
+  camera = new THREE.PerspectiveCamera(focale, canvasSize.width / window.innerHeight, 0.1, 1000);
+  focaleV = getfocaleV(focale, canvasSize.width, window.innerHeight);
+  cameraTarget = new THREE.Object3D();
+  camera.position.z = 180; //overridden by orbit
+  camera.position.y = 100;
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(canvasSize.width, window.innerHeight);
+  canvas.appendChild(renderer.domElement);
+  boundingBoxCenter = new THREE.Vector3();
+
+  // camera controls
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.listenToKeyEvents(window); // optional
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.screenSpacePanning = false;
+  controls.minDistance = 0.1;
+  controls.maxDistance = 1000;
+  controls.maxPolarAngle = Math.PI / 2;
+}
+
+function getfocaleV(focale,width,height) {
+  if ((height/width)>1) return focale
+  else return (2*(height/2)/((width/2)/Math.tan(0.0174533*(focale/2))));
+}
+
+function getfocaleH(focale,width,height) {
+  return (2*(height/2)/((width/2)/Math.tan(0.0174533*(focale/2))));
+}
+
+//listener canvas
+
+function onWindowResize() {
+  canvasSize = canvas.getBoundingClientRect();
+  let width = canvas.offsetWidth;
+  let height = window.innerHeight;
+  camera.aspect = width  / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+  focaleV=getfocaleV(focale,width,height);
+}
+
+//calcul de la position du pointeur da la souris dans le canvas THREE
+function onPointerMove( event ) {   
+  canvasSize = canvas.getBoundingClientRect();
+  let x = event.clientX - canvasSize.left; 
+  let y = event.clientY - canvasSize.top;
+  pointerScreen.x=x;
+  pointerScreen.y=y;
+  pointer.x = ( x / canvasSize.width ) * 2 - 1;
+  pointer.y = - ( y / window.innerHeight ) * 2 + 1;
+}
+
+function add3DListener() {
+  //listener espace 3D et keyboard
+  canvas.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('resize', onWindowResize);
+  //canvas.addEventListener('click', onCanvasClick);
+  //canvas.addEventListener('dragstart', onCanvasDrag, false);
+  canvas.addEventListener('contextmenu', onOpenContextMenu);
+  //canvas.addEventListener('mouseleave', function leaving() {});
+
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+}
+
+function onCanvasDrag () {
+  if (raycastedBloc>-1) console.log("pointer=",pointer);
+}
+
+function onCanvasClick() {
+  //
+}
+
+function onKeyDown(event) {
+if (event.key=="Escape") {
+  hideAllContextMenu();
+  clearSelectionList();
+  //refreshInterfaceContenu();
+  indiceCurrentMeuble=-1;
+  indiceCurrentBloc=-1;
+  refreshInterface();
+}
+pressedKey=event.key;
+}
+
+function onKeyUp(event) {
+ pressedKey=undefined;
+}
+
+function onOpenContextMenu() {
+  contextMenuGeneral.style.display = "block";
+  contextMenuGeneral.style.left = pointerScreen.x + "px";
+  contextMenuGeneral.style.top = pointerScreen.y + "px";
+  if (raycastedMeuble) {
+    changeCurrentMeubleFromClick(raycastedMeuble.meuble,false);
+    updateAllSelectable();
+  }
+  contextMenuMeuble.style.display = "block";
+
+  if (raycastedBloc) {
+    indiceCurrentBloc = raycastedBloc.bloc.numero;
+    changeCurrentBlocFromClick(raycastedBloc,false);
+    updateAllSelectable();
+    contextMenuBloc.style.display = "block";
+  }
+  if (raycastedEtagere > -1) {
+    contextMenuEtagere.style.display = "block";
+  }
+}
+
+function hideAllContextMenu() {
+  contextMenuGeneral.style.display="none";
+  contextMenuMeuble.style.display="none";
+  contextMenuBloc.style.display="none";
+  contextMenuEtagere.style.display="none";
+}
+
 //pointer raycast
 const pointer = new THREE.Vector2(); //coordonées three normalisées
 pointer.x=-1;
@@ -1568,31 +1829,6 @@ const pointerScreen = new THREE.Vector2(); // coordonées screenspace
 pointerScreen.x=-1;
 pointerScreen.y=-1;
 const radius = 5;
-
-//new scene and camera
-const scene = new THREE.Scene();
-var canvas = document.getElementById("canvas");
-var canvasSize = canvas.getBoundingClientRect();
-const camera = new THREE.PerspectiveCamera( focale, canvasSize.width/window.innerHeight, 0.1, 1000 );
-focaleV=getfocaleV(focale,canvasSize.width,window.innerHeight);
-var cameraTarget = new THREE.Object3D();
-camera.position.z = 180; //overridden by orbit
-camera.position.y = 100;
-const renderer = new THREE.WebGLRenderer({antialias : true});
-renderer.setSize( canvasSize.width, window.innerHeight);
-canvas.appendChild( renderer.domElement );
-var boundingBoxCenter = new THREE.Vector3();
-var boundingBoxHeight, boundingBoxWidth;
-
-// camera controls
-let controls = new OrbitControls(camera, renderer.domElement);
-controls.listenToKeyEvents(window); // optional
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.screenSpacePanning = false;
-controls.minDistance = 0.1;
-controls.maxDistance = 1000;
-controls.maxPolarAngle = Math.PI / 2;
 
 //raycaster
 let raycaster;
@@ -1614,17 +1850,6 @@ var raycastedHandle=undefined;
 var rayCastEnabled=true;
 raycaster = new THREE.Raycaster();
 
-//listener espace 3D
-canvas.addEventListener('mousemove', onPointerMove);
-window.addEventListener('resize', onWindowResize);
-canvas.addEventListener('click', onCanvasClick);
-//canvas.addEventListener('dragstart', onCanvasDrag, false);
-canvas.addEventListener('contextmenu', onOpenContextMenu);
-canvas.addEventListener('mouseleave', function leaving() {
-});
-
-window.addEventListener('keydown',onKeyDown);
-window.addEventListener('keyup',onKeyUp);
 
 function checkRaycastObject(selectableList,objectName) {
 if (!rayCastEnabled) return;
@@ -1656,7 +1881,7 @@ if (!rayCastEnabled) return;
   return raycastedObject;
 }
 
-function checkRaycastMeubles() {
+/* function checkRaycastMeubles() {
   if (!rayCastEnabled) return;
   const intersectsMeuble = raycaster.intersectObjects(selectableMeuble, true);
   if (intersectsMeuble.length > 0) {
@@ -1672,7 +1897,7 @@ function checkRaycastMeubles() {
     intersectedMeuble = null;
     raycastedMeuble = undefined;
   }
-}
+} */
 
 function checkRaycastEtageres() {
   if (!rayCastEnabled) return;
@@ -1742,61 +1967,6 @@ function checkRaycast() {
   if (selectionMode=="etageres") checkRaycastEtageres();
 }
 
-//raycast sur les objets 3d lors d'un changement de souris ou de camera
-function onCanvasClick () {
-  //console.log("raycastedbloc=",raycastedBloc);
-  //if ((selectionMode=="blocs") && (raycastedBloc>-1)) changeCurrentBlocFromClick(raycastedBloc);
-  //if ((selectionMode=="meubles") && (raycastedMeuble>-1)) changeCurrentMeubleFromClick(raycastedMeuble);
-  /* let raycasted=checkRaycastObject(selectableMeuble,"meuble");
-    if (!raycasted) clearSelectionList();
-  hideAllContextMenu(); */
-}
-
-function hideAllContextMenu() {
-  contextMenuGeneral.style.display="none";
-  contextMenuMeuble.style.display="none";
-  contextMenuBloc.style.display="none";
-  contextMenuEtagere.style.display="none";
-}
-
-function onKeyDown(event) {
-if (event.key=="Escape") {
-  hideAllContextMenu();
-  clearSelectionList();
-  refreshInterfaceContenu();
-}
-pressedKey=event.key;
-}
-
-function onKeyUp(event) {
- pressedKey=undefined;
-}
-
-function onOpenContextMenu() {
-  contextMenuGeneral.style.display = "block";
-  contextMenuGeneral.style.left = pointerScreen.x + "px";
-  contextMenuGeneral.style.top = pointerScreen.y + "px";
-  if (raycastedMeuble) {
-    changeCurrentMeubleFromClick(raycastedMeuble.meuble);
-    updateAllSelectable();
-  }
-  contextMenuMeuble.style.display = "block";
-
-  if (raycastedBloc) {
-    indiceCurrentBloc = raycastedBloc.bloc.numero;
-    changeCurrentBlocFromClick(raycastedBloc);
-    updateAllSelectable();
-    contextMenuBloc.style.display = "block";
-  }
-  if (raycastedEtagere > -1) {
-    contextMenuEtagere.style.display = "block";
-  }
-}
-
-function onCanvasDrag () {
-  if (raycastedBloc>-1) console.log("pointer=",pointer);
-}
-
 function listenToRaycast() {
   controls.addEventListener('change', checkRaycast);
   canvas.addEventListener('mouseout', clearRaycast);
@@ -1837,75 +2007,13 @@ function clearRaycast() {
   hideAllRaycastedBoxes();
 }
 
- function showChildren(obj) {
-  let listChildren = obj.children;
-  for (let item of listChildren) {
-    item.visible=true;
-  }
-}
-
-function hideChildren(obj) {
-  let listChildren = obj.children;
-  for (let item of listChildren) {
-    if (item.visible) item.visible=false;
-  }
-} 
-
-function hideAllBoxes() {
+/* function hideAllBoxes() {
   let allBoxes=[];
   scene.getObjectsByProperty("category","boiteSelection",allBoxes);
   for (var i=0; i<allBoxes.length;i++) {
     allBoxes[i].visible=false;
   }
-}
-
-//selection functions
-function clearSelectionList() {
-  for (var i=selectedObjects.length; i>0; i--)
-  {
-    let object=selectedObjects[0];
-    object.isSelected=false;
-    if (object.selectionBox) {
-      object.selectionBox.visible=false;}
-      selectedObjects.splice(0,1);
-  }
-  hideAllRaycastedBoxes();
-  refreshInterfaceContenu();
-}
-
-function addToSelection(object) {
-  object.isSelected=true;
-  //console.log(object.constructor.name);
-  //if (object.constructor.name!= "Meuble")
-  object.selectionBox.visible=true;
-  const isInSelectedObjects = (objectInList) => objectInList==object;
-  let index=selectedObjects.findIndex(isInSelectedObjects);
-  if (index>-1) {console.log("object already in list !!!")}
-  else {
-    selectedObjects.push(object);
-    console.log("object added");
-    refreshInterfaceContenu();
-  }
-}
-
-function removeFromSelection(object) {
-  object.isSelected=false;
-  object.selectionBox.visible=false;
-  const isInSelectedObjects = (objectInList) => objectInList==object;
-  let index=selectedObjects.findIndex(isInSelectedObjects);
-  if (index<0) {console.log("object not in list !!!")}
-  else {
-    selectedObjects.splice(index,1);
-  }
-}
-
-function select(object) {
-  console.log("select",object.name);
-  if (!pressedKey || pressedKey != "Shift") {clearSelectionList()}
-    object.isSelected = !object.isSelected;
-    if (object.isSelected) { addToSelection(object) }
-    else { removeFromSelection(object) }
-}
+} */
 
 //drag
 var newHelper;
@@ -1915,7 +2023,7 @@ function initDragElements() {
   dragElementControls.addEventListener('dragstart',function (event) {
     if (selectionMode!="elements") return;
     let clickedElement=event.object.element;//.bloc.element;
-    select(clickedElement);
+    select(clickedElement,true);
     event.object.xInitial = event.object.position.x;
     event.object.yInitial = event.object.position.y;
     event.object.zInitial = event.object.position.z;
@@ -2155,10 +2263,10 @@ function initDragBloc() {
   dragBlocControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="blocs") return;
     let clickedBloc = event.object.bloc;
-    select(clickedBloc);
+    select(clickedBloc,true);
     //changeCurrentMeubleFromClick(clickedBloc.meuble);
     console.log(selectedObjects);
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
     controls.enabled=false;
     //event.object.material.emissive.set(0xaaaaaa);
   });
@@ -2171,6 +2279,9 @@ function initDragBloc() {
     //on permute les blocs si ils sont différents
     var raycastedBlocBox=event.object;
     changeCurrentBlocFromClick(raycastedBloc);
+    indiceCurrentMeuble=raycastedBloc.meuble.numero;
+    refreshInterfaceMeuble();
+    //changeCurrentMeuble(meubles[raycastedBloc.meuble.numero],false);
     var num=event.object.numero;
     event.object.position.set(0,0,0);
     if ((!raycastedBloc) || (raycastedBloc.bloc==raycastedBlocBox.bloc)) {console.log("nothing happens")}
@@ -2250,7 +2361,6 @@ function initDragEtagere() {
   });
 }
 
-//drag meubles
 var dragMeubleControls;
 function initDragMeuble() {
   var wA,hA;
@@ -2266,7 +2376,7 @@ function initDragMeuble() {
     var meuble = boxMeuble.meuble;
     //select(selectedMeuble);
     var num=boxMeuble.meuble.numero;
-    changeCurrentMeubleFromClick(meuble);
+    changeCurrentMeubleFromClick(meuble,true);
     boxMeuble.xMeubleInit=meuble.x;
     boxMeuble.yMeubleInit=meuble.y;
     boxMeuble.xOk=boxMeuble.xMeubleInit;
@@ -2302,8 +2412,8 @@ function initDragMeuble() {
     adjustObjectPosition(boxMeuble,num,aX,aY,wA,hA,pos,0);
     meuble.x=boxMeuble.xMeubleInit+boxMeuble.position.x;
     meuble.y=boxMeuble.yMeubleInit+boxMeuble.position.y;
-    updateInterfaceX(num);
-    updateInterfaceY(num);
+    refreshInterfaceX(num);
+    refreshInterfaceY(num);
   });
 
   function intersectWithOneOfAll(obj, num, aaX, aaY, wwA, hhA) {
@@ -2511,34 +2621,55 @@ function updateAllSelectable() {
   updateSelectableHandleBloc();
 }
 
-function getfocaleV(focale,width,height) {
-  if ((height/width)>1) return focale
-  else return (2*(height/2)/((width/2)/Math.tan(0.0174533*(focale/2))));
+//selection functions
+function clearSelectionList() {
+  for (var i=selectedObjects.length; i>0; i--)
+  {
+    let object=selectedObjects[0];
+    object.isSelected=false;
+    if (object.selectionBox) {
+      object.selectionBox.visible=false;}
+      selectedObjects.splice(0,1);
+  }
+  hideAllRaycastedBoxes();
+  refreshInterfaceContenu();
+  /* indiceCurrentBloc=-1;
+  indiceCurrentMeuble=-1; */
 }
 
-function getfocaleH(focale,width,height) {
-  return (2*(height/2)/((width/2)/Math.tan(0.0174533*(focale/2))));
+function addToSelection(object,highlight) {
+  object.isSelected=true;
+  //console.log(object.constructor.name);
+  //if (object.constructor.name!= "Meuble")
+  if (highlight) object.selectionBox.visible=true;
+  console.log("highlight=",highlight);
+  const isInSelectedObjects = (objectInList) => objectInList==object;
+  let index=selectedObjects.findIndex(isInSelectedObjects);
+  if (index>-1) {console.log("object already in list !!!")}
+  else {
+    selectedObjects.push(object);
+    console.log("object added");
+    refreshInterfaceContenu();
+  }
 }
 
-function onWindowResize() {
-  canvasSize = canvas.getBoundingClientRect();
-  let width = canvas.offsetWidth;
-  let height = window.innerHeight;
-  camera.aspect = width  / height;
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height);
-  focaleV=getfocaleV(focale,width,height);
+function removeFromSelection(object) {
+  object.isSelected=false;
+  object.selectionBox.visible=false;
+  const isInSelectedObjects = (objectInList) => objectInList==object;
+  let index=selectedObjects.findIndex(isInSelectedObjects);
+  if (index<0) {console.log("object not in list !!!")}
+  else {
+    selectedObjects.splice(index,1);
+  }
 }
 
-//calcul de la position du pointeur da la souris dans le canvas THREE
-function onPointerMove( event ) {   
-  canvasSize = canvas.getBoundingClientRect();
-  let x = event.clientX - canvasSize.left; 
-  let y = event.clientY - canvasSize.top;
-  pointerScreen.x=x;
-  pointerScreen.y=y;
-  pointer.x = ( x / canvasSize.width ) * 2 - 1;
-  pointer.y = - ( y / window.innerHeight ) * 2 + 1;
+function select(object,highlight) {
+  console.log("select",object.name);
+  if (!pressedKey || pressedKey != "Shift") {clearSelectionList()}
+    object.isSelected = !object.isSelected;
+    if (object.isSelected) { addToSelection(object,highlight) }
+    else { removeFromSelection(object) }
 }
 
 //Materials
@@ -2592,6 +2723,7 @@ const materialSelectionBloc = new THREE.MeshBasicMaterial( materialSelectionBloc
 const materialSelectionEtagere = new THREE.MeshBasicMaterial( materialSelectionEtagereParams);
 const materialSelectionMeuble = new THREE.MeshBasicMaterial( materialSelectionMeubleParams);
 const materialHelper = new THREE.MeshBasicMaterial(materialHelperParams);
+var materialSelectionBlocAnim = new THREE.MeshStandardMaterial( materialSelectionBlocParams );
 materialSelectionMeuble.depthTest=false;
 materialHelper.depthTest=false;
 materialSelectionEtagere.depthTest=false;
@@ -2716,44 +2848,48 @@ var expandDimensions, expandBloc, expandMeubleData, expandAspect, expandEtageres
 var blocsData,contenuData,meubleData,etageresData,aspectData,enregistrementData;
 var contextMenuGeneral,contextMenuMeuble,contextMenuBloc,contextMenuEtagere;
 var warningContenu,warningBloc,warningEtageres,warningMeuble;
+var meubleHiddenIfEmpty;
 
 function initializeScene() {
-    buildEnvironnement();
-    addLights();
-    initDragMeuble();
-    initDragBloc();
-    initDragEtagere();
-    initDragElements();
-    initializeInterface();
-    initializeRaycast();
-    initializePoignees();
-    createNewMeuble();
-    selectedMeuble=meubles[0];
-    indiceCurrentMeuble=0;
-    select(selectedMeuble);
-    createInterfaceMeuble();
-    updateInterfaceBlocs();
-    refreshInterfaceAspect();
-    initPoigneesList();
-    initListTexturesMeuble();
-    createDropDownMenu(menuTexturesMeuble,imagesMeuble,"meuble");
-    addListenerMenuTexture(menuTexturesMeuble);
-    createDropDownMenu(menuTexturesTiroirs,imagesMeuble,"tiroirs");
-    addListenerMenuTexture(menuTexturesTiroirs);
-    createDropDownMenu(menuTexturesPlateau,imagesMeuble,"plateau");
-    addListenerMenuTexture(menuTexturesPlateau);
-    createDropDownMenu(menuTexturesCadre,imagesMeuble,"cadre");
-    addListenerMenuTexture(menuTexturesCadre);
-    createDropDownMenu(menuPoignees,poignees,"poignees");
-    addListenerMenuPoignees(menuPoignees);
-    frameCamera();
-    renderer.setAnimationLoop( animate );
-    initDragHandleBloc();
-    initDragHandleMeuble();
-    setSelectionMode("meubles"); 
-    refreshInterfaceContenu();
-    select(selectedMeuble);
-
+  initializeCamera();
+  add3DListener();
+  initializeAnimations();
+  buildEnvironnement();
+  addLights();
+  initDragMeuble();
+  initDragBloc();
+  initDragEtagere();
+  initDragElements();
+  initializeInterface();
+  initializeRaycast();
+  initializePoignees();
+  createNewMeuble();
+  selectedMeuble = meubles[0];
+  indiceCurrentMeuble = 0;
+  select(selectedMeuble,false);
+  createInterfaceMeuble();
+  refreshInterfaceBlocs();
+  refreshInterfaceAspect();
+  initPoigneesList();
+  initListTexturesMeuble();
+  createDropDownMenu(menuTexturesMeuble, imagesMeuble, "meuble");
+  addListenerMenuTexture(menuTexturesMeuble);
+  createDropDownMenu(menuTexturesTiroirs, imagesMeuble, "tiroirs");
+  addListenerMenuTexture(menuTexturesTiroirs);
+  createDropDownMenu(menuTexturesPlateau, imagesMeuble, "plateau");
+  addListenerMenuTexture(menuTexturesPlateau);
+  createDropDownMenu(menuTexturesCadre, imagesMeuble, "cadre");
+  addListenerMenuTexture(menuTexturesCadre);
+  createDropDownMenu(menuPoignees, poignees, "poignees");
+  addListenerMenuPoignees(menuPoignees);
+  frameCamera();
+  renderer.setAnimationLoop(animate);
+  initDragHandleBloc();
+  initDragHandleMeuble();
+  setSelectionMode("meubles");
+  refreshInterfaceContenu();
+  //select(selectedMeuble,false);
+  //meubles[0].selectionBox.visible=false;
 }
 
 function getHTMLElements () {
@@ -2843,6 +2979,8 @@ function getHTMLElements () {
   contextMenuMeuble = document.getElementById("contextMenuMeuble");
   contextMenuBloc= document.getElementById("contextMenuBloc");
   contextMenuEtagere= document.getElementById("contextMenuEtagere");
+
+  meubleHiddenIfEmpty=document.getElementById("meubleHiddenIfEmpty");
 }
 
 function initializeInterface() {
@@ -2886,7 +3024,7 @@ function initializeInterface() {
       meubles[num].hasPied=false;
       meubles[num].IsSuspendu=false;
     }
-    updateButtonFixationGroup(num);
+    refreshButtonFixationGroup(num);
     meubles[num].updateMeuble();
   }
 
@@ -2895,7 +3033,7 @@ function initializeInterface() {
       meubles[num].hasSocle=false;
       meubles[num].IsSuspendu=false;
     }
-    updateButtonFixationGroup(num);
+    refreshButtonFixationGroup(num);
     meubles[num].updateMeuble();
   }
 
@@ -2905,23 +3043,23 @@ function initializeInterface() {
       meubles[num].hasPied=false;
       meubles[num].hasSocle=false;
     }
-    updateButtonFixationGroup(num);
+    refreshButtonFixationGroup(num);
     meubles[num].updateMeuble();
   }
 
   function switchPlateau(num) {
     meubles[num].hasPlateau=!meubles[num].hasPlateau;
-    updateButtonPlateau(num);
+    refreshButtonPlateau(num);
     meubles[num].updateMeuble();
   }
 
   function switchCadre(num) {
     meubles[num].hasCadre=!meubles[num].hasCadre;
-    updateButtonCadre(num);
+    refreshButtonCadre(num);
     meubles[num].updateMeuble();
   }
 
-  // buttons blocs
+  // buttons contenu
   buttonPorte.addEventListener("click", switchPorte);
   buttonTiroirs.addEventListener("click", switchTiroirs);
   buttonEtageres.addEventListener("click", switchEtageres);
@@ -2945,7 +3083,7 @@ function setSelectionType(value) {
       object.type=value;
       object.meuble.updateMeuble();
     }
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
 }
 
 function setNombreDePortes(value) {
@@ -2955,7 +3093,7 @@ function setNombreDePortes(value) {
       object.nombrePortes=value;
       object.meuble.updateMeuble();
     }
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
     updateSelection();
 }
 
@@ -2966,7 +3104,7 @@ function setTypeDePortes(value) {
       object.ouverturePorte=value;
       object.meuble.updateMeuble();
     }
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
     updateSelection();
 }
 
@@ -2977,7 +3115,7 @@ function setValueOnSelection(key,value) {
       object[key]=value;
       object.meuble.updateMeuble();
     }
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
     updateSelection();
 }
 
@@ -3016,29 +3154,31 @@ function updateSelection() {
   } 
 
   selectListMeubles.addEventListener("change", function eventListMeublesPopup(event) { 
-    changeCurrentMeubleFromPopup(event.target.value);
+    changeCurrentMeubleFromPopup(event.target.value,false);
   }, false);
-  selectListBlocs.addEventListener("change",function changeCurrentBlocFromPopup(event) { 
+  selectListBlocs.addEventListener("change",function changeCurrentBlocFromPopup(event) {
     startMaterialAnimationBloc(event.target.value);
+    clearSelectionList();
     indiceCurrentBloc=event.target.value;
-    updateInterfaceBlocs();
+    console.log("indiceCurrentBloc=",indiceCurrentBloc);
+    refreshInterfaceBlocs();
     updateSelectableEtagere();
     updateSelectableHandleBloc();
   },false);
   buttonNewMeuble.addEventListener("click", function eventButtonNewMeuble() {
     createNewMeuble();
-    indiceCurrentBloc = 0;
+    indiceCurrentBloc = -1;
     refreshInterface();
   }, false);
   buttonDupliquerMeuble.addEventListener("click", function eventButtonDupliquerMeuble() {
     duplicateMeuble();
-    indiceCurrentBloc = 0;
+    indiceCurrentBloc = -1;
     refreshInterface();
   }, false);
   buttonDeleteMeuble.addEventListener("click", function eventButtonDeleteMeuble() {
-    deleteMeuble();
+    deleteMeuble(indiceCurrentMeuble);
     //recomputeMeublesId();
-    indiceCurrentBloc = 0;
+    indiceCurrentBloc = -1;
     refreshInterface();
     updateSelectableBlocs();
     frameCamera();
@@ -3095,7 +3235,6 @@ function updateSelection() {
     setSelectionMode("elements");
   },false);
 
-
   let listOptionsContextMenu = document.getElementsByClassName("contextMenuOption");
   for (let item of listOptionsContextMenu) {
     item.addEventListener('click',onClickOptionMenu);
@@ -3133,22 +3272,20 @@ function expand(divSwitch,divData) {
       divData.style.display="none";
       divSwitch.className="expandOff";
     }
-//console.log(divData.style.display);
-//console.log(divSwitch.className);
 }
 
   meubleData.style.display="none";
   expandMeubleData.addEventListener("click",function expandMeubleDataFn(event)
-  {expand(expandMeubleData,meubleData)});
+  {expand(expandMeubleData,meubleData); refreshInterfaceMeuble();});
 
   warningMeuble.style.display="none";
   meubleSliders.style.display="none";
   expandDimensions.addEventListener("click",function expandDimensionsMeuble(event)
-  {expand(expandDimensions,meubleSliders); updateInterfaceMeuble()});
+  {expand(expandDimensions,meubleSliders); refreshInterfaceMeuble()});
 
   blocsData.style.display="none";
   expandBloc.addEventListener("click",function expandFn(event)
-  {expand(expandBloc,blocsData); refreshInterfaceContenu()});
+  {expand(expandBloc,blocsData); refreshInterfaceBlocs();});
 
   warningEtageres.style.display="none";
   etageresData.style.display="none";
@@ -3162,7 +3299,7 @@ function expand(divSwitch,divData) {
 
   aspectData.style.display="none";
   expandAspect.addEventListener("click",function expandFn(event)
-  {expand(expandAspect,aspectData)});
+  {expand(expandAspect,aspectData);});
 
   enregistrementData.style.display="none";
   expandEnregistrement.addEventListener("click",function expandFn(event)
@@ -3342,235 +3479,6 @@ function initializePoignees() {
   poigneeGroup.add(poignee);
 }
 
-function recomputeMeublesId() {
-  for (var i=0; i<meubles.length; i++)
-  {
-    meubles[i].numero=i;
-    updateAllSelectable();
-  }
-}
-
-function deleteMeuble(num) {
-  scene.remove(meubles[num].root);
-  meubles.splice(num,1);
-  geometry.dispose();
-  material.dispose();
-  //selectableMeuble.splice(num,1);
-  //meubleRoot.splice(num,1);
-  geometry.dispose();
-  material.dispose();
-  if (meubles.length < (indiceCurrentMeuble+1)) indiceCurrentMeuble-=1;
-  recomputeMeublesId();
-  renameAllMeubles();
-  updateScene();
-  updateAllSelectable();
-}
-
-function renameAllMeubles() {
-  for (var i=0;i<meubles.length;i++) {
-    meubles[i].rename();
-  }
-}
-
-function placeNewMeuble(num) {
-  var minX = -10e34;
-  if (num>0) {
-    for (var i=0; i<num; i++) {
-      let currentMinX = meubles[i].x+meubles[i].getLargeurReelle()/2+ meubles[num].getLargeurReelle()/2;
-      minX = Math.max(currentMinX,minX)
-    }
-    meubles[num].x=minX;
-    //meubles[num].y=0;
-  }
-}
-
-function createNewMeuble() {
-  indiceCurrentMeuble=meubles.length;
-  meubles[indiceCurrentMeuble] = new Meuble(indiceCurrentMeuble);
-  selectedMeuble=meubles[indiceCurrentMeuble];
-  placeNewMeuble(indiceCurrentMeuble);
-  selectedMeuble.updateMeuble();
-  select(meubles[indiceCurrentMeuble]);
-  frameCamera();
-}
-
-function duplicatePropertiesValues(fromObj,toObj) {
-  Object.keys(fromObj,toObj).forEach(key => {
-    if (typeof toObj[key]=="object") {
-      duplicatePropertiesValues(fromObj[key],toObj[key]);
-    }
-    else {toObj[key]=fromObj[key]}
-  });
-}
-
-function duplicateMeuble(num) {
-  var indiceNewMeuble=meubles.length;
-  meubles[indiceNewMeuble] = new Meuble(indiceNewMeuble);
-  for (var i=0; i<meubles[num].nbBlocs; i++) {
-    meubles[indiceNewMeuble].bloc[i]=new Bloc(i);
-    duplicatePropertiesValues(meubles[num].bloc[i],meubles[indiceNewMeuble].bloc[i])
-  }
-  duplicatePropertiesValues(meubles[num],meubles[indiceNewMeuble])
-  meubles[indiceNewMeuble].numero = indiceNewMeuble;
-  meubles[indiceNewMeuble].name = "Meuble "+(indiceNewMeuble+1);
-  //meubles[indiceNewMeuble].createGeometryRoot();
-  //indiceCurrentMeuble = indiceNewMeuble;
-  meubles[indiceNewMeuble].updateMeuble();
-  placeNewMeuble(indiceNewMeuble);
-  scene.add(meubles[indiceNewMeuble].root);
-  changeCurrentMeuble(indiceNewMeuble);
-  updateScene();
-  frameCamera();
-}
-
-function getPlancheSuedoise(x, y, z, largeur, epaisseurS) {
-  let geo = new THREE.BufferGeometry;
-  let pieceA = new THREE.BufferGeometry;
-  pieceA = RoundEdgedBox(largeur, y, epaisseurS, 0.5, 1, 1, 1, 1);
-  let pieceB = pieceA.clone(true);
-  pieceA.translate(largeur / 2 - x / 2, 0, 0);
-  pieceB.translate(-largeur / 2 + x / 2, 0, 0);
-  let pieceC = new THREE.BufferGeometry;
-  let offset = -0.70;
-  pieceC = RoundEdgedBox(x - 2 * largeur - offset, largeur, epaisseurS, 0.5, 1, 1, 1, 1);
-  let pieceD = pieceC.clone(true);
-  pieceC.translate(0, -y / 2 + largeur/2, 0);
-  pieceD.translate(0, y / 2 - largeur/2, 0);
-  let cadre = new THREE.BoxGeometry(x - 2 * largeur, y - largeur, z);
-  let geometries = [];
-  geometries.push(pieceA, pieceB, pieceC, pieceD, cadre);
-  geo = BufferGeometryUtils.mergeGeometries(geometries);
-  pieceA.dispose();
-  pieceB.dispose();
-  pieceC.dispose();
-  pieceD.dispose();
-  return geo;
-}
-
-function createPlanche (x,y,z,styleParam) {
-  let geo = new THREE.BufferGeometry;
-  if (isPreviewOn || styleParam=="Basique") {
-    geo = new THREE.BoxGeometry( x,y,z );
-    return geo;
-  }
-  if (styleParam == "Arrondi") {geo = RoundEdgedBox(x,y,z,0.5,1,1,1,1)}
-  if (styleParam=="Suédois 1") { 
-    geo = getPlancheSuedoise (x,y,z,largeurSuedois,epaisseurSuedois);
-  }
-  if (styleParam=="Suédois 2") { 
-    let geoTemp = getPlancheSuedoise (x,y,z,largeurSuedois/2,epaisseurSuedois);
-    let pieceCentre = new THREE.BufferGeometry;
-    pieceCentre = RoundEdgedBox(x-2*largeurSuedois, y-2*largeurSuedois, epaisseurSuedois, 0.5, 1, 1, 1, 1);
-    let geometries=[];
-    geometries.push(geoTemp,pieceCentre);
-    geo = BufferGeometryUtils.mergeGeometries(geometries);
-  }
-  return geo;
-}
-
-function RoundEdgedBox(width, height, depth, radius, widthSegments, heightSegments, depthSegments, smoothness) {
-  depth<smoothness ? smoothness : depth;
-  width = width || 1;
-  height = height || 1;
-  depth = depth || 1;
-  radius = radius || (Math.min(Math.min(width, height), depth) * .25);
-  widthSegments = Math.floor(widthSegments) || 1;
-  heightSegments = Math.floor(heightSegments) || 1;
-  depthSegments = Math.floor(depthSegments) || 1;
-  smoothness = Math.max(3, Math.floor(smoothness) || 3);
-  let halfWidth = width * .5 - radius;
-  let halfHeight = height * .5 - radius;
-  let halfDepth = depth * .5 - radius;
-
-  var geometryRound = new THREE.BufferGeometry();
-
-  // corners - 4 eighths of a sphere
-  var corner1 = new THREE.SphereGeometry(radius, smoothness, smoothness, 0, Math.PI * .5, 0, Math.PI * .5);
-  corner1.translate(-halfWidth, halfHeight, halfDepth);
-  var corner2 = new THREE.SphereGeometry(radius, smoothness, smoothness, Math.PI * .5, Math.PI * .5, 0, Math.PI * .5);
-  corner2.translate(halfWidth, halfHeight, halfDepth);
-  var corner3 = new THREE.SphereGeometry(radius, smoothness, smoothness, 0, Math.PI * .5, Math.PI * .5, Math.PI * .5);
-  corner3.translate(-halfWidth, -halfHeight, halfDepth);
-  var corner4 = new THREE.SphereGeometry(radius, smoothness, smoothness, Math.PI * .5, Math.PI * .5, Math.PI * .5, Math.PI * .5);
-  corner4.translate(halfWidth, -halfHeight, halfDepth);
-  let geometries = [];
-  let corners = [];
-  corners.push(corner1,corner2,corner3,corner4);
-  let cornerMerged = BufferGeometryUtils.mergeGeometries(corners);
-  geometries.push(cornerMerged);
-
-  // edges - 2 fourths for each dimension
-  // width
-  var edge = new THREE.CylinderGeometry(radius, radius, width - radius * 2, smoothness, widthSegments, true, 0, Math.PI * .5);
-  edge.rotateZ(Math.PI * .5);
-  edge.translate(0, halfHeight, halfDepth);
-  var edge2 = new THREE.CylinderGeometry(radius, radius, width - radius * 2, smoothness, widthSegments, true, Math.PI * 1.5, Math.PI * .5);
-  edge2.rotateZ(Math.PI * .5);
-  edge2.translate(0, -halfHeight, halfDepth);
-
-  // height
-  var edge3 = new THREE.CylinderGeometry(radius, radius, height - radius * 2, smoothness, heightSegments, true, 0, Math.PI * .5);
-  edge3.translate(halfWidth, 0, halfDepth);
-  var edge4 = new THREE.CylinderGeometry(radius, radius, height - radius * 2, smoothness, heightSegments, true, Math.PI * 1.5, Math.PI * .5);
-  edge4.translate(-halfWidth, 0, halfDepth);
-
-  // depth
-  var edge5 = new THREE.CylinderGeometry(radius, radius, depth - radius * 2, smoothness, depthSegments, true, 0, Math.PI * .5);
-  edge5.rotateX(-Math.PI * .5);
-  edge5.translate(halfWidth, halfHeight, 0);
-  var edge6 = new THREE.CylinderGeometry(radius, radius, depth - radius * 2, smoothness, depthSegments, true, Math.PI * .5, Math.PI * .5);
-  edge6.rotateX(-Math.PI * .5);
-  edge6.translate(halfWidth, -halfHeight, 0);
-  let edges = [];
-  edges.push(edge,edge2,edge3,edge4,edge5,edge6);
-  let edgeMerged = BufferGeometryUtils.mergeGeometries(edges);
-  geometries.push(edgeMerged);
-
-  // sides
-  // front
-  var side = new THREE.PlaneGeometry(width - radius * 2, height - radius * 2, widthSegments, heightSegments);
-  side.translate(0, 0, depth * .5);
-
-  // right
-  var side2 = new THREE.PlaneGeometry(depth - radius * 2, height - radius * 2, depthSegments, heightSegments);
-  side2.rotateY(Math.PI * .5);
-  side2.translate(width * .5, 0, 0);
-  let sides = [];
-  sides.push(side,side2);
-  let sideMerged = BufferGeometryUtils.mergeGeometries(sides);
-  geometries.push(sideMerged);
-
-  // duplicate and flip
-  geometryRound = BufferGeometryUtils.mergeGeometries(geometries);
-  var secondHalf = geometryRound.clone();
-  secondHalf.rotateY(Math.PI);
-  geometries=[];
-
-  geometries.push(geometryRound,secondHalf);
-  geometryRound = BufferGeometryUtils.mergeGeometries(geometries);
-  geometries=[];
-
-  // top
-  var top = new THREE.PlaneGeometry(width - radius * 2, depth - radius * 2, widthSegments, depthSegments);
-  top.rotateX(-Math.PI * .5);
-  top.translate(0, height * .5, 0);
-
-  // bottom
-  var bottom = new THREE.PlaneGeometry(width - radius * 2, depth - radius * 2, widthSegments, depthSegments);
-  bottom.rotateX(Math.PI * .5);
-  bottom.translate(0, -height * .5, 0);
-
-  let topBottom=[];
-  topBottom.push(top,bottom);
-  let topBottomMerged = BufferGeometryUtils.mergeGeometries(topBottom);
-
-  //geometries=[];
-  geometries.push(topBottomMerged,geometryRound);
-  geometryRound = BufferGeometryUtils.mergeGeometries(geometries);
-  geometryRound=BufferGeometryUtils.mergeVertices(geometryRound);
-  return geometryRound;
-}
-
 // Interface
 function createSlider(objet,key,nom,value,type,min,max) {
   let retour = createSliderWithoutListener(objet,key,nom,value,type,min,max);
@@ -3614,16 +3522,16 @@ function createSliderWithoutListener(objet,key,nom,value,type,min,max) {
 }
 
 function refreshInterface() {
-  updateInterfaceMeuble();
-  updateInterfaceBlocs();
+  refreshInterfaceMeuble();
+  refreshInterfaceBlocs();
   refreshInterfaceAspect();  
 }
 
-function updateInterfaceMeuble() {
+function refreshInterfaceMeuble() {
   clearInterfaceMeuble();
   createInterfaceMeuble(); // Rebuild HTML content
-  if (displayWarning(expandMeubleData,meubleData,warningMeuble)) return;
-  meubleData.style.display="";
+  if (displayWarning(expandMeubleData,meubleHiddenIfEmpty,warningMeuble,(indiceCurrentMeuble==-1))) return;
+  meubleHiddenIfEmpty.style.display="";
 }
 
 function clearInterfaceMeuble() {
@@ -3632,24 +3540,38 @@ function clearInterfaceMeuble() {
   selectListMeubles.classList.remove("animationMeublesName");
 }
 
-function changeCurrentMeuble(meuble) {
+function changeCurrentMeuble(meuble,highlight) {
   indiceCurrentMeuble = meuble.numero;
   selectedMeuble=meuble;
   //selectedObjects=[];
   //selectedObjects.push(selectedMeuble);
-  select(meuble);
-  updateCheckboxMeuble();
+  select(meuble,highlight);
+  refreshCheckboxMeuble();
   refreshInterface();
   updateAllSelectable();
 }
 
-function changeCurrentMeubleFromClick(meuble) {
-  changeCurrentMeuble(meuble);
+function changeCurrentMeubleFromClick(meuble,highlight) {
+  changeCurrentMeuble(meuble,highlight);
   selectListMeubles.classList.remove("animationMeublesName");
   selectListMeubles.offsetWidth; //pour temporisation
   selectListMeubles.classList.add("animationMeublesName");
   checkRaycast();
 }
+
+function showChildren(obj) {
+  let listChildren = obj.children;
+  for (let item of listChildren) {
+    item.visible=true;
+  }
+}
+
+function hideChildren(obj) {
+  let listChildren = obj.children;
+  for (let item of listChildren) {
+    if (item.visible) item.visible=false;
+  }
+} 
 
 function onMaterialAnimationFinish (meuble) {
   clipActionMaterial.stop();
@@ -3663,13 +3585,14 @@ function onMaterialAnimationFinish (meuble) {
   showChildren(boiteSelectionMeuble);
 }
 
-var materialSelectionMeubleAnim = new THREE.MeshStandardMaterial( materialSelectionMeubleParams );
-var offset = new THREE.NumberKeyframeTrack( '.opacity', [ 0, 1 ], [ 0.5,0] )
-var clipMaterial = new THREE.AnimationClip( 'opacity_animation', 1, [ offset ] );
-var mixerMaterial;
-var clipActionMaterial;
+var materialSelectionMeubleAnim,offset,clipMaterial,mixerMaterial,clipActionMaterial,clock;
 
-var clock = new THREE.Clock();
+function initializeAnimations() {
+  materialSelectionMeubleAnim = new THREE.MeshStandardMaterial( materialSelectionMeubleParams );
+  offset = new THREE.NumberKeyframeTrack( '.opacity', [ 0, 1 ], [ 0.5,0] )
+  clipMaterial = new THREE.AnimationClip( 'opacity_animation', 1, [ offset ] );
+  clock = new THREE.Clock();
+}
 
 function startMaterialAnimationMeuble(meuble) {
   let boiteSelectionMeuble = meuble.selectionBox;
@@ -3684,24 +3607,28 @@ function startMaterialAnimationMeuble(meuble) {
 }
   
 function changeCurrentMeubleFromPopup(num) {
+  changeCurrentMeuble(meubles[num],false);
   startMaterialAnimationMeuble(meubles[num]);
-  changeCurrentMeuble(meubles[num]);
 }
 
 function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   let meuble = selectedMeuble;
+  //dropdown list meuble
   for (var i=0;i<meubles.length;i++) {
+    console.log("indice",indiceCurrentMeuble);
     let o = document.createElement("option");
     o.value = i;
     o.innerHTML = meubles[i].name;
     if (i==indiceCurrentMeuble) o.selected="selected";
     selectListMeubles.append(o);
   }
+  if (indiceCurrentMeuble==-1) selectListMeubles.value="";
+
+  //hauteur meuble
   hauteurDiv=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
   meubleSliders.append(hauteurDiv);
   hauteurDivSlider=hauteurDiv.querySelector("#slider");
   hauteurDivInput=hauteurDiv.querySelector("#number");
-
   hauteurDivSlider.addEventListener("input",function() {eventHauteurInput()},false);
   hauteurDivInput.addEventListener("change",function() {eventHauteurInput()},false);
 
@@ -3710,20 +3637,21 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     var maxHeight = selectedMeuble.getMaxAllowedHeight();
     selectedMeuble.hauteur = (hauteur<maxHeight) ? hauteur : maxHeight;
     selectedMeuble.computeBlocsSize();
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
     selectedMeuble.updateMeuble();
-    updateInterfaceHauteur();
+    refreshInterfaceHauteur();
     frameCamera();
   }
 
+  //profondeur meuble
   let elp=createSlider(meuble,"profondeur","Profondeur",meuble.profondeur,0,10,250);
   elp.querySelector("#slider").addEventListener("input",function eventElpInput() {selectedMeuble.updateMeuble();frameCamera();},false);
   elp.querySelector("#number").addEventListener("change",function eventElpChange() {selectedMeuble.updateMeuble();frameCamera();},false);
   meubleSliders.append(elp);
 
+  //largeur meuble
   largeurDiv=createSlider(meuble,"largeur","Largeur",meuble.largeur,0,10,500);
   meubleSliders.append(largeurDiv);
-
   largeurSlider=largeurDiv.querySelector("#slider");
   largeurDivInput=largeurDiv.querySelector("#number");
   largeurSlider.addEventListener("input",function() {eventLargeurInput()},false);
@@ -3734,40 +3662,30 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     var maxWidth = selectedMeuble.getMaxAllowedWidth();  //calcul collision sur input
     selectedMeuble.largeur = (largeur<maxWidth) ? largeur : maxWidth;
     selectedMeuble.computeBlocsSize();
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
     selectedMeuble.updateMeuble();
-    updateInterfaceLargeur();
+    refreshInterfaceLargeur();
     frameCamera();
   }
 
-let retour;
+  let retour;
 
-  //placement horizontal
+  //placement horizontal meuble
   retour = createSliderWithoutListener(meuble,"x","Placement horizontal",meuble.x,0,-300,300);
   XDiv=retour[0];
   XDivSlider=retour[1];
   XDivInput=retour[2];
-  XDivSlider.addEventListener("input",function () {eventXDivInputSlider()},false);
-  XDivInput.addEventListener("change",function () {eventXDivInputBox()},false);
+  XDivSlider.addEventListener("input",function () {eventXDivInput(+XDivSlider.value)},false); //forçage de type
+  XDivInput.addEventListener("change",function () {eventXDivInput(+XDivInput.value)},false);  //forçage de type
   meubleSliders.append(XDiv);
 
-  function eventXDivInputSlider() {
-    var x=+XDivSlider.value; //forçage de type
-    eventXDivInput(x);
-  }
-
-  function eventXDivInputBox() {
-    var x=+XDivInput.value; //forçage de type
-    eventXDivInput(x);
-  }
-
   function eventXDivInput(x) {
-    var translateX = selectedMeuble.getLimitTranslationX();
+    var translateX = selectedMeuble.getLimitTranslationX();  //calcul collission
     x = (x<translateX[0]) ? translateX[0] : x;
     x = (x>translateX[1]) ? translateX[1] : x;
     selectedMeuble.x = x;
     selectedMeuble.computeBlocsSize();
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
     selectedMeuble.updateMeuble();
     selectedMeuble.placeMeuble();
     XDivSlider.value = selectedMeuble.x;
@@ -3775,15 +3693,16 @@ let retour;
     frameCamera();
   }
 
+  //placement vertical meuble 
   retour = createSliderWithoutListener(meuble,"y","Placement vertical",meuble.y,0,0,300);
   YDiv=retour[0];
   YDivSlider=retour[1];
   YDivInput=retour[2];
-  YDivSlider.addEventListener("input",function () {eventYDivInputSlider()},false);
-  YDivInput.addEventListener("change",function () {eventYDivInputBox()},false);
+  YDivSlider.addEventListener("input",function () {eventYDivInput(+YDivSlider.value)},false); //forçage de type
+  YDivInput.addEventListener("change",function () {eventYDivInput(+YDivInput.value)},false);  //forçage de type
   meubleSliders.append(YDiv);
 
-  function eventYDivInputSlider() {
+/*   function eventYDivInputSlider() {
     var y=+YDivSlider.value; //forçage de type
     eventYDivInput(y);
   }
@@ -3791,7 +3710,7 @@ let retour;
   function eventYDivInputBox() {
     var y=+YDivInput.value; //forçage de type
     eventYDivInput(y);
-  }
+  } */
 
   function eventYDivInput(y) {
     var translateY = selectedMeuble.getLimitTranslationY(); //collision
@@ -3799,27 +3718,32 @@ let retour;
     y = (y>translateY[1]) ? translateY[1] : y;
     selectedMeuble.y = y;
     selectedMeuble.computeBlocsSize();
-    updateInterfaceBlocs();
+    refreshInterfaceBlocs();
     selectedMeuble.updateMeuble();
     YDivSlider.value = selectedMeuble.y;
     YDivInput.value = YDivSlider.value;
     frameCamera();
   }
 
-  updateCheckboxMeuble();
-  updateButtonPlateau();
-  updateButtonCadre();
-  updateButtonFixationGroup();
-  updateButtonDelete();
+  refreshCheckboxMeuble();
+  refreshButtonPlateau();
+  refreshButtonCadre();
+  refreshButtonFixationGroup();
+  refreshButtonDelete();
+  refreshButtonDupliquerMeuble();
+  console.log("buttons refreshed");
+  console.log("indiceCurrentMeuble",indiceCurrentMeuble);
 }
 
-function updateCheckboxMeuble() {
+function refreshCheckboxMeuble() {
   if (selectedMeuble.disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
   if (selectedMeuble.isSimple) {checkboxSimple.checked=true} else {checkboxSimple.checked=false}
 }
 
-function updateButtonDelete() {
-  if (meubles.length>1) {
+function refreshButtonDelete() {
+  //if (meubles.length>1) {
+  if (indiceCurrentMeuble!=-1) {
+
     buttonDeleteMeuble.disabled = false;
   }
   else {
@@ -3827,34 +3751,43 @@ function updateButtonDelete() {
   }
 }
 
-function updateButtonPlateau() { if (selectedMeuble.hasPlateau) {buttonPlateau.className="buttonOn"} else {buttonPlateau.className="buttonOff"}}
-function updateButtonCadre() {if (selectedMeuble.hasCadre) {buttonCadre.className="buttonOn"} else {buttonCadre.className="buttonOff"}}
-function updateButtonSocle() { if (selectedMeuble.hasSocle) {buttonSocle.className="buttonOn"} else {buttonSocle.className="buttonOff"}}
-function updateButtonPied() { if (selectedMeuble.hasPied) {buttonPied.className="buttonOn"} else {buttonPied.className="buttonOff"} }
-function updateButtonSuspendu() {  if (selectedMeuble.IsSuspendu) {buttonSuspendu.className="buttonOn"} else {buttonSuspendu.className="buttonOff"}}
-
-function updateButtonFixationGroup() {
-  updateButtonSocle();
-  updateButtonPied();
-  updateButtonSuspendu();
+function refreshButtonDupliquerMeuble() {
+  if (indiceCurrentMeuble!=-1) {
+    buttonDupliquerMeuble.disabled = false;
+  }
+  else {
+    buttonDupliquerMeuble.disabled = true;
+  }
 }
 
-function updateInterfaceLargeur() {
+function refreshButtonPlateau() { if (selectedMeuble.hasPlateau) {buttonPlateau.className="buttonOn"} else {buttonPlateau.className="buttonOff"}}
+function refreshButtonCadre() { if (selectedMeuble.hasCadre) {buttonCadre.className="buttonOn"} else {buttonCadre.className="buttonOff"}}
+function refreshButtonSocle() { if (selectedMeuble.hasSocle) {buttonSocle.className="buttonOn"} else {buttonSocle.className="buttonOff"}}
+function refreshButtonPied() { if (selectedMeuble.hasPied) {buttonPied.className="buttonOn"} else {buttonPied.className="buttonOff"} }
+function refreshButtonSuspendu() { if (selectedMeuble.IsSuspendu) {buttonSuspendu.className="buttonOn"} else {buttonSuspendu.className="buttonOff"}}
+
+function refreshButtonFixationGroup() {
+  refreshButtonSocle();
+  refreshButtonPied();
+  refreshButtonSuspendu();
+}
+
+function refreshInterfaceLargeur() {
   largeurDiv.querySelector("#slider").value = selectedMeuble.largeur;
   largeurDiv.querySelector("#number").value = selectedMeuble.largeur;
 }
 
-function updateInterfaceHauteur() {
+function refreshInterfaceHauteur() {
   hauteurDiv.querySelector("#slider").value = selectedMeuble.hauteur;
   hauteurDiv.querySelector("#number").value = selectedMeuble.hauteur;
 }
 
-function updateInterfaceX() {
+function refreshInterfaceX() {
   XDiv.querySelector("#slider").value = selectedMeuble.x;
   XDiv.querySelector("#number").value = selectedMeuble.x;
 }
 
-function updateInterfaceY() {
+function refreshInterfaceY() {
   YDiv.querySelector("#slider").value = selectedMeuble.y;
   YDiv.querySelector("#number").value = selectedMeuble.y;
 }
@@ -3862,7 +3795,7 @@ function updateInterfaceY() {
 function changeCurrentBlocFromClick(bloc) {
   indiceCurrentBloc = bloc.numero;
   //selectedObjects.push(bloc);
-  updateInterfaceBlocs();
+  refreshInterfaceBlocs();
   //flash input box
   selectListBlocs.classList.remove("animationBlocsName");
   selectListBlocs.offsetWidth; // pour temporisation
@@ -3875,9 +3808,9 @@ function onChangeBlocsQuantity(num) {
   selectedMeuble.setBlocsQuantity(num);
   selectedMeuble.updateTaille();
   selectedMeuble.updateMeuble();
-  updateInterfaceBlocs();
-  updateInterfaceLargeur();
-  updateInterfaceHauteur();
+  refreshInterfaceBlocs();
+  refreshInterfaceLargeur();
+  refreshInterfaceHauteur();
   updateScene();
   frameCamera();
 }
@@ -3890,14 +3823,16 @@ function rebuildInterfaceBlocs() {
     if (i==indiceCurrentBloc) o.selected="selected";
     selectListBlocs.append(o);
   }
+  if (indiceCurrentBloc==-1) {selectListBlocs.value=""}
+  console.log("indiceCurrentBloc=",indiceCurrentBloc);
 }
 
-function displayWarning(divExpand,divContent,divWarning) {
+function displayWarning(divExpand,divContent,divWarning,condition) {
   if (divExpand.className=="expandOff") {
     divWarning.style.display="none";
     return true;
   }
-  if (selectedObjects.length==0) {
+  if (condition) {
     divContent.style.display="none";
     divWarning.style.display="";
     return true;
@@ -3917,9 +3852,9 @@ function refreshInterfaceContenu() {
     return;
   } */
 
-  if (displayWarning(expandBloc,blocsData,warningBloc)) {  blocsData.style.display="none";}
+  if (displayWarning(expandBloc,blocsData,warningBloc,(selectionMode!="blocs"))) {  blocsData.style.display="none";}
   else {  blocsData.style.display="";}
-  if (displayWarning(expandContenu,contenuData,warningContenu)) return;
+  if (displayWarning(expandContenu,contenuData,warningContenu,(selectedObjects.length==0))) return;
   warningContenu.style.display="none";
 
   contenuData.style.display="";
@@ -3960,10 +3895,10 @@ function refreshInterfaceContenu() {
   if (object.isRentrant) {checkboxRentrant.checked=true;} else {checkboxRentrant.checked=false;}
 }
 
-function updateInterfaceBlocs() {
+function refreshInterfaceBlocs() {
   clearInterfaceBlocs();
   rebuildInterfaceBlocs();
-  createSlidersBlocs();
+  if (indiceCurrentBloc!=-1) createSlidersBlocs();
   refreshInterfaceContenu();
 }
 
@@ -3982,8 +3917,6 @@ function onMaterialBlocAnimationFinish (num) {
   mixerMaterial.removeEventListener('finished', onMaterialBlocAnimationFinish, false);
   mixerMaterial=undefined;
 }
-
-var materialSelectionBlocAnim = new THREE.MeshStandardMaterial( materialSelectionBlocParams );
 
 function startMaterialAnimationBloc(num) {
   let bloc=selectedMeuble.root.getObjectByName("boiteSelectionBloc"+num);
@@ -4017,12 +3950,21 @@ function createSlidersBlocs() {
   //Taille bloc
   retour = createSliderWithoutListener(meuble.bloc[numBloc], "taille", "Taille du bloc", meuble.bloc[numBloc].taille, 0, 10, 200);
   let slideLargeurBloc = retour[0];
+
   slideLargeurBloc.querySelector("#slider").addEventListener("input", function (event) {
-    setTailleOnSelection(Number(event.target.value));
+    isPreviewOn=true;
+    setTailleOnSelectedBlocs(Number(event.target.value));
     slideLargeurBloc.querySelector("#number").value=Number(event.target.value); //refresh
   }, false);
+
+  slideLargeurBloc.querySelector("#slider").addEventListener("change", function (event) {
+    isPreviewOn=false;
+    setTailleOnSelectedBlocs(Number(event.target.value));
+    slideLargeurBloc.querySelector("#number").value=Number(event.target.value); //refresh
+  }, false);
+
   slideLargeurBloc.querySelector("#number").addEventListener("change", function (event) {
-    setTailleOnSelection(Number(event.target.value));
+    setTailleOnSelectedBlocs(Number(event.target.value));
     slideLargeurBloc.querySelector("#slider").value=Number(event.target.value); //refresh
   }, false);
   blocsSliders.append(slideLargeurBloc);
@@ -4055,23 +3997,44 @@ function setEtageresNumberOnSelection(num) {
   frameCamera();
 }
 
-function setTailleOnSelection(num) {
-  for (var i=0; i<selectedObjects.length; i++) {
-    let bloc = selectedObjects[i];
-    console.log ("meuble n°",bloc.meuble.numero);
-    num=Number(num);
-    let lMax=bloc.meuble.getMaxAllowedWidth();
-    let deltaMax=lMax-bloc.meuble.largeur;
-    console.log(deltaMax);
-    let deltaTaille = num-bloc.taille;
-    let newTaille = (deltaTaille>deltaMax) ? bloc.taille+deltaMax: num;
-    bloc.taille=newTaille;
-    console.log(num,deltaTaille,deltaMax,newTaille);
-    bloc.meuble.updateTaille();
-    bloc.meuble.updateMeuble();
+function setTailleOnBloc(bloc,taille) {
+  let lMax=bloc.meuble.getMaxAllowedWidth();
+  let deltaMax=lMax-bloc.meuble.largeur;
+  //console.log(deltaMax);
+  let deltaTaille = taille-bloc.taille;
+  let newTaille = (deltaTaille>deltaMax) ? bloc.taille+deltaMax: taille;
+  bloc.taille=newTaille;
+  //console.log(taille,deltaTaille,deltaMax,newTaille);
+  bloc.meuble.updateTaille();
+  bloc.meuble.updateMeuble();
+}
+
+function setTailleOnSelectedBlocs(taille) {
+  let exit;
+  let bloc;
+  taille=Number(taille);
+  console.log("selectionMode",selectionMode);
+  if (selectionMode!="blocs" || selectedObjects.length==0 || selectedObjects[0].constructor.name!="Bloc") {
+    console.log("meuble,bloc:",indiceCurrentMeuble,indiceCurrentBloc);
+    bloc=meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc];
+    setTailleOnBloc(bloc,taille);
   }
-  updateInterfaceLargeur();
-  updateInterfaceHauteur();
+  else {
+  for (var i=0; i<selectedObjects.length; i++) {
+/*     if (selectionMode!="blocs") {
+      console.log("not blocs !!!!");
+      //console.log("ici : indiceCurrentMeuble,CurrentBloc",indiceCurrentBloc,indiceCurrentMeuble);
+      bloc=meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc];
+      exit=true;
+    } */
+    bloc = selectedObjects[i];
+    console.log ("meuble n°",bloc.meuble.numero);
+    setTailleOnBloc(bloc,taille)
+    if (exit) break;
+  }
+}
+  refreshInterfaceLargeur();
+  refreshInterfaceHauteur();
   frameCamera();
 }
 
