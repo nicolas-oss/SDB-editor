@@ -3097,24 +3097,20 @@ function initializeInterface() {
     }
     clearSelectionList();
     indiceCurrentBloc=-1;
+    refreshInterfaceMeuble();
     refreshInterfaceBlocs();
   }
 
   function supprimerBlocs() {
-    console.log("selectedObjects", selectedObjects);
     for (var i = selectedObjects.length - 1; i > -1; i--) {
       let bloc = selectedObjects[i];
-      console.log(bloc);
       if (bloc.constructor.name == "Bloc") {
-        console.log(bloc.meuble.bloc);
+        //console.log(bloc.meuble.bloc);
         if (bloc.meuble.bloc.length > 1) {
           bloc.meuble.bloc.splice(bloc.numero, 1);
           bloc.meuble.nbBlocs -= 1;
           bloc.meuble.recomputeBlocsId();
         }
-        //bloc.meuble.updateTaille();
-        //bloc.meuble.updateMeuble();
-        //console.log("selectedObjects",selectedObjects);
       }
     }
     meubles.forEach(meuble => {
@@ -3123,27 +3119,38 @@ function initializeInterface() {
     updateScene();
     clearSelectionList();
     indiceCurrentBloc = -1;
+    refreshInterfaceMeuble();
     refreshInterfaceBlocs();
   }
 
- /*  function supprimerBloc() {
-    let meuble = meubles[indiceCurrentMeuble];
-    if (meuble.nbBlocs<2 || indiceCurrentBloc==-1) return;
-    meuble.bloc.splice(indiceCurrentBloc,1);
-    meuble.nbBlocs-=1;
-    meuble.recomputeBlocsId();
-    meuble.updateTaille();
-    meuble.updateMeuble();
-    clearSelectionList();
-    indiceCurrentBloc=-1;
-    refreshInterfaceBlocs();
-  } */
-
   function decalerGauche() {
+    for (var i = selectedObjects.length - 1; i > -1; i--) {
+      let bloc = selectedObjects[i];
+      let meuble = bloc.meuble;
+      if (bloc.constructor.name == "Bloc") {
+        if (bloc.numero > 0) {
+          [meuble.bloc[bloc.numero], meuble.bloc[bloc.numero-1]] = [meuble.bloc[bloc.numero-1], meuble.bloc[bloc.numero]];
+          bloc.meuble.recomputeBlocsId();
+          meuble.updateMeuble();
+        }
+      }
+    }
+    refreshInterfaceBlocs();
   }
 
   function decalerDroite() {
-
+    for (var i = selectedObjects.length - 1; i > -1; i--) {
+      let bloc = selectedObjects[i];
+      let meuble = bloc.meuble;
+      if (bloc.constructor.name == "Bloc") {
+        if (bloc.numero < meuble.nbBlocs-1) {
+          [meuble.bloc[bloc.numero+1], meuble.bloc[bloc.numero]] = [meuble.bloc[bloc.numero], meuble.bloc[bloc.numero+1]];
+          bloc.meuble.recomputeBlocsId();
+          meuble.updateMeuble();
+        }
+      }
+    }
+    refreshInterfaceBlocs();
   }
 
   //buttons contenu
@@ -3837,7 +3844,6 @@ function refreshCheckboxMeuble() {
 function refreshButtonDelete() {
   //if (meubles.length>1) {
   if (indiceCurrentMeuble!=-1) {
-
     buttonDeleteMeuble.disabled = false;
   }
   else {
@@ -3982,6 +3988,7 @@ function refreshInterfaceContenu() {
 function refreshInterfaceBlocs() {
   clearInterfaceBlocs();
   rebuildInterfaceBlocs();
+  refreshBlocsButtons();
   if (indiceCurrentBloc!=-1) createSlidersBlocs();
   refreshInterfaceContenu();
 }
@@ -3990,6 +3997,21 @@ function clearInterfaceBlocs() {
   blocsSliders.innerHTML="";
   selectListBlocs.innerHTML="";
   etageresSliders.innerHTML="";
+}
+
+function refreshBlocsButtons() {
+  console.log("refreshButtonBlocs");
+  if (indiceCurrentBloc == -1 || selectedMeuble.bloc.length==1 || selectedObjects.length==0) {
+    buttonSupprimerBloc.disabled = true;
+    buttonDecalerGauche.disabled = true;
+    buttonDecalerDroite.disabled = true;
+    console.log("disabled");
+  }
+  else {
+    buttonSupprimerBloc.disabled = false;
+    buttonDecalerGauche.disabled = false;
+    buttonDecalerDroite.disabled = false;
+  }
 }
 
 function onMaterialBlocAnimationFinish (num) {
@@ -4092,12 +4114,6 @@ function setTailleOnSelectedBlocs(taille) {
   }
   else {
   for (var i=0; i<selectedObjects.length; i++) {
-/*     if (selectionMode!="blocs") {
-      console.log("not blocs !!!!");
-      //console.log("ici : indiceCurrentMeuble,CurrentBloc",indiceCurrentBloc,indiceCurrentMeuble);
-      bloc=meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc];
-      exit=true;
-    } */
     bloc = selectedObjects[i];
     console.log ("meuble n°",bloc.meuble.numero);
     setTailleOnBloc(bloc,taille)
