@@ -8,6 +8,7 @@ import { poignees } from './poignees';
 import { initPoigneesList } from "./poignees.js";
 import { initListTexturesMeuble, imagesMeuble, image, imagesPath } from "./textures.js"
 import {roundEdgedBox} from "./roundEdgedBox.js";
+import e from 'cors';
 
 class Element {
   constructor(bloc,i) {
@@ -1340,12 +1341,10 @@ class Meuble {
   }
   
   addBloc() {
-    console.log(this.bloc[this.bloc.length]);
     if (!this.bloc[this.bloc.length]) {
       this.bloc[this.bloc.length] = new Bloc(this,this.bloc.length);
       console.log(this.bloc[this.bloc.length-1]);
     }
-
     return this.bloc[this.bloc.length-1].taille;
   }
 
@@ -1437,6 +1436,13 @@ class Meuble {
   setEtageresNumber(num) {
     for (var i=0;i<this.nbBlocs;i++) {
       this.bloc[i].setEtageresNumber(num);
+    }
+  }
+
+  recomputeBlocsId() {
+    for (var i=0; i<this.bloc.length; i++)
+    {
+      this.bloc[i].numero=i;
     }
   }
 }
@@ -2281,6 +2287,7 @@ function initDragBloc() {
     var raycastedBlocBox=event.object;
     changeCurrentBlocFromClick(raycastedBloc);
     indiceCurrentMeuble=raycastedBloc.meuble.numero;
+    selectedMeuble=meubles[indiceCurrentMeuble];
     refreshInterfaceMeuble();
     refreshInterfaceBlocs();
     //changeCurrentMeuble(meubles[raycastedBloc.meuble.numero],false);
@@ -2301,25 +2308,27 @@ function initDragEtagere() {
     controls.enabled=false;
     rayCastEnabled=false;
     let clickedEtagereBox = event.object;
-    let clickedEtagereElement = event.object.element;
-    let id=clickedEtagereElement.numero;
-    let blocId=clickedEtagereElement.bloc.numero;
+    let etagere = event.object.element;
+    let meuble = etagere.bloc.meuble;
+
+    let id=etagere.numero;
+    let blocId=etagere.bloc.numero;
     let parent=event.object.parent;
-    let hasEtagerePrecedente = parent.getObjectByName("etagere "+(id-1));   //marche pas
+    let hasEtagerePrecedente = parent.getObjectByName("etagere "+(id-1));
     let hasEtagereSuivante = parent.getObjectByName("etagere "+(id+1));
 
-    if (!selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales) {
+    if (!etagere.bloc.etageresVerticales) {
       if (hasEtagerePrecedente) { var yMin = hasEtagerePrecedente.position.y }
-      else { var yMin = -selectedMeuble.hauteur / 2 + epaisseur / 2 }
+      else { var yMin = -meuble.hauteur / 2 + epaisseur / 2 }
       if (hasEtagereSuivante) { var yMax = hasEtagereSuivante.position.y }
-      else { var yMax = selectedMeuble.hauteur / 2 - epaisseur / 2 }
+      else { var yMax = meuble.hauteur / 2 - epaisseur / 2 }
 
     }
     else {
       if (hasEtagerePrecedente) { var xMin = hasEtagerePrecedente.position.x }
-      else { var xMin = -selectedMeuble.bloc[indiceCurrentBloc].taille / 2 + epaisseur / 2 }
+      else { var xMin = -etagere.bloc.taille / 2 + epaisseur / 2 }
       if (hasEtagereSuivante) { var xMax = hasEtagereSuivante.position.x }
-      else { var xMax = selectedMeuble.bloc[indiceCurrentBloc].hauteur / 2 - epaisseur / 2 }
+      else { var xMax = etagere.bloc.hauteur / 2 - epaisseur / 2 }
     }
 
     event.object.yMin = yMin + epaisseur;
@@ -2331,33 +2340,39 @@ function initDragEtagere() {
 
   dragEtagereControls.addEventListener('drag', function (event) {
     if (selectionMode!="etageres") return;
-    var selectedEtagere = event.object;
-    if (!selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales) {
-      let y = selectedEtagere.position.y;
+    var etagere = event.object;
+    console.log(etagere);
+
+    let meuble = etagere.element.bloc.meuble;
+    console.log(meuble);
+
+    if (!etagere.element.bloc.etageresVerticales) {
+      let y = etagere.position.y;
       y = y > event.object.yMax ? event.object.yMax : y;
       y = y < event.object.yMin ? event.object.yMin : y;
-      selectedEtagere.position.set(0, y, 0);
-      selectedEtagere.element.y = y;
+      etagere.position.set(0, y, 0);
+      etagere.element.y = y;
+      console.log("y set");
     }
     else {
-      let x = selectedEtagere.position.x;
+      let x = etagere.position.x;
       x = x > event.object.xMax ? event.object.xMax : x;
       x = x < event.object.xMin ? event.object.xMin : x;
-      selectedEtagere.position.set(x, 0, 0);
-      selectedEtagere.element.x = x;
+      etagere.position.set(x, 0, 0);
+      etagere.element.x = x;
     }
-    selectedMeuble.updateMeuble();
+    meuble.updateMeuble();
   });
 
   dragEtagereControls.addEventListener('dragend', function (event) {
     //event.object.material.emissive.set(0x000000);
-    var selectedEtagere = event.object;
-    let y = selectedEtagere.position.y;
-    selectedEtagere.element.y = y;
-    let x = selectedEtagere.position.x;
-    selectedEtagere.element.x = x;
+    let etagere = event.object;
+    let y = etagere.position.y;
+    etagere.element.y = y;
+    let x = etagere.position.x;
+    etagere.element.x = x;
     resetRaycast();
-    selectedMeuble.updateMeuble();
+    etagere.element.bloc.meuble.updateMeuble();
     controls.enabled = true;
     rayCastEnabled = true;
   });
@@ -2376,7 +2391,6 @@ function initDragMeuble() {
     //event.object.material.emissive.set(0xaaaaaa);
     var boxMeuble=event.object;
     var meuble = boxMeuble.meuble;
-    //select(selectedMeuble);
     var num=boxMeuble.meuble.numero;
     changeCurrentMeubleFromClick(meuble,true);
     boxMeuble.xMeubleInit=meuble.x;
@@ -2589,8 +2603,7 @@ function updateSelectableMeubles() {
 
 function updateSelectableEtagere() {
   selectableEtagere = [];
-  let blocsRoot = selectedMeuble.root.getObjectByName("blocs");
-  blocsRoot.getObjectsByProperty("shortName","etagere",selectableEtagere);
+  scene.getObjectsByProperty("shortName","etagere",selectableEtagere);
   dragEtagereControls.setObjects(selectableEtagere);
 }
 
@@ -2603,8 +2616,6 @@ function updateSelectableElements() {
 function updateSelectableHandleBloc() {
   selectableHandleBloc = [];
   scene.getObjectsByProperty("shortName", "handleBloc", selectableHandleBloc);
-  //let handleMeubleHaut =  selectedMeuble.root.getObjectByName("handleMeubleHaut");
-  //selectableHandleBloc.push(handleMeubleHaut);
   if (dragHandleBlocControls) dragHandleBlocControls.setObjects(selectableHandleBloc);
 }
 
@@ -2886,8 +2897,6 @@ function initializeScene() {
   initDragHandleMeuble();
   setSelectionMode("meubles");
   refreshInterfaceContenu();
-  //select(selectedMeuble,false);
-  //meubles[0].selectionBox.visible=false;
 }
 
 function getHTMLElements () {
@@ -3066,7 +3075,7 @@ function initializeInterface() {
 
   //buttons blocs
   buttonAjouterBloc.addEventListener("click",ajouterBloc);
-  buttonSupprimerBloc.addEventListener("click",supprimerBloc);
+  buttonSupprimerBloc.addEventListener("click",supprimerBlocs);
   buttonDecalerGauche.addEventListener("click",decalerGauche);
   buttonDecalerDroite.addEventListener("click",decalerDroite);
 
@@ -3086,16 +3095,49 @@ function initializeInterface() {
       meuble.updateTaille();
       meuble.updateMeuble();
     }
+    clearSelectionList();
+    indiceCurrentBloc=-1;
+    refreshInterfaceBlocs();
   }
 
-  function supprimerBloc() {
+  function supprimerBlocs() {
+    console.log("selectedObjects", selectedObjects);
+    for (var i = selectedObjects.length - 1; i > -1; i--) {
+      let bloc = selectedObjects[i];
+      console.log(bloc);
+      if (bloc.constructor.name == "Bloc") {
+        console.log(bloc.meuble.bloc);
+        if (bloc.meuble.bloc.length > 1) {
+          bloc.meuble.bloc.splice(bloc.numero, 1);
+          bloc.meuble.nbBlocs -= 1;
+          bloc.meuble.recomputeBlocsId();
+        }
+        //bloc.meuble.updateTaille();
+        //bloc.meuble.updateMeuble();
+        //console.log("selectedObjects",selectedObjects);
+      }
+    }
+    meubles.forEach(meuble => {
+      meuble.updateTaille();
+    })
+    updateScene();
+    clearSelectionList();
+    indiceCurrentBloc = -1;
+    refreshInterfaceBlocs();
+  }
+
+ /*  function supprimerBloc() {
     let meuble = meubles[indiceCurrentMeuble];
-    if (meuble.nbBlocs<2) return;
+    if (meuble.nbBlocs<2 || indiceCurrentBloc==-1) return;
     meuble.bloc.splice(indiceCurrentBloc,1);
     meuble.nbBlocs-=1;
+    meuble.recomputeBlocsId();
     meuble.updateTaille();
     meuble.updateMeuble();
-  }
+    clearSelectionList();
+    indiceCurrentBloc=-1;
+    refreshInterfaceBlocs();
+  } */
 
   function decalerGauche() {
   }
@@ -3181,7 +3223,7 @@ function initializeInterface() {
   buttonOuverturePorteGauche.addEventListener("click", switchPorteGauche, false);
   buttonOuverturePorteDroite.addEventListener("click", switchPorteDroite, false);
   buttonEtageresVerticales.addEventListener("click", function () {switchEtagereVerticale(indiceCurrentBloc)});
-  checkboxRentrant.addEventListener("click", function () {switchRentrant(indiceCurrentBloc)});
+  checkboxRentrant.addEventListener("click", function () {switchRentrant()});
 
   function switchEtagereVerticale() {
     selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales=!selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales;
@@ -3584,8 +3626,6 @@ function clearInterfaceMeuble() {
 function changeCurrentMeuble(meuble,highlight) {
   indiceCurrentMeuble = meuble.numero;
   selectedMeuble=meuble;
-  //selectedObjects=[];
-  //selectedObjects.push(selectedMeuble);
   select(meuble,highlight);
   refreshCheckboxMeuble();
   refreshInterface();
@@ -3734,7 +3774,7 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   meubleSliders.append(XDiv);
 
   function eventXDivInput(x) {
-    var translateX = selectedMeuble.getLimitTranslationX();  //calcul collission
+    var translateX = selectedMeuble.getLimitTranslationX();  //calcul collision
     x = (x<translateX[0]) ? translateX[0] : x;
     x = (x>translateX[1]) ? translateX[1] : x;
     selectedMeuble.x = x;
@@ -3895,17 +3935,7 @@ function displayWarning(divExpand,divContent,divWarning,condition) {
 }
 
 function refreshInterfaceContenu() {
-/*   if (expandContenu.className=="expandOff") {
-    warningContenu.style.display="none";
-    return;
-  }
-  if (selectedObjects.length==0) {
-    contenuData.style.display="none";
-    warningContenu.style.display="flex";
-    return;
-  } */
 
-  //condition = (selectionMode!="blocs" || indiceCurrentMeuble==-1)
   if (displayWarning(expandBloc,blocsData,warningBloc,(selectionMode!="blocs" || indiceCurrentMeuble==-1))) {  blocsData.style.display="none";}
   else {  blocsData.style.display="";}
   if (displayWarning(expandContenu,contenuData,warningContenu,(selectedObjects.length==0))) return;
