@@ -28,6 +28,7 @@ class Element {
     this.isRentrantLocal = undefined;
     this.ouverturePorteLocal = undefined;
     this.nombrePortesLocal = undefined;
+    //this.epaisseur=this.meuble.epaisseur;
 
     this.ySuivant = undefined;
     this.yl = undefined;
@@ -36,6 +37,14 @@ class Element {
     this.zl = undefined;
 
     this.sousMeuble=undefined;
+  }
+
+  get epaisseur() {
+    return this.meuble.epaisseur;
+  }
+
+  get epaisseurCadre() {
+    return this.meuble.epaisseurCadre;
   }
 
   get style() {if (this.localStyle) {return this.localStyle}
@@ -61,7 +70,7 @@ class Element {
     return y;}
 
   get x() {if (this.xPredefini) return this.bloc.xPredefini;
-    var step = (this.bloc.l - 2 * epaisseur) / (this.bloc.etageres + 1);
+    var step = (this.bloc.l - 2 * this.epaisseur) / (this.bloc.etageres + 1);
     return step * (0.5 + this.numero - this.bloc.etageres / 2);}
 
   get yTiroir() {if (this.numero<this.bloc.etageres && this.numero>0) {
@@ -70,7 +79,7 @@ class Element {
     if (this.bloc.isRentrant) {hUtile = this.bloc.hauteurInterieure}
     else hUtile = this.bloc.h;
       if (this.bloc.elements[this.numero-1].yPredefini!=undefined) return this.bloc.elements[this.numero-1].yPredefini}
-    var step = (this.bloc.hUtile - 0.25 * epaisseur - 2*this.offsetTiroir()) / (this.bloc.etageres + 1);
+    var step = (this.bloc.hUtile - 0.25 * this.epaisseur - 2*this.offsetTiroir()) / (this.bloc.etageres + 1);
     return step * (0.5 + this.numero  - this.bloc.etageres / 2);}
 
   set isRentrant(value) {this.isRentrantLocal = value;}
@@ -103,7 +112,7 @@ class Element {
   }
 
   offsetTiroir() {
-    if (this.isRentrant) {var offsetTiroir=epaisseur}
+    if (this.isRentrant) {var offsetTiroir=this.epaisseur}
     else {var offsetTiroir=0}
     return offsetTiroir;
   }
@@ -111,14 +120,14 @@ class Element {
   getEtagere() {
     if (this.numero < 1 || this.numero > this.bloc.etageres) return;
     let offsetSimple;
-    if (this.bloc.meuble.isSimple) {offsetSimple=epaisseur;}
-    else {offsetSimple = 2*epaisseur;}
+    if (this.bloc.meuble.isSimple) {offsetSimple=this.epaisseur;}
+    else {offsetSimple = 2*this.epaisseur;}
     let geometry;
     if (this.etageresVerticales) {
-      geometry = new THREE.BoxGeometry(epaisseur, this.bloc.h - 2 * epaisseur, this.bloc.p - epaisseur);
+      geometry = new THREE.BoxGeometry(this.epaisseur, this.bloc.h - 2 * this.epaisseur, this.bloc.p - this.epaisseur);
     }
     else {
-      geometry = new THREE.BoxGeometry(this.bloc.l - offsetSimple, epaisseur, this.bloc.p - epaisseur);
+      geometry = new THREE.BoxGeometry(this.bloc.l - offsetSimple, this.epaisseur, this.bloc.p - this.epaisseur);
     }
     let etagere = new THREE.Mesh(geometry, material);
 
@@ -139,28 +148,28 @@ class Element {
     else {
       if (this.bloc.isRentrant || this.isRentrant) {
         if (this.bloc.meuble.isSimple) {
-          this.ySuivant = this.meuble.hauteur / 2 - epaisseurCadreSimple + epaisseur / 2;
+          this.ySuivant = this.meuble.hauteur / 2 - this.epaisseurCadre + this.epaisseur / 2;
         }
         else { this.ySuivant = this.meuble.hauteur / 2 - this.offsetTiroir() / 2; }
       }
       else { this.ySuivant = this.meuble.hauteur / 2 - this.offsetTiroir() / 2; }
     }
     this.yl = this.ySuivant - this.y - this.offsetTiroir();
-    this.xl = this.bloc.l - 0.25 * epaisseur - 2 * this.offsetTiroir();
+    this.xl = this.bloc.l - 0.25 * this.epaisseur - 2 * this.offsetTiroir();
     if (this.bloc.meuble.isSimple && this.isRentrant) {
       if (this.bloc.numero == 0 || this.bloc.numero==this.bloc.meuble.nbBlocs-1) {
         //this.xl += this.offsetTiroir();
-        this.xl -= epaisseurCadreSimple / 2;
+        this.xl -= this.epaisseurCadre / 2;
       }
     }
-    this.zl = epaisseur;
+    this.zl = this.epaisseur;
   }
 
   getSelectionBox() {
     let selectionBoxRoot = new THREE.Object3D();
     selectionBoxRoot.name = "selectionBoxRoot";
     //boite de selection element
-    geometry = new THREE.BoxGeometry(this.xl + 0.05, this.yl + 0.05, this.bloc.meuble.profondeur + this.offsetTiroir() + offsetSuedois + 0.1 + epaisseur);
+    geometry = new THREE.BoxGeometry(this.xl + 0.05, this.yl + 0.05, this.bloc.meuble.profondeur + this.offsetTiroir() + offsetSuedois + 0.1 + this.epaisseur);
     let boiteSelectionElement = new THREE.Mesh(geometry, materialSelectionEtagere);
     boiteSelectionElement.name = "boiteSelectionElement " + this.numero;
     boiteSelectionElement.shortName = "boiteSelectionElement";
@@ -181,9 +190,9 @@ class Element {
     tiroirRoot.name = "tiroirRoot";
 
     let offsetSimple;
-    if (this.bloc.isRentrant && this.bloc.isSimple) offsetSimple=epaisseurCadreSimple;
-    if (this.bloc.meuble.isSimple) {offsetSimple=epaisseur;}
-    else {offsetSimple = 2*epaisseur;}
+    if (this.bloc.isRentrant && this.bloc.isSimple) offsetSimple=this.epaisseurCadre;
+    if (this.bloc.meuble.isSimple) {offsetSimple=this.epaisseur;}
+    else {offsetSimple = 2*this.epaisseur;}
 
     if (this.type == "Tiroirs") {
       //tiroir
@@ -198,7 +207,7 @@ class Element {
       poigneeB.name = "poignee";
       tiroir.add(poigneeB);
       let yPoignee = this.yl * (this.bloc.meuble.offsetPoignees / 250);
-      poigneeB.position.set(0, yPoignee, epaisseur / 2 + offsetSuedois);
+      poigneeB.position.set(0, yPoignee, this.epaisseur / 2 + offsetSuedois);
     }
     let yTiroir = this.y + this.yl / 2 + this.offsetTiroir()/2;
     let zTiroir = this.bloc.p / 2;
@@ -270,6 +279,7 @@ class Bloc {
     this.taille = tailleBlocDefaut;
     this.createBlocRoot();
     this.meuble = meuble;
+    this.bloc=this;
     this.p = this.meuble.profondeur;
     this.updateLHP();
     this.unherited = true;
@@ -286,7 +296,18 @@ class Bloc {
     this.ouverturePorteLocal = undefined;
     this.nombrePortesLocal = undefined;
     this.etageresVerticalesLocal = undefined;
+    //this.epaisseur=this.meuble.epaisseur;
+    console.log('epaisseur in bloc=',this.meuble.epaisseur);
+    console.log(this.meuble);
   }
+
+get epaisseur() {
+  return this.meuble.epaisseur;
+}
+
+get epaisseurCadre() {
+  return this.meuble.epaisseurCadre;
+}
 
    get etageres() {
     if (this.etageresLocal) {
@@ -345,41 +366,42 @@ class Bloc {
     if (this.meuble.disposition == "vertical") { this.l = this.meuble.largeur; this.h = this.taille; }
     this.p = this.meuble.profondeur;
     var epaisseurRelle;
-    if (this.meuble.isSimple) { epaisseurRelle = epaisseurCadreSimple }
-    else { epaisseurRelle = epaisseur }
+    if (this.meuble.isSimple) { epaisseurRelle = this.epaisseurCadre }
+    else { epaisseurRelle = this.epaisseur }
     this.hauteurInterieure = this.meuble.hauteur - 2 * epaisseurRelle;    // ??????
     console.log("hauteurInterieure",this.hauteurInterieure);
   }
 
   getCadre() {
-    geometry = new THREE.BoxGeometry( this.l, epaisseur, this.p );
+    geometry = new THREE.BoxGeometry( this.l, this.epaisseur, this.p );
     plancheBas = new THREE.Mesh( geometry, material );
     plancheBas.name = "plancheBas";
     plancheHaut = new THREE.Mesh( geometry, material );
     plancheHaut.name = "plancheHaut";
-    plancheBas.position.set(0,-this.h/2+epaisseur/2,0);
-    plancheHaut.position.set(0,this.h/2-epaisseur/2,0);
-    geometry = new THREE.BoxGeometry( epaisseur, this.h-epaisseur*2, this.p );
+    plancheBas.position.set(0,-this.h/2+this.epaisseur/2,0);
+    plancheHaut.position.set(0,this.h/2-this.epaisseur/2,0);
+    geometry = new THREE.BoxGeometry( this.epaisseur, this.h-this.epaisseur*2, this.p );
     plancheDroite = new THREE.Mesh( geometry, material );
     plancheDroite.name = "plancheDroite";
     plancheDroite.numBloc = this.numero;
     plancheGauche = new THREE.Mesh( geometry, material );
     plancheGauche.name = "plancheGauche";
     plancheGauche.numBloc = this.numero;
-    plancheDroite.position.set(-this.l/2 + epaisseur/2,0,0);
-    plancheGauche.position.set(this.l/2 - epaisseur/2,0,0);
+    plancheDroite.position.set(-this.l/2 + this.epaisseur/2,0,0);
+    plancheGauche.position.set(this.l/2 - this.epaisseur/2,0,0);
     let cadreBlocRoot=new THREE.Group();
     cadreBlocRoot.name="cadreBlocRoot"+this.numero;
     cadreBlocRoot.shortName="cadreBlocRoot";
     cadreBlocRoot.add(plancheBas,plancheHaut,plancheDroite,plancheGauche);
+    console.log("getCadre",this.epaisseur);
     return cadreBlocRoot;
   }
 
   getPortes() {
     var porte = [];
-      var offset = epaisseur * this.isRentrant ;
+      var offset = this.epaisseur * this.isRentrant ;
       if (this.nombrePortes == "1") {
-        geometry = createPlanche(this.l - 0.25 * epaisseur - 2 * offset, this.h - 0.25 * epaisseur - 2 * offset, epaisseur, this.style);
+        geometry = createPlanche(this.l - 0.25 * this.epaisseur - 2 * offset, this.h - 0.25 * this.epaisseur - 2 * offset, this.epaisseur, this.style);
         porte[0] = new THREE.Mesh(geometry, materialTiroirs);
         porte[0].name = "porte 0";
         //poignee
@@ -390,13 +412,13 @@ class Bloc {
         if (deltaX < 0) deltaX = 0;
         if (this.ouverturePorte == "droite") { deltaX *= -1; poigneeB.rotateZ(Math.PI / 2); }
         else poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
-        poigneeB.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
+        poigneeB.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
         porte[0].position.set(0, 0, this.p / 2 - offset);
         return porte[0]
       }
       else {
         //porte gauche
-        geometry = createPlanche(this.l / 2 - 0.25 * epaisseur - offset / 2, this.h - 0.25 * epaisseur - 2 * offset, epaisseur, this.style);
+        geometry = createPlanche(this.l / 2 - 0.25 * this.epaisseur - offset / 2, this.h - 0.25 * this.epaisseur - 2 * offset, this.epaisseur, this.style);
         porte[0] = new THREE.Mesh(geometry, materialTiroirs);
         porte[0].name = "porte 0";
 
@@ -407,7 +429,7 @@ class Bloc {
         porte[0].add(poigneeB);
         let deltaX = this.l / 4 - 4 * taillePoignees;
         if (4 * taillePoignees > this.l / 4) deltaX = 0;
-        poigneeB.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
+        poigneeB.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
         porte[0].position.set(-this.l / 4 + offset / 2, 0, this.p / 2 - offset);
 
         //porte droite
@@ -418,7 +440,7 @@ class Bloc {
         poigneeC.rotateZ(Math.PI / 2);  // a soumettre à option
         porte[1].add(poigneeC);
         deltaX *= -1
-        poigneeC.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
+        poigneeC.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
         poigneeC.name = "poignee";
         porte[1].position.set(this.l / 4 - offset / 2, 0, this.p / 2 - offset);
         let porteDoubleRoot=new THREE.Object3D();
@@ -488,7 +510,7 @@ class Bloc {
   }
 
   getHandleBlocs() {
-    geometry = new THREE.BoxGeometry( epaisseurHandleBlocs, this.h+2*epaisseur, this.p+2*epaisseur );
+    geometry = new THREE.BoxGeometry( epaisseurHandleBlocs, this.h+2*this.epaisseur, this.p+2*this.epaisseur );
     let coneG = new THREE.Mesh( geometryConeHelper, materialSelectionMeuble);
     let coneD = new THREE.Mesh( geometryConeHelper, materialSelectionMeuble);
     coneG.scale.set(0.8,0.8,0.8);
@@ -535,7 +557,7 @@ class Bloc {
       }
     }
     else { //vertical
-      geometry = new THREE.BoxGeometry(this.l+epaisseur, epaisseurHandleBlocs, this.p+epaisseur);
+      geometry = new THREE.BoxGeometry(this.l+this.epaisseur, epaisseurHandleBlocs, this.p+this.epaisseur);
       let handle = new THREE.Mesh(geometry, materialSelectionBloc);
       handle.name = "handleBloc" + this.numero;
       handle.numBloc = this.numero;
@@ -675,6 +697,8 @@ class Meuble {
     this.y = 0;
     this.bloc = new Array;
     this.disposition = "horizontal";
+    this.epaisseur=epaisseur;
+    this.epaisseurCadre=epaisseurCadre;
     for (var i=0; i<this.nbBlocs; i++) {this.bloc[i] = new Bloc(this,i)}
     this.updateTaille();
     this.hasPlateau=false;
@@ -697,7 +721,7 @@ class Meuble {
     this.isSelected = false;
     this.selectionBox = undefined;
     this.etageres=3;
-
+    
     //commun à la classe bloc
     this.ouverturePorte = "gauche";
     this.nombrePortes = "1";
@@ -773,12 +797,12 @@ class Meuble {
   }
 
   getLargeurReelle() {
-    return (this.largeur+this.hasCadre*epaisseurCadre*2);
+    return (this.largeur+this.hasCadre*this.epaisseurCadre*2);
   }
 
   getHauteurReelle() {
-    var bordSup=Math.max(this.hasCadre*epaisseurCadre,this.hasPlateau*epaisseurPlateau);
-    return (this.hauteur+this.hasCadre*epaisseurCadre+this.hasSocle*hauteurSocle+this.hasPied*hauteurPied+bordSup);
+    var bordSup=Math.max(this.hasCadre*this.epaisseurCadre,this.hasPlateau*epaisseurPlateau);
+    return (this.hauteur+this.hasCadre*this.epaisseurCadre+this.hasSocle*hauteurSocle+this.hasPied*hauteurPied+bordSup);
   }
 
   //collisions
@@ -786,7 +810,7 @@ class Meuble {
     var deltaY=10e34;
     var maxHeight = 10e34;
     var yA=this.y;
-    var cadreA = this.hasCadre*epaisseurCadre;
+    var cadreA = this.hasCadre*this.epaisseurCadre;
     var piedA = this.hasPied*hauteurPied;
     var socleA = this.hasSocle*hauteurSocle;
     var plateauA = this.hasPlateau*epaisseurPlateau;
@@ -814,10 +838,10 @@ class Meuble {
       if (i != this.numero) {
         if (this.intersectY(i)) {
           if (this.x > meubles[i].x) {
-            deltaLeft = (this.x-this.largeur/2 - this.hasCadre*epaisseurCadre) - (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*epaisseurCadre);
+            deltaLeft = (this.x-this.largeur/2 - this.hasCadre*this.epaisseurCadre) - (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*this.epaisseurCadre);
           }
           else {
-            deltaRight = -(this.x + this.largeur / 2 + this.hasCadre*epaisseurCadre) + (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre*epaisseurCadre);
+            deltaRight = -(this.x + this.largeur / 2 + this.hasCadre*this.epaisseurCadre) + (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre*this.epaisseurCadre);
           }
           maxLeft = Math.min(maxLeft, deltaLeft);
           maxRight = Math.min(maxRight, deltaRight);
@@ -840,10 +864,10 @@ class Meuble {
         //bY = meubles[i].y + meubles[i].hauteur / 2;
         if (this.intersectY(i)) {
           if (this.x > meubles[i].x) {
-            deltaX = (this.x) - (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*epaisseurCadre + this.hasCadre*epaisseurCadre);
+            deltaX = (this.x) - (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*this.epaisseurCadre + this.hasCadre*this.epaisseurCadre);
           }
           else {
-            deltaX = (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre*epaisseurCadre - this.hasCadre*epaisseurCadre) - (this.x);
+            deltaX = (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre*this.epaisseurCadre - this.hasCadre*this.epaisseurCadre) - (this.x);
           }
           maxWidth = Math.min(maxWidth, deltaX);
         }
@@ -860,13 +884,13 @@ class Meuble {
     var maxX=10e34;
     for (var i = 0; i < meubles.length; i++) {
       if (i != this.numero) {
-        bY = meubles[i].y + meubles[i].hauteur / 2 + meubles[i].hasCadre*epaisseurCadre;
+        bY = meubles[i].y + meubles[i].hauteur / 2 + meubles[i].hasCadre*this.epaisseurCadre;
         if (this.intersectY(i)) {
             if (this.x > meubles[i].x) {
-              minX = (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*epaisseurCadre) + (this.largeur / 2+this.hasCadre*epaisseurCadre);
+              minX = (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*this.epaisseurCadre) + (this.largeur / 2+this.hasCadre*this.epaisseurCadre);
             }
             if (this.x < meubles[i].x) {
-              maxX = (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre*epaisseurCadre) - (this.largeur / 2 + this.hasCadre*epaisseurCadre);
+              maxX = (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre*this.epaisseurCadre) - (this.largeur / 2 + this.hasCadre*this.epaisseurCadre);
             }
             minXGlobal=Math.max(minX,minXGlobal);
             maxXGlobal=Math.min(maxX,maxXGlobal);
@@ -901,8 +925,8 @@ class Meuble {
   }
 
   intersectY(indiceMeubleB) {
-    var cadreA = this.hasCadre * epaisseurCadre;
-    var cadreB = meubles[indiceMeubleB].hasCadre * epaisseurCadre;
+    var cadreA = this.hasCadre * this.epaisseurCadre;
+    var cadreB = meubles[indiceMeubleB].hasCadre * this.epaisseurCadre;
     var socleA = this.hasSocle * hauteurSocle;
     var socleB = meubles[indiceMeubleB].hasSocle * hauteurSocle;
     var piedA = this.hasPied * hauteurPied;
@@ -916,8 +940,8 @@ class Meuble {
   }
 
   intersectX(indiceMeubleB) {
-    var cadreA = this.hasCadre * epaisseurCadre;
-    var cadreB = meubles[indiceMeubleB].hasCadre * epaisseurCadre;
+    var cadreA = this.hasCadre * this.epaisseurCadre;
+    var cadreB = meubles[indiceMeubleB].hasCadre * this.epaisseurCadre;
     var xA = this.x;
     var xB = meubles[indiceMeubleB].x;
     var lA = this.largeur;
@@ -942,7 +966,7 @@ class Meuble {
 
   placeMeuble() {
     let y=this.hauteur / 2 + this.y;
-    if (this.hasCadre) y+=epaisseurCadre;
+    if (this.hasCadre) y+=this.epaisseurCadre;
     if (this.hasSocle) y+=hauteurSocle;
     if (this.hasPied) y+=hauteurPied;
     this.root.position.set(
@@ -983,7 +1007,7 @@ class Meuble {
         hauteurSocle,
         this.profondeur - retraitSocle);
       socle = new THREE.Mesh(geometry, material);
-      let cadre = this.hasCadre * epaisseurCadre;
+      let cadre = this.hasCadre * this.epaisseurCadre;
       socle.position.set(0, -this.hauteur / 2 - hauteurSocle / 2 - cadre, -retraitSocle);
       socle.name = "socle";
       return socle;
@@ -997,7 +1021,7 @@ class Meuble {
         largeurPied,
         hauteurPied,
         largeurPied);
-      let cadre = this.hasCadre * epaisseurCadre;
+      let cadre = this.hasCadre * this.epaisseurCadre;
 
       piedA = new THREE.Mesh(geometry, material);
       piedA.position.set(
@@ -1042,32 +1066,32 @@ class Meuble {
     //if (this.hasCadre) {
 
       geometry = new THREE.BoxGeometry(
-        this.largeur + 2 * epaisseurCadre - 0.05,
-        epaisseurCadre,
+        this.largeur + 2 * this.epaisseurCadre - 0.05,
+        this.epaisseurCadre,
         this.profondeur + debordCadre + 0.05);
 
       let cadreHaut = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreHaut.position.set(0, this.hauteur / 2 + epaisseurCadre / 2, debordCadre);
+      cadreHaut.position.set(0, this.hauteur / 2 + this.epaisseurCadre / 2, debordCadre);
       cadreHaut.name = "cadreHaut";
       //blocs.add(cadreHaut);
 
       let cadreBas = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreBas.position.set(0, -this.hauteur / 2 - epaisseurCadre / 2, debordCadre);
+      cadreBas.position.set(0, -this.hauteur / 2 - this.epaisseurCadre / 2, debordCadre);
       cadreBas.name = "cadreBas";
       //blocs.add(cadreBas);
 
       geometry = new THREE.BoxGeometry(
-        epaisseurCadre,
-        this.hauteur + 2 * epaisseurCadre - 0.05,
+        this.epaisseurCadre,
+        this.hauteur + 2 * this.epaisseurCadre - 0.05,
         this.profondeur + debordCadre);
 
       let cadreGauche = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreGauche.position.set(-this.largeur / 2 - epaisseurCadre / 2, 0, debordCadre);
+      cadreGauche.position.set(-this.largeur / 2 - this.epaisseurCadre / 2, 0, debordCadre);
       cadreGauche.name = "cadreGauche";
       //blocs.add(cadreGauche);
 
       let cadreDroit = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreDroit.position.set(this.largeur / 2 + epaisseurCadre / 2, 0, debordCadre);
+      cadreDroit.position.set(this.largeur / 2 + this.epaisseurCadre / 2, 0, debordCadre);
       cadreDroit.name = "cadreDroit";
       //blocs.add(cadreDroit);
     //}
@@ -1079,31 +1103,31 @@ class Meuble {
   getCadreSimple() {
     geometry = new THREE.BoxGeometry(
       this.largeur + 0.01,
-      epaisseurCadreSimple,
+      this.epaisseurCadre,
       this.profondeur +  0.01);
 
     let cadreSimpleHaut = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleHaut.position.set(0, this.hauteur / 2 - epaisseurCadreSimple/2 , 0);
+    cadreSimpleHaut.position.set(0, this.hauteur / 2 - this.epaisseurCadre/2 , 0);
     cadreSimpleHaut.name = "cadreSimpleHaut";
     //blocs.add(cadreHaut);
 
     let cadreSimpleBas = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleBas.position.set(0, -this.hauteur / 2 + epaisseurCadreSimple/2, 0);
+    cadreSimpleBas.position.set(0, -this.hauteur / 2 + this.epaisseurCadre/2, 0);
     cadreSimpleBas.name = "cadreSimpleBas";
     //blocs.add(cadreBas);
 
     geometry = new THREE.BoxGeometry(
-      epaisseurCadreSimple,
+      this.epaisseurCadre,
       this.hauteur - 0.05,
       this.profondeur);
 
     let cadreSimpleGauche = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleGauche.position.set(-this.largeur / 2+epaisseurCadreSimple/2, 0, 0);
+    cadreSimpleGauche.position.set(-this.largeur / 2+this.epaisseurCadre/2, 0, 0);
     cadreSimpleGauche.name = "cadreSimpleGauche";
     //blocs.add(cadreGauche);
 
     let cadreSimpleDroit = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleDroit.position.set(this.largeur / 2-epaisseurCadreSimple/2, 0, 0);
+    cadreSimpleDroit.position.set(this.largeur / 2-this.epaisseurCadre/2, 0, 0);
     cadreSimpleDroit.name = "cadreSimpleDroit";
     //blocs.add(cadreDroit);
     //}
@@ -1221,9 +1245,9 @@ class Meuble {
     let handleMeubleRoot=new THREE.Object3D();
     handleMeubleRoot.name="handleMeubleRoot";
     geometry = new THREE.BoxGeometry(
-      this.largeur + 4*epaisseur+0.05,
+      this.largeur + 4*this.epaisseur+0.05,
         epaisseurHandleBlocs,
-        this.profondeur + 4*epaisseur+0.05);
+        this.profondeur + 4*this.epaisseur+0.05);
     let handleMeubleHaut = new THREE.Mesh(geometry, materialSelectionMeuble);
     handleMeubleHaut.position.set(0, this.hauteur / 2, 0);
     handleMeubleHaut.visible=false;
@@ -1243,8 +1267,8 @@ class Meuble {
     //to keep poignee inf
     geometry = new THREE.BoxGeometry(
       epaisseurHandleBlocs,
-      this.hauteur + 4 * epaisseur - 0.05,
-      this.profondeur+4*epaisseur);
+      this.hauteur + 4 * this.epaisseur - 0.05,
+      this.profondeur+4*this.epaisseur);
 
     let handleMeubleGauche = new THREE.Mesh(geometry, materialSelectionMeuble);
     handleMeubleGauche.position.set(-this.largeur / 2, 0, 0);
@@ -2033,6 +2057,12 @@ function initDragElements() {
     if (selectionMode!="elements") return;
     let clickedElement=event.object.element;//.bloc.element;
     select(clickedElement,true);
+    indiceCurrentBloc=clickedElement.bloc.numero;
+    indiceCurrentMeuble=clickedElement.bloc.meuble.numero;
+    selectedMeuble=meubles[indiceCurrentMeuble];
+    console.log("indiceCurrentBloc,indiceCurrentMeuble",indiceCurrentBloc,indiceCurrentMeuble,selectableMeuble);
+    refreshInterfaceBlocs();
+    refreshInterfaceMeuble();
     event.object.xInitial = event.object.position.x;
     event.object.yInitial = event.object.position.y;
     event.object.zInitial = event.object.position.z;
@@ -2319,22 +2349,22 @@ function initDragEtagere() {
 
     if (!etagere.bloc.etageresVerticales) {
       if (hasEtagerePrecedente) { var yMin = hasEtagerePrecedente.position.y }
-      else { var yMin = -meuble.hauteur / 2 + epaisseur / 2 }
+      else { var yMin = -meuble.hauteur / 2 + meuble.epaisseur / 2 }
       if (hasEtagereSuivante) { var yMax = hasEtagereSuivante.position.y }
-      else { var yMax = meuble.hauteur / 2 - epaisseur / 2 }
+      else { var yMax = meuble.hauteur / 2 - meuble.epaisseur / 2 }
 
     }
     else {
       if (hasEtagerePrecedente) { var xMin = hasEtagerePrecedente.position.x }
-      else { var xMin = -etagere.bloc.taille / 2 + epaisseur / 2 }
+      else { var xMin = -etagere.bloc.taille / 2 + meuble.epaisseur / 2 }
       if (hasEtagereSuivante) { var xMax = hasEtagereSuivante.position.x }
-      else { var xMax = etagere.bloc.hauteur / 2 - epaisseur / 2 }
+      else { var xMax = etagere.bloc.hauteur / 2 - meuble.epaisseur / 2 }
     }
 
-    event.object.yMin = yMin + epaisseur;
-    event.object.yMax = yMax - epaisseur;
-    event.object.xMin = xMin + epaisseur;
-    event.object.xMax = xMax - epaisseur;
+    event.object.yMin = yMin + meuble.epaisseur;
+    event.object.yMax = yMax - meuble.epaisseur;
+    event.object.xMin = xMin + meuble.epaisseur;
+    event.object.xMax = xMax - meuble.epaisseur;
     event.object.blocId = blocId;
   });
 
@@ -2404,7 +2434,7 @@ function initDragMeuble() {
     let geometries=meuble.root.getObjectByName("geometries");
     boxMeuble.attach(geometries);  //on détache pour éviter les references circulaires dans les calculs de coordonnées
     geometries.position.set(0,0,0);
-    let cadreA = meuble.hasCadre*epaisseurCadre;
+    let cadreA = meuble.hasCadre*meuble.epaisseurCadre;
     let plateauA = meuble.hasPlateau*epaisseurPlateau;
     let piedA = meuble.hasPied*hauteurPied;
     let socleA = meuble.hasSocle*hauteurSocle;
@@ -2440,7 +2470,7 @@ function initDragMeuble() {
     var intersectB = false;
     for (var i = 0; i < meubles.length; i++) {
       if (i != num) {
-        var cadreB =meubles[i].hasCadre*epaisseurCadre;
+        var cadreB =meubles[i].hasCadre*meubles[i].epaisseurCadre;
         var plateauB = meubles[i].hasPlateau*epaisseurPlateau;
         var piedB = meubles[i].hasPied*hauteurPied;
         var socleB = meubles[i].hasSocle*hauteurSocle;
@@ -2467,7 +2497,7 @@ function initDragMeuble() {
     if (aY < hA / 2) { pos.y += (hA / 2 - aY); aY = hA / 2; replace = true }
     for (var i = 0; i < meubles.length; i++) {
       if (i != num) {
-        cadreB = meubles[i].hasCadre * epaisseurCadre;
+        cadreB = meubles[i].hasCadre * meubles[i].epaisseurCadre;
         plateauB = meubles[i].hasPlateau * epaisseurPlateau;
         piedB = meubles[i].hasPied * hauteurPied;
         socleB = meubles[i].hasSocle * hauteurSocle;
@@ -2853,8 +2883,9 @@ var dropDownPoignees, dropDownMeuble, dropDownTiroirs, dropDownPlateau, dropDown
 var buttonSelectMeuble,buttonSelectBloc,buttonSelectElement;
 var buttonAdjustBloc,buttonAdjustMeuble,buttonAdjustEtagere;
 var buttonSousMeuble;
-var expandDimensions, expandBloc, expandMeubleData, expandAspect, expandEtageres, expandContenu, expandEnregistrement;
-var blocsData,contenuData,meubleData,etageresData,aspectData,enregistrementData;
+var buttonResetEtageres;
+var expandDimensions, expandBloc, expandMeubleData, expandAspect, expandEtageres, expandContenu, expandEnregistrement, expandParametres;
+var blocsData,contenuData,meubleData,etageresData,aspectData,enregistrementData,parametresData;
 var contextMenuGeneral,contextMenuMeuble,contextMenuBloc,contextMenuEtagere;
 var warningContenu,warningBloc,warningEtageres,warningMeuble;
 var meubleHiddenIfEmpty;
@@ -2969,6 +3000,8 @@ function getHTMLElements () {
   buttonAdjustEtagere = document.getElementById("buttonAdjustEtagere");
   buttonSelectElement = document.getElementById("buttonSelectElement");
   buttonSousMeuble = document.getElementById("buttonSousMeuble");
+
+  buttonResetEtageres = document.getElementById("buttonResetEtageres");
   
   expandDimensions=document.getElementById("expandDimensions");
   expandBloc=document.getElementById("expandBloc");
@@ -2976,6 +3009,7 @@ function getHTMLElements () {
   expandEtageres=document.getElementById("expandEtageres");
   expandAspect=document.getElementById("expandAspect");
   expandEnregistrement=document.getElementById("expandEnregistrement");
+  expandParametres=document.getElementById("expandParametres");
 
   meubleData=document.getElementById("meubleData");
   expandMeubleData=document.getElementById("expandMeubleData");
@@ -2983,6 +3017,7 @@ function getHTMLElements () {
   contenuData=document.getElementById("contenuData");
   aspectData=document.getElementById("aspectData");
   enregistrementData=document.getElementById("enregistrementData");
+  parametresData=document.getElementById("parametresData");
 
   warningContenu=document.getElementById("warningContenu");
   warningBloc=document.getElementById("warningBloc");
@@ -3394,6 +3429,10 @@ function expand(divSwitch,divData) {
   enregistrementData.style.display="none";
   expandEnregistrement.addEventListener("click",function expandFn(event)
   {expand(expandEnregistrement,enregistrementData)});
+
+  parametresData.style.display="none",
+  expandParametres.addEventListener("click",function expandFn(event)
+  {expand(expandParametres,parametresData)});
 }
 
 function setSelectionMode(value) {
@@ -3410,6 +3449,7 @@ function setSelectionMode(value) {
 }
 
 function refreshSelectButtons() {
+  console.log("selectionMode=",selectionMode);
   if (selectionMode=="meubles") {buttonSelectMeuble.className="buttonOn";}
   else {buttonSelectMeuble.className="buttonOff"}
 
@@ -3420,7 +3460,7 @@ function refreshSelectButtons() {
   else {buttonSelectBloc.className="buttonOff"}
 
   if (selectionMode=="ajusteBlocs") {buttonAdjustBloc.className="buttonOn";}
-  else {buttonAdjustBloc.className="buttonOff"
+  else {buttonAdjustBloc.className="buttonOff"}
     
   if (selectionMode=="etageres") {buttonAdjustEtagere.className="buttonOn";}
   else {buttonAdjustEtagere.className="buttonOff"}
@@ -3428,7 +3468,7 @@ function refreshSelectButtons() {
   if (selectionMode=="elements") {buttonSelectElement.className="buttonOn";}
   else {buttonSelectElement.className="buttonOff"}
 }
-}
+
 
 function dropMenu(event) {
  let elt=document.getElementById(event.target.attributes["cible"].value);
@@ -3626,6 +3666,7 @@ function refreshInterfaceMeuble() {
 function clearInterfaceMeuble() {
   meubleSliders.innerHTML="";
   nbBlocsSlider.innerHTML="";
+  parametresData.innerHTML="";
   selectListMeubles.innerHTML="";
   selectListMeubles.classList.remove("animationMeublesName");
 }
@@ -3712,7 +3753,6 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   }
   if (indiceCurrentMeuble==-1) selectListMeubles.value="";
 
-
   //nbBlocs
   let retour = createSliderWithoutListener(meuble,"nbBlocs","Nombre de blocs",meuble.nbBlocs,0,1,maxBlocs);
   let nbBlocsDiv = retour[0];
@@ -3725,7 +3765,6 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   nbBlocsDiv.querySelector("#slider").value=Number(event.target.value); //refresh
   },false);
   nbBlocsSlider.append(nbBlocsDiv);
-
 
   //hauteur meuble
   hauteurDiv=createSlider(meuble,"hauteur","Hauteur",meuble.hauteur,0,10,250);
@@ -3803,16 +3842,6 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   YDivInput.addEventListener("change",function () {eventYDivInput(+YDivInput.value)},false);  //forçage de type
   meubleSliders.append(YDiv);
 
-/*   function eventYDivInputSlider() {
-    var y=+YDivSlider.value; //forçage de type
-    eventYDivInput(y);
-  }
-
-  function eventYDivInputBox() {
-    var y=+YDivInput.value; //forçage de type
-    eventYDivInput(y);
-  } */
-
   function eventYDivInput(y) {
     var translateY = selectedMeuble.getLimitTranslationY(); //collision
     y = (y<translateY[0]) ? translateY[0] : y;
@@ -3824,6 +3853,31 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     YDivSlider.value = selectedMeuble.y;
     YDivInput.value = YDivSlider.value;
     frameCamera();
+  }
+
+  //parametres
+  //epaisseur etageres
+  let epaisseurDiv = createSlider(meuble, "epaisseur", "Epaisseur des étagères", meuble.epaisseur, 0, 0, 20);
+  parametresData.append(epaisseurDiv);
+  let epaisseurSlider = epaisseurDiv.querySelector("#slider");
+  let epaisseurInput = epaisseurDiv.querySelector("#number");
+  epaisseurSlider.addEventListener("input", function () { eventEpaisseurInput(+epaisseurSlider.value) }, false);
+  epaisseurInput.addEventListener("change", function () { eventEpaisseurInput(+epaisseurInput.value) }, false);
+
+  function eventEpaisseurInput(ep) {
+    selectedMeuble.updateMeuble();
+  }
+
+  //epaisseur cadre
+  let epaisseurCadreDiv = createSlider(meuble, "epaisseurCadre", "Epaisseur du cadre", meuble.epaisseurCadre, 0, 0, 20);
+  parametresData.append(epaisseurCadreDiv);
+  let epaisseurCadreSlider = epaisseurCadreDiv.querySelector("#slider");
+  let epaisseurCadreInput = epaisseurCadreDiv.querySelector("#number");
+  epaisseurCadreSlider.addEventListener("input", function () { eventEpaisseurCadreInput(+epaisseurCadreSlider.value) }, false);
+  epaisseurCadreInput.addEventListener("change", function () { eventEpaisseurCadreInput(+epaisseurCadreInput.value) }, false);
+
+  function eventEpaisseurCadreInput(ep) {
+    selectedMeuble.updateMeuble();
   }
 
   refreshCheckboxMeuble();
@@ -3942,7 +3996,7 @@ function displayWarning(divExpand,divContent,divWarning,condition) {
 
 function refreshInterfaceContenu() {
 
-  if (displayWarning(expandBloc,blocsData,warningBloc,(selectionMode!="blocs" || indiceCurrentMeuble==-1))) {  blocsData.style.display="none";}
+  if (displayWarning(expandBloc,blocsData,warningBloc,(indiceCurrentMeuble==-1))) {  blocsData.style.display="none";}
   else {  blocsData.style.display="";}
   if (displayWarning(expandContenu,contenuData,warningContenu,(selectedObjects.length==0))) return;
   warningContenu.style.display="none";
@@ -3991,6 +4045,12 @@ function refreshInterfaceBlocs() {
   refreshBlocsButtons();
   if (indiceCurrentBloc!=-1) createSlidersBlocs();
   refreshInterfaceContenu();
+  refreshInterfaceEtagere();
+}
+
+function  refreshInterfaceEtagere() {
+  if (indiceCurrentBloc==-1 && indiceCurrentMeuble==-1) buttonResetEtageres.disabled=true
+  else buttonResetEtageres.disabled=false;
 }
 
 function clearInterfaceBlocs() {
@@ -4036,7 +4096,7 @@ function startMaterialAnimationBloc(num) {
 }
 
 function createSlidersBlocs() {
-  let numBloc=indiceCurrentBloc;
+  let numBloc = indiceCurrentBloc;
   let meuble = selectedMeuble;
   let retour;
 
@@ -4046,18 +4106,18 @@ function createSlidersBlocs() {
 
   slideLargeurBloc.querySelector("#slider").addEventListener("input", function (event) {
     isPreviewOn=true;
-    setTailleOnSelectedBlocs(Number(event.target.value));
+    setTailleOnSelection(Number(event.target.value));
     slideLargeurBloc.querySelector("#number").value=Number(event.target.value); //refresh
   }, false);
 
   slideLargeurBloc.querySelector("#slider").addEventListener("change", function (event) {
     isPreviewOn=false;
-    setTailleOnSelectedBlocs(Number(event.target.value));
+    setTailleOnSelection(Number(event.target.value));
     slideLargeurBloc.querySelector("#number").value=Number(event.target.value); //refresh
   }, false);
 
   slideLargeurBloc.querySelector("#number").addEventListener("change", function (event) {
-    setTailleOnSelectedBlocs(Number(event.target.value));
+    setTailleOnSelection(Number(event.target.value));
     slideLargeurBloc.querySelector("#slider").value=Number(event.target.value); //refresh
   }, false);
   blocsSliders.append(slideLargeurBloc);
@@ -4085,7 +4145,9 @@ function setEtageresNumberOnSelection(num) {
     let object = selectedObjects[i];
     let type=object.constructor.name;
     if (type=="Meuble" || type=="Bloc") object.setEtageresNumber(Number(num));
+    if (type=="Element") object.bloc.setEtageresNumber(Number(num));
   }
+  console.log(selectedObjects.length);
   updateScene();
   frameCamera();
 }
@@ -4093,31 +4155,25 @@ function setEtageresNumberOnSelection(num) {
 function setTailleOnBloc(bloc,taille) {
   let lMax=bloc.meuble.getMaxAllowedWidth();
   let deltaMax=lMax-bloc.meuble.largeur;
-  //console.log(deltaMax);
   let deltaTaille = taille-bloc.taille;
   let newTaille = (deltaTaille>deltaMax) ? bloc.taille+deltaMax: taille;
   bloc.taille=newTaille;
-  //console.log(taille,deltaTaille,deltaMax,newTaille);
   bloc.meuble.updateTaille();
   bloc.meuble.updateMeuble();
 }
 
-function setTailleOnSelectedBlocs(taille) {
-  let exit;
-  let bloc;
+function setTailleOnSelection(taille) {
   taille=Number(taille);
   console.log("selectionMode",selectionMode);
-  if (selectionMode!="blocs" || selectedObjects.length==0 || selectedObjects[0].constructor.name!="Bloc") {
+  if ((selectionMode!="blocs" && selectionMode!="elements") || selectedObjects.length==0) {
     console.log("meuble,bloc:",indiceCurrentMeuble,indiceCurrentBloc);
-    bloc=meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc];
+    let bloc=meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc];
     setTailleOnBloc(bloc,taille);
   }
   else {
   for (var i=0; i<selectedObjects.length; i++) {
-    bloc = selectedObjects[i];
-    console.log ("meuble n°",bloc.meuble.numero);
-    setTailleOnBloc(bloc,taille)
-    if (exit) break;
+    let object = selectedObjects[i];
+    if (object.bloc) setTailleOnBloc(object.bloc,taille)
   }
 }
   refreshInterfaceLargeur();
