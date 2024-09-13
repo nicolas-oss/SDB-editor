@@ -75,8 +75,8 @@ class Element {
 
   get xTiroir() {
     if (this.bloc.meuble.isSimple && this.isRentrant) {
-      if (this.bloc.numero == 0) return (this.epaisseurCadre / 3.6665);
-      if (this.bloc.numero == this.bloc.meuble.nbBlocs - 1) return (-this.epaisseurCadre / 3.6665);
+      if (this.bloc.numero == 0) return (this.epaisseurCadre / 4);
+      if (this.bloc.numero == this.bloc.meuble.nbBlocs - 1) return (-this.epaisseurCadre / 4);
     }
     return 0;
   }
@@ -477,6 +477,8 @@ get epaisseurCadre() {
     let coneD = new THREE.Mesh( geometryConeHelper, materialSelectionMeuble);
     coneG.scale.set(0.8,0.8,0.8);
     coneD.scale.set(0.8,0.8,0.8);
+    coneG.shortName="cone";
+    coneD.shortName="cone";
     var handleBlocRoot=new THREE.Object3D();
     handleBlocRoot.name="handleBlocRoot"+this.numero;
     handleBlocRoot.shortName="handleBlocRoot";
@@ -647,7 +649,7 @@ class Meuble {
     this.hauteur = 50;
     this.largeur = 140;
     this.profondeur = 50;
-    this.nbBlocs = 4;
+    this.nbBlocs = 3;
     this.x = 0;
     this.y = 0;
     this.bloc = new Array;
@@ -1164,7 +1166,7 @@ class Meuble {
     }
   }
 
-  getNewBoiteSelectionMeuble() {
+  getBoiteSelectionMeuble() {
     if (this.isSousMeuble) return;
     let delta = 0.1 * this.numero;
     let x=this.largeur + delta + epsilon;
@@ -1200,7 +1202,7 @@ class Meuble {
     return cube;
   }
 
-  getNewBoiteManipulationHandles () {
+  getHandlesMeuble () {
     if (this.isSousMeuble) return;
     let handleMeubleRoot=new THREE.Object3D();
     handleMeubleRoot.name="handleMeubleRoot";
@@ -1280,12 +1282,12 @@ class Meuble {
     if (!isPreviewOn) {
       //boite de sélection
       console.log("isSousMeuble=",this.isSousMeuble,this.name);
-      let boiteSelectionMeuble = this.getNewBoiteSelectionMeuble();
+      let boiteSelectionMeuble = this.getBoiteSelectionMeuble();
       handlesMeuble.add(boiteSelectionMeuble);
       this.selectionBox = boiteSelectionMeuble;
       boiteSelectionMeuble.meuble=this;
       selectableHandleMeuble = [];
-      handlesMeuble.add(this.getNewBoiteManipulationHandles());
+      handlesMeuble.add(this.getHandlesMeuble());
       updateAllSelectable();
     }
     this.placeMeuble();
@@ -1589,11 +1591,12 @@ var indiceCurrentMeuble = 0;
 
 const hasPlancheBas = true;
 const epaisseurHandleBlocs = 6;
-const epaisseur = 3;
+const epaisseur = 1; //epaisseur etageres
+const epaisseurTiroirs = 1;
 //const epaisseurCadreSimple = 6;
 const epaisseurPlateau = 3;
 const debordPlateau = 2;
-const epaisseurCadre = 6;
+const epaisseurCadre = 2;
 const debordCadre = 0.5;
 const retraitSocle = 2;
 const hauteurSocle = 8;
@@ -1961,6 +1964,7 @@ var newHelper;
 var dragElementControls;
 function initDragElements() {
   dragElementControls = new DragControls(selectableElements, camera, renderer.domElement);
+  dragElementControls.recursive=false;
   dragElementControls.addEventListener('dragstart',function (event) {
     if (selectionMode!="elements") return;
     let clickedElement=event.object.element;//.bloc.element;
@@ -1994,6 +1998,7 @@ var dragHandleBlocControls;
 function initDragHandleBloc() {
   //drag handle bloc
   dragHandleBlocControls = new DragControls(selectableHandleBloc, camera, renderer.domElement);
+  dragHandleBlocControls.recursive=false;
   dragHandleBlocControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="ajusteBlocs") return;
     controls.enabled = false;
@@ -2127,6 +2132,7 @@ var dragHandleMeubleControls;
 function initDragHandleMeuble() {
   //drag handle bloc
   dragHandleMeubleControls = new DragControls(selectableHandleMeuble, camera, renderer.domElement);
+  dragHandleMeubleControls.recursive=false;
   dragHandleMeubleControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="ajusteMeubles") {return;}
     controls.enabled = false;
@@ -2205,6 +2211,7 @@ var dragBlocControls;
 function initDragBloc() {
   //drag blocs
   dragBlocControls = new DragControls(selectableBloc, camera, renderer.domElement);
+  dragBlocControls.recursive=false;
   dragBlocControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="blocs") return;
     let clickedBloc = event.object.bloc;
@@ -2240,7 +2247,7 @@ var dragEtagereControls;
 function initDragEtagere() {
   //drag etageres
   dragEtagereControls = new DragControls(selectableEtagere, camera, renderer.domElement);
-
+  dragEtagereControls.recursive=false;
   dragEtagereControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="etageres") return;
     controls.enabled=false;
@@ -2321,7 +2328,7 @@ function initDragMeuble() {
   var wA,hA;
   var aX,aY;
   dragMeubleControls=new DragControls(selectableMeuble, camera, renderer.domElement);
-
+  dragMeubleControls.recursive=false;
   dragMeubleControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="meubles") return;
     controls.enabled=false;
@@ -3952,6 +3959,7 @@ function refreshInterfaceBlocs() {
   rebuildInterfaceBlocs();
   refreshBlocsButtons();
   if (indiceCurrentBloc!=-1) createSlidersBlocs();
+  createSlidersEtageres();
   refreshInterfaceContenu();
   refreshInterfaceEtagere();
 }
@@ -4029,6 +4037,14 @@ function createSlidersBlocs() {
     slideLargeurBloc.querySelector("#slider").value=Number(event.target.value); //refresh
   }, false);
   blocsSliders.append(slideLargeurBloc);
+}
+
+function createSlidersEtageres() {
+  let numBloc=indiceCurrentBloc;
+  console.log("indiceCurrentBloc",indiceCurrentBloc);
+  if (indiceCurrentBloc==-1) numBloc = 0;
+  let meuble = selectedMeuble;
+  let retour;
 
   retour = createSliderWithoutListener(meuble.bloc[numBloc], "etageres", "Nombre d'étagères", meuble.bloc[numBloc].etageres, 0, 0, maxEtageres);
   let sliderEtageres=retour[0];
@@ -4055,7 +4071,7 @@ function setEtageresNumberOnSelection(num) {
     if (type=="Meuble" || type=="Bloc") object.setEtageresNumber(Number(num));
     if (type=="Element") object.bloc.setEtageresNumber(Number(num));
   }
-  console.log(selectedObjects.length);
+  if (selectedObjects.length==0 && indiceCurrentMeuble>-1) selectedMeuble.setEtageresNumber(Number(num));
   updateScene();
   frameCamera();
 }
