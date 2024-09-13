@@ -29,12 +29,6 @@ class Element {
     this.ouverturePorteLocal = undefined;
     this.nombrePortesLocal = undefined;
 
-    this.ySuivant = undefined;
-    this.yl = undefined;
-    //this.yTiroir = undefined;
-    this.xl = undefined;
-    this.zl = undefined;
-
     this.sousMeuble=undefined;
   }
 
@@ -63,7 +57,6 @@ class Element {
     if (this.bloc.isRentrant) {
       let h = this.meuble.hauteur - 2 * this.epaisseurCadre + this.epaisseur;
       let yStart = this.epaisseurCadre - this.epaisseur / 2 - this.meuble.hauteur / 2;
-      let yEnd = -this.epaisseurCadre + this.epaisseur / 2 + this.meuble.hauteur / 2;
       y = (h/(this.bloc.etageres+1))* (this.numero) + yStart;
     }
     else {
@@ -76,18 +69,21 @@ class Element {
     var step = (this.bloc.l - 2 * this.epaisseur) / (this.bloc.etageres + 1);
     return step * (0.5 + this.numero - this.bloc.etageres / 2);}
 
-  get yTiroir() {if (this.numero<this.bloc.etageres && this.numero>0) {
-    if (this.yPredefini) return this.yPredefini;
-    let hUtile;
-    if (this.bloc.isRentrant) {hUtile = this.bloc.hauteurInterieure}
-    else hUtile = this.bloc.h;
-      if (this.bloc.elements[this.numero-1].yPredefini!=undefined) return this.bloc.elements[this.numero-1].yPredefini}
-    var step = (this.bloc.hUtile - 0.25 * this.epaisseur - 2*this.offsetTiroir()) / (this.bloc.etageres + 1);
-    return step * (0.5 + this.numero  - this.bloc.etageres / 2);}
+  get yTiroir() {
+    return (this.y + this.bloc.elements[this.numero+1].y) / 2;
+  }
+
+  get xTiroir() {
+    if (this.bloc.meuble.isSimple && this.isRentrant) {
+      if (this.bloc.numero == 0) return (this.epaisseurCadre / 3.6665);
+      if (this.bloc.numero == this.bloc.meuble.nbBlocs - 1) return (-this.epaisseurCadre / 3.6665);
+    }
+    return 0;
+  }
 
   set isRentrant(value) {this.isRentrantLocal = value;}
 
-  get isRentrant() {//return this.isRentrantLocal;
+  get isRentrant() {
      if (this.isRentrantLocal!=undefined) {return this.isRentrantLocal}
     else return this.bloc.isRentrant; 
   }
@@ -104,29 +100,29 @@ class Element {
   set ouverturePorte(value) { this.ouverturePorteLocal=value }
   set nombrePortes(value) { this.nombrePortesLocal=value }
 
-  updateData() {
-    if (this.numero < this.bloc.etageres) {
-      this.ySuivant = this.bloc.elements[this.numero + 1].y;
+  get ySuivant() {
+    if (this.numero < this.bloc.etageres+1) {
+      return this.bloc.elements[this.numero + 1].y;
     }
-    else {
-      if (this.bloc.isRentrant || this.isRentrant) {
-        if (this.bloc.meuble.isSimple) {
-          this.ySuivant = this.meuble.hauteur / 2 - this.epaisseurCadre + this.epaisseur / 2;
-        }
-        else { this.ySuivant = this.meuble.hauteur / 2 - this.offsetTiroir() / 2; }
-      }
-      else { this.ySuivant = this.meuble.hauteur / 2 - this.offsetTiroir() / 2; }
-    }
-    this.yl = this.ySuivant - this.y - this.offsetTiroir();
-    this.xl = this.bloc.l - 2 * this.offsetTiroir();
-    if (this.bloc.meuble.isSimple && this.isRentrant) {
-      if (this.bloc.numero == 0 || this.bloc.numero==this.bloc.meuble.nbBlocs-1) {
-        //this.xl += this.offsetTiroir();
-        this.xl -= this.epaisseurCadre / 2;
-      }
-    }
-    this.zl = this.epaisseur;
   }
+
+  get yl() {
+    return this.ySuivant - this.y - this.epaisseur * this.isRentrant;
+  }
+
+  get xl() {
+    if (!this.isRentrant) return this.bloc.taille;
+    if (this.meuble.isSimple) {
+      if (this.bloc.numero == 0) { return (this.bloc.taille - 1.5*this.epaisseurCadre); }
+      if (this.bloc.numero == (this.meuble.nbBlocs - 1)) { return (this.bloc.taille - 1.5*this.epaisseurCadre); }
+      return (this.bloc.taille - this.epaisseurCadre); }
+    return this.bloc.taille - 2 * this.epaisseurCadre;
+  }
+
+  get zl() {
+    return this.epaisseur;
+  }
+
   reset() {
     this.unherited = true;
     this.xPredefini = undefined;
@@ -138,10 +134,69 @@ class Element {
   }
 
   offsetTiroir() {
-    if (this.isRentrant) {var offsetTiroir=this.epaisseur}
-    else {var offsetTiroir=0}
+    if (this.isRentrant) { var offsetTiroir = this.epaisseurCadre }
+    else { var offsetTiroir = 0 }
     return offsetTiroir;
   }
+
+//getPorte(l,h,p,nombrePortes,ouverturePorte,style,isRentrant,numero) {
+getPorte(isPorteBloc) {
+    var porte = [];
+    let hauteurPorte;
+    if (isPorteBloc) hauteurPorte=this.bloc.hauteur
+    else hauteurPorte=this.yl;
+    var offset = this.epaisseur * this.isRentrant ;
+    if (this.nombrePortes == "1") {
+      //geometry = createPlanche(this.xl - 0.25 * this.epaisseur - 2 * offset, this.yl - 0.25 * this.epaisseur - 2 * offset, this.epaisseur, this.style);
+      geometry = createPlanche(this.xl, hauteurPorte, this.epaisseur, this.style);
+      porte[0] = new THREE.Mesh(geometry, materialTiroirs);
+      porte[0].name = "porte 0";
+      //poignee
+      let poigneeB = poigneeGroup.clone(true);
+      poigneeB.name = "poignee";
+      porte[0].add(poigneeB);
+      let deltaX = this.xl / 2 - 4 * taillePoignees;
+      if (deltaX < 0) deltaX = 0;
+      if (this.ouverturePorte == "droite") { deltaX *= -1; poigneeB.rotateZ(Math.PI / 2); }
+      else poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
+      poigneeB.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
+      porte[0].position.set(0, 0, this.bloc.p / 2 - offset);
+      return porte[0];
+    }
+    else {
+      //porte gauche
+      geometry = createPlanche(this.xl/2, hauteurPorte, this.epaisseur, this.style);
+      porte[0] = new THREE.Mesh(geometry, materialTiroirs);
+      porte[0].name = "porte 0";
+
+      //poignee gauche
+      let poigneeB = poigneeGroup.clone(true);
+      poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
+      poigneeB.name = "poignee";
+      porte[0].add(poigneeB);
+      let deltaX = this.xl / 4 - 4 * taillePoignees;
+      if (4 * taillePoignees > this.xl / 4) deltaX = 0;
+      poigneeB.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
+      porte[0].position.set(-this.xl / 4, 0, this.bloc.p / 2 - offset);
+
+      //porte droite
+      porte[1] = new THREE.Mesh(geometry, materialTiroirs);
+      porte[1].name = "porte 1";
+      //poignee droite
+      let poigneeC = poigneeGroup.clone(true);
+      poigneeC.rotateZ(Math.PI / 2);  // a soumettre à option
+      porte[1].add(poigneeC);
+      deltaX *= -1
+      poigneeC.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
+      poigneeC.name = "poignee";
+      porte[1].position.set(this.xl / 4, 0, this.bloc.p / 2 - offset);
+      let porteDoubleRoot=new THREE.Object3D();
+      porteDoubleRoot.name="porteDoubleRoot"+this.numero;
+      porteDoubleRoot.shortName="porteDoubleRoot";
+      porteDoubleRoot.add(porte[0],porte[1]);
+      return porteDoubleRoot;
+    }
+}
 
   getEtagere() {
     if (this.numero < 1 || this.numero > this.bloc.etageres) return;
@@ -211,23 +266,18 @@ class Element {
       let yPoignee = this.yl * (this.bloc.meuble.offsetPoignees / 250);
       poigneeB.position.set(0, yPoignee, this.epaisseur / 2 + offsetSuedois);
     }
-    let yTiroir = this.y + this.yl / 2 + this.offsetTiroir()/2;
     let zTiroir = this.bloc.p / 2;
 
-    tiroirRoot.position.set(0, yTiroir, zTiroir - this.offsetTiroir());
-    if (this.meuble.isSimple && this.isRentrant) {
-      if (this.bloc.numero == 0) tiroirRoot.translateX(offsetSimple / 2);
-      if (this.bloc.numero == this.bloc.meuble.nbBlocs - 1) tiroirRoot.translateX(-offsetSimple / 2);
-    }
+    tiroirRoot.position.set(this.xTiroir, this.yTiroir, zTiroir - this.epaisseur*this.isRentrant);
     return tiroirRoot;
   }
   
   getElement() {
-    this.updateData();
+    //this.updateData();
     var elementRoot = new THREE.Object3D();
     elementRoot.name = "elementRoot";
     elementRoot.attach(this.getSelectionBox());
-    elementRoot.attach(this.getTiroir());
+    if (this.type == "Tiroirs" && this.numero<this.bloc.etageres+1) elementRoot.attach(this.getTiroir());
     if (this.type == "Etageres" || this.type == "Tiroirs" || this.type=="SousMeuble" || this.type=="Portes") {
       let etagere = this.getEtagere();
       if (etagere) elementRoot.attach(etagere);
@@ -238,10 +288,10 @@ class Element {
       elementRoot.attach(sousMeuble);
     }
     if (this.type == "Portes") {
-      let porte=createPortes(this.xl,this.yl,this.bloc.p,this.nombrePortes,this.ouverturePorte,this.style,this.isRentrant,this.numero);
+      let porte=this.getPorte(false);
       let porteRoot=new THREE.Object3D();
       porteRoot.attach(porte);
-      porteRoot.position.set(0,this.y+this.yl/2,0);
+      porteRoot.position.set(this.xTiroir,this.yTiroir,0);
       elementRoot.attach(porteRoot);
     }
     return elementRoot;
@@ -287,7 +337,9 @@ class Bloc {
     this.unherited = true;
     this.elements = [];
     this.etageresLocal = undefined;
-    for (var i=0; i<this.etageres+2; i++) {this.elements[i] = new Element(this,i)} // -1/+1 pour étageres 0 et n+1
+    for (var i=0; i<this.etageres+4; i++)
+      {this.elements[i] = new Element(this,i);
+      } // -1/+1 pour étageres 0 et n+1
     this.selectionBox = undefined;
     
     //commun aux autres classes
@@ -298,8 +350,6 @@ class Bloc {
     this.ouverturePorteLocal = undefined;
     this.nombrePortesLocal = undefined;
     this.etageresVerticalesLocal = undefined;
-    console.log('epaisseur in bloc=',this.meuble.epaisseur);
-    console.log(this.meuble);
   }
 
 get epaisseur() {
@@ -350,6 +400,11 @@ get epaisseurCadre() {
   get isRentrant() { if (this.isRentrantLocal!=undefined) {return this.isRentrantLocal}
     else return this.meuble.isRentrant;}
 
+  get hauteur() {
+    if (!this.isRentrant) return this.meuble.hauteur
+    else return this.meuble.hauteur-2*this.epaisseurCadre;
+  }
+
   reset() {
     this.unherited = true;
     this.localType = undefined;
@@ -367,10 +422,7 @@ get epaisseurCadre() {
     if (this.meuble.disposition == "vertical") { this.l = this.meuble.largeur; this.h = this.taille; }
     this.p = this.meuble.profondeur;
     var epaisseurRelle;
-    //if (this.meuble.isSimple) { epaisseurRelle = this.epaisseurCadre }
-    //else { epaisseurRelle = this.epaisseur }
     this.hauteurInterieure = this.meuble.hauteur - 2 * this.epaisseurCadre;    // ??????
-    //console.log("hauteurInterieure",this.hauteurInterieure);
   }
 
   getCadre() {
@@ -400,82 +452,18 @@ get epaisseurCadre() {
     return cadreBlocRoot;
   }
 
-  getPortes() {
-    var porte = [];
-      var offset = this.epaisseur * this.isRentrant ;
-      let h,l;
-      if (this.isRentrant) {
-        h=this.meuble.hauteur-2*this.epaisseurCadre;
-        l=this.elements[0].xl;
-      }
-      else {
-        h=this.meuble.hauteur;
-        l=this.taille;
-      }
-      if (this.nombrePortes == "1") {
-        geometry = createPlanche(l,h, this.epaisseur, this.style);
-        porte[0] = new THREE.Mesh(geometry, materialTiroirs);
-        porte[0].name = "porte 0";
-        //poignee
-        let poigneeB = poigneeGroup.clone(true);
-        poigneeB.name = "poignee";
-        porte[0].add(poigneeB);
-        let deltaX = l / 2 - 4 * taillePoignees;
-        if (deltaX < 0) deltaX = 0;
-        if (this.ouverturePorte == "droite") { deltaX *= -1; poigneeB.rotateZ(Math.PI / 2); }
-        else poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
-        poigneeB.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
-        porte[0].position.set(0, 0, this.p / 2 - offset);
-        return porte[0]
-      }
-      else {
-        //porte gauche
-        geometry = createPlanche(l / 2,h, this.epaisseur, this.style);
-        porte[0] = new THREE.Mesh(geometry, materialTiroirs);
-        porte[0].name = "porte 0";
-
-        //poignee gauche
-        let poigneeB = poigneeGroup.clone(true);
-        poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
-        poigneeB.name = "poignee";
-        porte[0].add(poigneeB);
-        let deltaX = l / 4 - 4 * taillePoignees;
-        if (4 * taillePoignees > this.l / 4) deltaX = 0;
-        poigneeB.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
-        porte[0].position.set(-this.l / 4 + offset / 2, 0, this.p / 2 - offset);
-
-        //porte droite
-        porte[1] = new THREE.Mesh(geometry, materialTiroirs);
-        porte[1].name = "porte 1";
-        //poignee droite
-        let poigneeC = poigneeGroup.clone(true);
-        poigneeC.rotateZ(Math.PI / 2);  // a soumettre à option
-        porte[1].add(poigneeC);
-        deltaX *= -1
-        poigneeC.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
-        poigneeC.name = "poignee";
-        porte[1].position.set(this.l / 4 - offset / 2, 0, this.p / 2 - offset);
-        let porteDoubleRoot=new THREE.Object3D();
-        porteDoubleRoot.name="porteDoubleRoot"+this.numero;
-        porteDoubleRoot.shortName="porteDoubleRoot";
-        porteDoubleRoot.add(porte[0],porte[1]);
-        return porteDoubleRoot;
-      }
-  }
-
   createElementBloc(i) {
     if (!this.elements[i]) this.elements[i] = new Element(this, i);
   }
 
   createElementsBloc() {
-    for (var i = 0; i < this.etageres+1; i++) this.createElementBloc(i);
+    for (var i = 0; i < this.etageres+2; i++) this.createElementBloc(i);
   }
 
   getElements() {
     var elementsRoot = new THREE.Object3D();
     elementsRoot.name = "elementsRoot" + this.numero;
     elementsRoot.shortName = "elementsRoot";
-    //console.log("this.etageres+1",1+Number(this.etageres));
     for (var i = 0; i < +this.etageres+1; i++) {
       let element = this.elements[i].getElement();
       if (element) elementsRoot.add(element);
@@ -561,12 +549,25 @@ get epaisseurCadre() {
     if (!isPreviewOn) { this.blocRoot.add(this.getHandleBlocs()) }
 
     //portes
-    if (this.type == "Portes") {this.blocRoot.add(createPortes(this.l,this.h,this.p,this.nombrePortes,this.ouverturePorte,this.style,this.isRentrant,this.numero))}
+    if (this.type == "Portes") {
+      
+    /*   let h,l;
+      if (this.isRentrant) {
+        h=this.meuble.hauteur-2*this.epaisseurCadre;
+        l=this.elements[0].xl;
+      }
+      else {
+        h=this.meuble.hauteur;
+        l=this.taille;
+      }  */
+      let portes=this.elements[this.etageres].getPorte(true);
+      portes.translateX(this.elements[this.etageres].xTiroir);
+      this.blocRoot.add(portes);}
 
     //elements
     if (this.type == "Tiroirs" || this.type == "Etageres") {
       this.blocRoot.add(this.getElements());
-    } 
+    }
 
     //sous-meuble
     if (this.type == "SousMeuble") {
@@ -621,39 +622,19 @@ get epaisseurCadre() {
   }
 
   setEtageresNumber(num) {
-    console.log(num);
-    /*     for (var i=num; i<elements.length(); i++) {
-          console.log(i);
-          if (this.elements[i]) {this.elements[i]=undefined;}
-        } */
     for (var i = this.etageres+1; i < num+2; i++) {
-      //console.log(i);
-      console.log(typeof this.elements[i]);
       if (!this.elements[i]) {
         this.elements[i] = new Element(this, i);
       }
-      
-      /*     if (indiceCurrentBloc>(this.nbBlocs-1)) {indiceCurrentBloc=this.nbBlocs-1;}
-          this.nbBlocs=num;console.log("this.nbBlocs=",this.nbBlocs); */
     }
     this.etageresLocal = num;
   }
 
   setTaille(num) {
-    console.log(num);
-    /*     for (var i=num; i<elements.length(); i++) {
-          console.log(i);
-          if (this.elements[i]) {this.elements[i]=undefined;}
-        } */
     for (var i = this.etageres+1; i < num+2; i++) {
-      //console.log(i);
-      console.log(typeof this.elements[i]);
       if (!this.elements[i]) {
         this.elements[i] = new Element(this, i);
       }
-      
-      /*     if (indiceCurrentBloc>(this.nbBlocs-1)) {indiceCurrentBloc=this.nbBlocs-1;}
-          this.nbBlocs=num;console.log("this.nbBlocs=",this.nbBlocs); */
     }
     this.etageresLocal = num;
   }
@@ -666,7 +647,7 @@ class Meuble {
     this.hauteur = 50;
     this.largeur = 140;
     this.profondeur = 50;
-    this.nbBlocs = 3;
+    this.nbBlocs = 4;
     this.x = 0;
     this.y = 0;
     this.bloc = new Array;
@@ -737,10 +718,8 @@ class Meuble {
     else {
       var largeurTemp = 0;
       for (var i = 0; i < this.nbBlocs; i++) {
-        console.log(i, this.bloc[i].taille);
         largeurTemp += this.bloc[i].taille;
       }
-      console.log("largeur = ", largeurTemp);
       return (largeurTemp);
     }
   }
@@ -1165,7 +1144,7 @@ class Meuble {
     //positionnement bloc dans meuble
     if (this.disposition=="horizontal") {
       //if (!this.meuble.isSimple) {
-        var blocPosition = -this.largeur / 2;
+        var blocPosition = -this.largeur / 2.0;
       //}
       //else var blocPosition = (-this.largeur+epaisseurCadreSimple) / 2;
     }
@@ -1175,7 +1154,7 @@ class Meuble {
           blocPosition += this.bloc[j].taille;
         }
       }
-      blocPosition += this.bloc[i].taille / 2;
+      blocPosition += this.bloc[i].taille / 2.0;
       if (this.disposition=="horizontal") { 
         blocRoot.position.set(blocPosition, 0, 0)
       } 
@@ -1187,14 +1166,12 @@ class Meuble {
 
   getNewBoiteSelectionMeuble() {
     if (this.isSousMeuble) return;
-    console.log("creating boites",this.name);
     let delta = 0.1 * this.numero;
     let x=this.largeur + delta + epsilon;
     let y=this.hauteur + delta + epsilon;
     let z=this.profondeur + delta + epsilon;
     geometry = roundEdgedBox(x, y, z, 3, 2, 2, 2, 2)
     cube = new THREE.Mesh(geometry, materialSelectionMeuble);
-    //cube.numero = this.numero;
     cube.name = "boiteSelectionMeuble" + this.numero;
     cube.shortName = "boiteSelectionMeuble";
     cube.category = "boiteSelection";
@@ -1550,60 +1527,6 @@ function duplicateMeuble(num) {
 }
 
 //fonctions creations geometries
-
-function createPortes(l,h,p,nombrePortes,ouverturePorte,style,isRentrant,numero) {
-  var porte = [];
-    var offset = epaisseur * isRentrant ;
-    if (nombrePortes == "1") {
-      geometry = createPlanche(l - 0.25 * epaisseur - 2 * offset, h - 0.25 * epaisseur - 2 * offset, epaisseur, style);
-      porte[0] = new THREE.Mesh(geometry, materialTiroirs);
-      porte[0].name = "porte 0";
-      //poignee
-      let poigneeB = poigneeGroup.clone(true);
-      poigneeB.name = "poignee";
-      porte[0].add(poigneeB);
-      let deltaX = l / 2 - 4 * taillePoignees;
-      if (deltaX < 0) deltaX = 0;
-      if (ouverturePorte == "droite") { deltaX *= -1; poigneeB.rotateZ(Math.PI / 2); }
-      else poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
-      poigneeB.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
-      porte[0].position.set(0, 0, p / 2 - offset);
-      return porte[0]
-    }
-    else {
-      //porte gauche
-      geometry = createPlanche(l / 2 - 0.25 * epaisseur - offset / 2, h - 0.25 * epaisseur - 2 * offset, epaisseur, style);
-      porte[0] = new THREE.Mesh(geometry, materialTiroirs);
-      porte[0].name = "porte 0";
-
-      //poignee gauche
-      let poigneeB = poigneeGroup.clone(true);
-      poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
-      poigneeB.name = "poignee";
-      porte[0].add(poigneeB);
-      let deltaX = l / 4 - 4 * taillePoignees;
-      if (4 * taillePoignees > l / 4) deltaX = 0;
-      poigneeB.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
-      porte[0].position.set(-l / 4 + offset / 2, 0, p / 2 - offset);
-
-      //porte droite
-      porte[1] = new THREE.Mesh(geometry, materialTiroirs);
-      porte[1].name = "porte 1";
-      //poignee droite
-      let poigneeC = poigneeGroup.clone(true);
-      poigneeC.rotateZ(Math.PI / 2);  // a soumettre à option
-      porte[1].add(poigneeC);
-      deltaX *= -1
-      poigneeC.position.set(deltaX, 0, epaisseur / 2 + offsetSuedois);
-      poigneeC.name = "poignee";
-      porte[1].position.set(l / 4 - offset / 2, 0, p / 2 - offset);
-      let porteDoubleRoot=new THREE.Object3D();
-      porteDoubleRoot.name="porteDoubleRoot"+numero;
-      porteDoubleRoot.shortName="porteDoubleRoot";
-      porteDoubleRoot.add(porte[0],porte[1]);
-      return porteDoubleRoot;
-    }
-}
 
 function getPlancheSuedoise(x, y, z, largeur, epaisseurS) {
   let geo = new THREE.BufferGeometry;
