@@ -968,18 +968,21 @@ class Meuble {
     if (this.hasCadre) y+=this.epaisseurCadre;
     if (this.hasSocle) y+=hauteurSocle;
     if (this.hasPied) y+=hauteurPied;
-     this.root.position.set(
+    if (!onMurGauche) {
+      this.root.position.set(
       this.x,
       y,
       this.profondeur / 2); 
+    }
       
     if (onMurGauche) {
       this.root.position.set(
         this.profondeur/2-largeurPiece/2,
         y,
-        -this.x+this.largeur/2);
+        -this.x);
       this.root.rotation.set(0, Math.PI / 2, 0);
     }
+    console.log("meuble placé");
   }
 
   getPlateau() {
@@ -1156,6 +1159,8 @@ class Meuble {
   
   updateGeometry() {
     //if (!geometries) this.createGeometryRoot;
+    //this.root.position.set(0,0,0);
+    //this.root.rotation.set(0,0,0);
     let geometries = this.root.getObjectByName("geometries");
     geometries.children = [];
     geometry.dispose();
@@ -2355,6 +2360,9 @@ function initDragHandleBloc() {
     newHelper.visible=true;
     event.object.newHelperXInit=newHelper.position.x;
     event.object.newHelperYInit=newHelper.position.y;
+    event.object.newHelperZInit=newHelper.position.z;
+    if (onMurGauche) newHelper.rotation.set(0,-Math.PI/2,0);
+    scene.add(newHelper);
   });
 
   dragHandleBlocControls.addEventListener('drag', function (event) {
@@ -2363,7 +2371,7 @@ function initDragHandleBloc() {
     //console.log(obj1);
     var meuble = obj1.bloc.meuble;
     var blocId = obj1.bloc.numero;
-    scene.add(newHelper);
+    //scene.add(newHelper);
     if (meuble.disposition == "horizontal") {
       let x = obj1.position.x;
       x = x > event.object.xMax ? event.object.xMax : x;
@@ -2391,6 +2399,7 @@ function initDragHandleBloc() {
         if (delta > (obj1.deltaMaxDroite)) {
           delta = obj1.deltaMaxDroite;
           x = obj1.xInitial + delta;
+          z = obj1.zInitial + delta;
         }
         fact = 1;
         meuble.x = obj1.xMeubleInitial + delta / 2;
@@ -2398,7 +2407,8 @@ function initDragHandleBloc() {
       meuble.bloc[blocId].taille = fact * (x + obj1.xInitial);
       console.log(meuble.bloc[blocId].taille);
       obj1.position.set(x, 0, 0);
-      newHelper.position.x=obj1.newHelperXInit+delta;
+      if (!onMurGauche) newHelper.position.x=obj1.newHelperXInit-delta
+      else if (onMurGauche) newHelper.position.z=obj1.newHelperZInit-delta;
     }
 
     else { //vertical
@@ -2450,6 +2460,7 @@ function initDragHandleMeuble() {
     controls.enabled = false;
     rayCastEnabled = false;
     var meuble = event.object.meuble;
+    console.log(meuble);
     //select(event.object.meuble);
     //changeCurrentMeubleFromClick(event.object.meuble);
     //event.object.material.emissive.set(0xaaaaaa);
