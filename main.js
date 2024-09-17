@@ -709,6 +709,8 @@ class Meuble {
 
     this.isRentrant = false;
     this.isSimple = true;
+    this.onMurGauche = false;
+    this.onMurDroit = false;
 
     //commun aux autres classes
     this.localStyle = undefined;
@@ -968,20 +970,33 @@ class Meuble {
     if (this.hasCadre) y+=this.epaisseurCadre;
     if (this.hasSocle) y+=hauteurSocle;
     if (this.hasPied) y+=hauteurPied;
-    if (!onMurGauche) {
+    if (!this.onMurGauche && !this.onMurDroit) {
+      console.log ("place sur mur fond");
       this.root.position.set(
       this.x,
       y,
-      this.profondeur / 2); 
+      this.profondeur / 2);
+      this.root.rotation.set(0, 0, 0);
     }
       
-    if (onMurGauche) {
+    if (this.onMurGauche) {
+      console.log ("place sur mur gauche");
       this.root.position.set(
         this.profondeur/2-largeurPiece/2,
         y,
         -this.x);
       this.root.rotation.set(0, Math.PI / 2, 0);
     }
+
+    if (this.onMurDroit) {
+      console.log ("place sur mur droit");
+      this.root.position.set(
+        -this.profondeur/2+largeurPiece/2,
+        y,
+        this.x);
+      this.root.rotation.set(0, - Math.PI / 2, 0);
+    }
+
     console.log("meuble placé");
   }
 
@@ -1627,34 +1642,9 @@ class SousMeuble extends Meuble {
     boite.sousMeuble = this;
     boite.visible = false;
 
-    /* let coneHautMain=new THREE.Mesh(geometryConeHelper, materialHelper);
-    let coneBasMain=new THREE.Mesh(geometryConeHelper, materialHelper);
-    coneHautMain.shortName="cone";
-    coneBasMain.shortName="cone";
-    coneHautMain.position.set(0,3*epaisseurHandleBlocs+y/2,0);
-    coneBasMain.position.set(0,-3*epaisseurHandleBlocs-y/2,0);
-
-    let coneDroitMain=new THREE.Mesh(geometryConeHelper, materialHelper);
-    let coneGaucheMain=new THREE.Mesh(geometryConeHelper, materialHelper);
-    coneDroitMain.shortName="cone";
-    coneGaucheMain.shortName="cone";
-    coneDroitMain.position.set(3*epaisseurHandleBlocs+x/2,0,0);
-    coneGaucheMain.position.set(-3*epaisseurHandleBlocs-x/2,0,0);
-
-    coneBasMain.rotateX(Math.PI);
-    coneDroitMain.rotateZ(-Math.PI/2);
-    coneGaucheMain.rotateZ(Math.PI/2); */
-
-    //boite.add(coneHautMain,coneBasMain,coneGaucheMain,coneDroitMain);
     return boite;
   }
-
-
-
-
-
 }
-
 
 //fonctions meuble
 
@@ -1838,7 +1828,7 @@ const focale=60;
 const decalagePoignee=0.4;
 
 const largeurPiece=400;
-const onMurGauche=true;
+//const onMurGauche=true;
 
 var geometryConeHelper=new THREE.ConeGeometry(2*epaisseurHandleBlocs,4*epaisseurHandleBlocs);
 var offsetSuedois=0;
@@ -2361,7 +2351,8 @@ function initDragHandleBloc() {
     event.object.newHelperXInit=newHelper.position.x;
     event.object.newHelperYInit=newHelper.position.y;
     event.object.newHelperZInit=newHelper.position.z;
-    if (onMurGauche) newHelper.rotation.set(0,-Math.PI/2,0);
+    if (event.object.bloc.meuble.onMurGauche || event.object.bloc.meuble.onMurDroit) newHelper.rotation.set(0,-Math.PI/2,0)
+      else newHelper.rotation.set(0,0,0);
     scene.add(newHelper);
   });
 
@@ -2407,8 +2398,8 @@ function initDragHandleBloc() {
       meuble.bloc[blocId].taille = fact * (x + obj1.xInitial);
       console.log(meuble.bloc[blocId].taille);
       obj1.position.set(x, 0, 0);
-      if (!onMurGauche) newHelper.position.x=obj1.newHelperXInit-delta
-      else if (onMurGauche) newHelper.position.z=obj1.newHelperZInit-delta;
+      if (!meuble.onMurGauche) newHelper.position.x=obj1.newHelperXInit+delta
+      else if (meuble.onMurGauche || meuble.onMurDroit) newHelper.position.z=obj1.newHelperZInit-delta;
     }
 
     else { //vertical
@@ -2693,7 +2684,7 @@ function initDragMeuble() {
     var pos=boxMeuble.position;
     boxMeuble.localToWorld(wpos);
     
-    if (onMurGauche) aX=wpos.z;
+    if (meuble.onMurGauche || meuble.onMurDroit) aX=wpos.z;
     else aX=wpos.x;
 
     aY=wpos.y-boxMeuble.offsetBasA/2+boxMeuble.offsetHautA/2; // centre du bloc complet
@@ -2704,40 +2695,6 @@ function initDragMeuble() {
     refreshInterfaceX(num);
     refreshInterfaceY(num);
   });
-
-  function intersectWithMursOrSol(obj,wA,hA) {
-    var aaX,aaY;
-    var pos = new THREE.Vector3();
-    obj.localToWorld(pos);
-    if (onMurGauche) aaX = pos.z
-    else aaX=pos.x;
-    aaY = pos.y-obj.offsetBasA/2+obj.offsetHautA/2;
-    console.log(aaX,aaY);
-
-    //test collision sol
-    if (aaY < hA / 2) { 
-      console.log("ça retouche le sol");
-      return true;
-    }
-    //test si on sort des limites de la piece
-    if (!onMurGauche) {
-      if (aaX > (-wA / 2 + largeurPiece / 2)) {
-        console.log("ça retouche le mur");
-
-        return true;
-      }
-      if (aaX < (wA / 2 - largeurPiece / 2)) {
-        console.log("ça retouche le mur");
-
-        return true;
-      }
-    }
-    if (onMurGauche) {
-      if (aaX < (wA / 2)) {
-        return true;
-      }
-    }
-  }
   
   function intersectWithOneOfAll(obj, num, aaX, aaY, wwA, hhA) {
     var pos = new THREE.Vector3();
@@ -2745,9 +2702,9 @@ function initDragMeuble() {
 
     var intersectB = false;
     var bbX;
-    var wposBB = new THREE.Vector3();
+    //var wposBB = new THREE.Vector3();
     for (var i = 0; i < meubles.length; i++) {
-      if (i != num) {
+      if (i != num && (meubles[i].onMurGauche == meubles[num].onMurGauche) && (meubles[i].onMurDroit == meubles[num].onMurDroit)) {
         var cadreB =meubles[i].hasCadre*meubles[i].epaisseurCadre;
         var plateauB = meubles[i].hasPlateau*epaisseurPlateau;
         var piedB = meubles[i].hasPied*hauteurPied;
@@ -2758,7 +2715,6 @@ function initDragMeuble() {
         var hhB = offsetBasB+meubles[i].hauteur+offsetHautB;
         var bbY = meubles[i].y + meubles[i].hauteur / 2 + offsetBasB/2 + offsetHautB/2;
         var bbX = meubles[i].x;
-
 /*         let boxMeubleBB=scene.getObjectByName("boiteSelection"+i);
         boxMeubleBB.localToWorld(wposBB);
         
@@ -2770,7 +2726,6 @@ function initDragMeuble() {
           bbX = wposBB.x;
           //fact=1;
         }  */
-
         if ((Math.abs(aaX - bbX) * 2 < (wwA + wwB)) && (Math.abs(aaY - bbY) * 2 < (hhA + hhB))) intersectB = true;
         if (intersectB) { console.log("intersect with ", i, " num=", num);
           console.log("delta=", Math.abs(aaX - bbX) * 2-(wwA + wwB),Math.abs(aaY - bbY) * 2 - (hhA + hhB));
@@ -2779,7 +2734,7 @@ function initDragMeuble() {
     } return intersectB;
   }
   
-  function recaleSurMursEtSol(pos,aX,aY) {
+  function recaleSurMursEtSol(meuble,pos,aX,aY) {
     //correction en y si on rentre dans le sol
     if (aY < hA / 2) { 
       console.log("ça touche le sol");
@@ -2787,7 +2742,7 @@ function initDragMeuble() {
       return [true,pos,aX,aY];
     }
     //correction si on sort des limites de la piece
-    if (!onMurGauche) {
+    if (!meuble.onMurGauche) {
       if (aX > (-wA / 2 + largeurPiece / 2)) {
         console.log("ça touche le mur");
         let deltaX = aX - (largeurPiece / 2 - wA / 2);
@@ -2801,7 +2756,8 @@ function initDragMeuble() {
         return [true,pos,aX,aY];
       }
     }
-    if (onMurGauche) {
+
+    if (meuble.onMurGauche) {
       console.log(aX,wA,pos);
       if (aX < (wA / 2)) {
         console.log("ça touche le mur");
@@ -2810,10 +2766,19 @@ function initDragMeuble() {
         return [true,pos,aX,aY];
       }
     }
+
+    if (meuble.onMurDroit) {
+      console.log(aX,wA,pos);
+      if (aX < (wA / 2)) {
+        console.log("ça touche le mur");
+        let deltaX = aX - (wA / 2);
+        pos.x -= deltaX; aX = wA / 2;
+        return [true,pos,aX,aY];
+      }
+    }
+
     return [false,pos,aX,aY];
   }
-
-
 
   function adjustObjectPosition(obj1, num, aX, aY, wA, hA, pos, count) {
     pos.z = obj1.zOk;
@@ -2824,17 +2789,19 @@ function initDragMeuble() {
     var replace = false;
 
     let valeurSorties=[];
-    valeurSorties=recaleSurMursEtSol(pos,aX,aY);
+    valeurSorties=recaleSurMursEtSol(obj1.meuble,pos,aX,aY);
     replace=valeurSorties[0];
-    pos=valeurSorties[1];
-    aX=valeurSorties[2];
-    aY=valeurSorties[3];
+    if (replace) {
+      pos = valeurSorties[1];
+      aX = valeurSorties[2];
+      aY = valeurSorties[3];
+    }
 
     for (var i = 0; i < meubles.length; i++) {
       var wposB = new THREE.Vector3();
       //var boxMeubleB;
       var fact=1;
-      if (i != num) {
+      if (i != num && (meubles[i].onMurGauche == meubles[num].onMurGauche) && (meubles[i].onMurDroit == meubles[num].onMurDroit)) {
         cadreB = meubles[i].hasCadre * meubles[i].epaisseurCadre;
         plateauB = meubles[i].hasPlateau * epaisseurPlateau;
         piedB = meubles[i].hasPied * hauteurPied;
@@ -2845,11 +2812,17 @@ function initDragMeuble() {
         let boxMeubleB=scene.getObjectByName("boiteSelection"+i);
         boxMeubleB.localToWorld(wposB);
         
-        if (onMurGauche) {
+        if (obj1.meuble.onMurGauche) {
           bX = wposB.z;
           fact=-1;
         }
-        else {
+
+        if (obj1.meuble.onMurDroit) {
+          bX = wposB.z;
+          fact=1;
+        }
+
+        if (!obj1.meuble.onMurDroit && !obj1.meuble.onMurGauche) {
           bX = wposB.x;
           fact=1;
         }
@@ -2877,17 +2850,17 @@ function initDragMeuble() {
      var replaceB=false;
      if (replace) {
       valeurSorties = [];
-      valeurSorties = recaleSurMursEtSol(pos,aX,aY);
+      valeurSorties = recaleSurMursEtSol(obj1.meuble,pos,aX,aY);
       replaceB = valeurSorties[0];
       //console.log(valeurSorties);
       console.log("deuxième recalage mur/sol",replaceB);
       console.log("valeurs deuxieme passage",valeurSorties[1],valeurSorties[2],valeurSorties[3]);
-      if (replaceB) {
-        console.log("recalé une 2ieme fois sur mur/sol");
-        pos = valeurSorties[1];
-      aX = valeurSorties[2];
-      aY = valeurSorties[3];
-      console.log("nouvelles valeurs après recalage sur mur sol",aX,aY);
+       if (replaceB) {
+         console.log("recalé une 2ieme fois sur mur/sol");
+         pos = valeurSorties[1];
+         aX = valeurSorties[2];
+         aY = valeurSorties[3];
+        console.log("nouvelles valeurs après recalage sur mur sol",aX,aY);
     } 
   }
     //console.log(replace,replaceB);
@@ -2930,7 +2903,7 @@ function initDragMeuble() {
     //resetRaycast();
     checkRaycast();
     frameCamera();
-    meuble.placeMeuble();
+    //meuble.placeMeuble();
 
   });
 }
@@ -3272,6 +3245,7 @@ var YDiv,YDivSlider,YDivInput;
 var styleMenu;
 var slidersAspect;
 var checkboxVertical;
+var checkboxMurGauche,checkboxMurDroit;
 // var checkboxSimple;
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
 var menuPoignees;
@@ -3376,6 +3350,8 @@ function getHTMLElements () {
   styleMenu = document.getElementById("style");
   slidersAspect = document.getElementById("slidersAspect");
   checkboxVertical = document.getElementById("checkboxVertical");
+  checkboxMurGauche = document.getElementById("checkboxMurGauche");
+  checkboxMurDroit = document.getElementById("checkboxMurDroit");
   colorDrawer = document.getElementById("colorDrawer");
   colorMeuble = document.getElementById("colorMeuble");
   colorPlateau = document.getElementById("colorPlateau");
@@ -3442,6 +3418,8 @@ function initializeInterface() {
   //buttons meuble
   checkboxVertical.addEventListener("click", switchVertical);
   checkboxSimple.addEventListener("click", switchSimple);
+  checkboxMurGauche.addEventListener("click", switchMurGauche);
+  checkboxMurDroit.addEventListener("click", switchMurDroit);
   buttonSocle.addEventListener("click",function() {switchSocle(indiceCurrentMeuble)});
   buttonPied.addEventListener("click",function() {switchPied(indiceCurrentMeuble)});
   buttonSuspendu.addEventListener("click",function() {switchSuspendu()});  //à virer
@@ -3465,6 +3443,38 @@ function initializeInterface() {
 
   function switchSimple() {
     selectedMeuble.isSimple = !selectedMeuble.isSimple;
+    selectedMeuble.update();
+  }
+
+  function switchMurGauche() {
+    selectedMeuble.onMurGauche = !selectedMeuble.onMurGauche;
+    if (selectedMeuble.onMurGauche) {
+      if (selectedMeuble.onMurDroit) {
+        selectedMeuble.onMurDroit = false;
+        selectedMeuble.x *= -1;
+      }
+      else {
+        selectedMeuble.x -= largeurPiece/2
+      }
+    }
+    else { selectedMeuble.x += largeurPiece/2}
+    refreshButtonsMeuble();
+    selectedMeuble.update();
+  }
+
+  function switchMurDroit() {
+    selectedMeuble.onMurDroit = !selectedMeuble.onMurDroit;
+    if (selectedMeuble.onMurDroit) {
+      if (selectedMeuble.onMurGauche) {
+        selectedMeuble.onMurGauche = false;
+        selectedMeuble.x *= -1;
+      }
+      else {
+        selectedMeuble.x += largeurPiece/2
+      }
+    }
+    else { selectedMeuble.x -= largeurPiece/2}
+    refreshButtonsMeuble();
     selectedMeuble.update();
   }
 
@@ -4115,22 +4125,12 @@ function createInterfaceSousMeuble() { // Rebuild HTML content
   }, false);
 
   sousMeublesSliders.append(sliderEtageresSousMeuble);
-
-
-
-
-
 }
-
-
-
-
-
-
 
 function refreshInterfaceMeuble() {
   clearInterfaceMeuble();
   createInterfaceMeuble(); // Rebuild HTML content
+  refreshButtonsMeuble();
   if (displayWarning(expandMeubleData,meubleHiddenIfEmpty,warningMeuble,(indiceCurrentMeuble==-1))) return;
   meubleHiddenIfEmpty.style.display="";
 }
@@ -4424,6 +4424,18 @@ function refreshButtonDupliquerMeuble() {
   else {
     buttonDupliquerMeuble.disabled = true;
   }
+}
+
+function refreshCheckboxVertical() { if (selectedMeuble.disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}}
+function refreshCheckboxMurGauche() { if (selectedMeuble.onMurGauche) {checkboxMurGauche.checked=true} else {checkboxMurGauche.checked=false}}
+function refreshCheckboxMurDroit() { if (selectedMeuble.onMurDroit) {checkboxMurDroit.checked=true} else {checkboxMurDroit.checked=false}}
+function refreshCheckboxSimple() { if (selectedMeuble.isSimple) {checkboxSimple.checked=true} else {checkboxSimple.checked=false}}
+
+function refreshButtonsMeuble() {
+  refreshCheckboxVertical();
+  refreshCheckboxMurGauche();
+  refreshCheckboxMurDroit();
+  refreshCheckboxSimple();
 }
 
 function refreshButtonPlateau() { if (selectedMeuble.hasPlateau) {buttonPlateau.className="buttonOn"} else {buttonPlateau.className="buttonOff"}}
