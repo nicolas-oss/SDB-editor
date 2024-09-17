@@ -45,7 +45,7 @@
               <input type="button" id="buttonDupliquerMeuble" value="Dupliquer" class="buttonFlex">
               <input type="button" id="buttonDeleteMeuble" value="Supprimer" class="buttonFlex">
             </div>
-            <div id="meubleHiddenIfEmpty">
+           <div id="meubleHiddenIfEmpty">
             <div id="switchMeuble">
               <label class="switch">
                 <input type="checkbox" id="checkboxVertical" checked="false">
@@ -66,8 +66,10 @@
               <input type="button" id="buttonPlateau" value="Plateau" class="buttonFlex">
             </div>
             <div id="nbBlocsSlider"></div>
-            <div class="expandOff" target="meubleSliders" id="expandDimensions">Dimensions</div>
+            <div class="expandOff" id="expandDimensions">Dimensions</div>
             <div id="meubleSliders" class="expandContent"></div>
+            <div class="expandOff" id="expandParametres">Paramètres</div>
+            <div id="parametresData" class="expandContent"></div>
           </div>
         </div>
           <div id="warningMeuble" class="warning">La sélection est vide</div> 
@@ -89,7 +91,6 @@
               <input type="button" id="buttonSupprimerBloc" value="Suppr." class="buttonFlex">
               <input type="button" id="buttonDecalerGauche" value="<<" class="buttonFlex">
               <input type="button" id="buttonDecalerDroite" value=">>" class="buttonFlex">
-
             </div>
             <div id="blocsSliders"></div>
           </div>
@@ -109,6 +110,21 @@
             <input type="button" id="buttonResetEtageres" value="Reset">
           </div>
           <div id="warningEtageres" class="warning">La sélection est vide</div>
+
+        </div>
+        <div id="sousMeubles">
+          <div class="title">
+            <p class="expandOff" id="expandSousMeubles">Sous-Meubles</p>
+            <div class="buttonsSelectDiv">
+              <input type="button" id="buttonAdjustSousMeuble" value="Ajust.">
+              <input type="button" id="buttonSelectSousMeuble" value="Select.">
+            </div>
+          </div>
+          <div id="sousMeublesSliders"></div>
+
+          <div id="sousMeublesData">
+          </div>
+          <div id="warningSousMeubles" class="warning">La sélection est vide</div>
 
         </div>
       </div>

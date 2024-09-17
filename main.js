@@ -51,8 +51,25 @@ class Element {
   get type() {if (this.localType) return this.localType;
     else return this.bloc.type;}
 
+  get ySousMeuble() {
+    //if (this.yPredefini) return this.yPredefini;
+    //if (this.meuble.isSousMeuble) return this.ySousMeuble;
+    let y;
+    if (this.bloc.isRentrant) {
+      let h = this.meuble.hauteur - 2 * this.epaisseur + this.epaisseur;
+      let yStart = this.epaisseur - this.epaisseur / 2 - this.meuble.hauteur / 2;
+      y = (h / (this.bloc.etageres + 1)) * (this.numero) + yStart;
+    }
+    else {
+      let step = (this.meuble.hauteur) / (this.bloc.etageres + 1);
+      y = step * (-0.5 + this.numero - this.bloc.etageres / 2);
+    }
+    return y;
+  }
+
   get y() {
     if (this.yPredefini) return this.yPredefini;
+    if (this.meuble.isSousMeuble) return this.ySousMeuble;
     let y;
     if (this.bloc.isRentrant) {
       let h = this.meuble.hauteur - 2 * this.epaisseurCadre + this.epaisseur;
@@ -74,6 +91,7 @@ class Element {
   }
 
   get xTiroir() {
+    if (this.meuble.isSousMeuble) return 0;
     if (this.bloc.meuble.isSimple && this.isRentrant) {
       if (this.bloc.numero == 0) return (this.epaisseurCadre / 4);
       if (this.bloc.numero == this.bloc.meuble.nbBlocs - 1) return (-this.epaisseurCadre / 4);
@@ -107,12 +125,13 @@ class Element {
   }
 
   get yl() {
+    if (this.meuble.isSousMeuble) return this.ySuivant - this.y;
     return this.ySuivant - this.y - this.epaisseur * this.isRentrant;
   }
 
   get xl() {
-    if (!this.isRentrant) return this.bloc.taille;
-    if (this.meuble.isSimple) {
+    if (!this.isRentrant || this.meuble.isSousMeuble) return this.bloc.taille;
+    if (this.meuble.isSimple && !this.meuble.isSousMeuble) {
       if (this.bloc.numero == 0) { return (this.bloc.taille - 1.5*this.epaisseurCadre); }
       if (this.bloc.numero == (this.meuble.nbBlocs - 1)) { return (this.bloc.taille - 1.5*this.epaisseurCadre); }
       return (this.bloc.taille - this.epaisseurCadre); }
@@ -298,12 +317,14 @@ getPorte(isPorteBloc) {
   }
 
   getSousMeuble() {
-    let sousMeubleRoot = new THREE.Object3D();
-    if (!this.sousMeuble) this.sousMeuble=new Meuble(this.numero);
-    this.sousMeuble.largeur=this.xl;
-    this.sousMeuble.hauteur=this.yl;
-    this.sousMeuble.x=this.x;
-    this.sousMeuble.y=this.y;
+    //let sousMeubleRoot = new THREE.Object3D();
+    //console.log(this.sousMeuble);
+    if (!this.sousMeuble) {
+      this.sousMeuble=new SousMeuble(this.numero);
+      //console.log("sousMeuble created");
+    
+    //this.sousMeuble.x=this.x;
+    //this.sousMeuble.y=this.y;
     this.sousMeuble.etageres=1;
     this.sousMeuble.type="Etageres";
     this.sousMeuble.nbBlocs=3;
@@ -311,18 +332,29 @@ getPorte(isPorteBloc) {
     this.sousMeuble.isSousMeuble=true;
     this.sousMeuble.meubleRoot=this.bloc.meuble;
     this.sousMeuble.name="sousMeuble";
-    this.sousMeuble.calculTailleBlocs();
-    this.sousMeuble.createGeometryRoot();
-    this.sousMeuble.updateGeometry();
-    let root=this.sousMeuble.root;
-    sousMeubleRoot.attach(root);
-    let yTiroir = this.y + this.yl / 2 + this.offsetTiroir()/2;
-    let zTiroir = 0;//this.bloc.p / 2;
+    this.sousMeuble.largeur=this.xl;
+  this.sousMeuble.hauteur=this.yl;
+  this.sousMeuble.calculTailleBlocs();
 
-    sousMeubleRoot.position.set(0, yTiroir, zTiroir - this.offsetTiroir());
-    return sousMeubleRoot;
   }
-
+  this.sousMeuble.largeur=this.xl;
+  this.sousMeuble.hauteur=this.yl;
+  console.log("xl yl cellule",this.xl,this.yl);
+  //console.log(this.sousM);
+    this.sousMeuble.computeBlocsSize();
+    this.sousMeuble.createGeometryRoot();
+    this.sousMeuble.update();
+    this.sousMeuble.element=this;
+    this.sousMeuble.placeMeuble();
+    let root=this.sousMeuble.root;
+    //sousMeubleRoot.attach(root);
+    //let yTiroir = this.y + this.yl / 2 + this.offsetTiroir()/2;
+    //let zTiroir = 0;//this.bloc.p / 2;
+    //this.root.position.set(this.element.xTiroir,this.element.yTiroir,0);
+    //sousMeubleRoot.position.set(0, yTiroir, zTiroir - this.offsetTiroir());
+    //return sousMeubleRoot;
+    return root;
+  }
 }
 
 class Bloc {
@@ -472,11 +504,23 @@ get epaisseurCadre() {
   }
 
   getHandleBlocs() {
-    geometry = new THREE.BoxGeometry( epaisseurHandleBlocs, this.h+2*this.epaisseur, this.p+2*this.epaisseur );
+
     let coneG = new THREE.Mesh( geometryConeHelper, materialSelectionMeuble);
     let coneD = new THREE.Mesh( geometryConeHelper, materialSelectionMeuble);
-    coneG.scale.set(0.8,0.8,0.8);
-    coneD.scale.set(0.8,0.8,0.8);
+    let fact=1;
+    if (this.meuble.isSousMeuble) {
+      geometry = new THREE.BoxGeometry( this.epaisseurCadre, this.h, this.p );
+      fact=0.6666666;
+    }
+    
+    else {
+      geometry = new THREE.BoxGeometry( epaisseurHandleBlocs, this.h+2*this.epaisseur, this.p+2*this.epaisseur );
+    }
+
+    let scale=0.8*fact;
+    coneG.scale.set(scale,scale,scale);
+    coneD.scale.set(scale,scale,scale);
+
     coneG.shortName="cone";
     coneD.shortName="cone";
     var handleBlocRoot=new THREE.Object3D();
@@ -492,9 +536,9 @@ get epaisseurCadre() {
       handleBlocGauche.position.set(-this.l / 2, 0, 0);
       handleBlocGauche.add(coneG,coneD);
       coneG.rotateZ(Math.PI/2);
-      coneG.position.set(-2*epaisseurHandleBlocs,0,0);
+      coneG.position.set(-2*epaisseurHandleBlocs*fact,0,0);
       coneD.rotateZ(-Math.PI/2);
-      coneD.position.set(2*epaisseurHandleBlocs,0,0);
+      coneD.position.set(2*epaisseurHandleBlocs*fact,0,0);
       handleBlocGauche.visible = false;
       handleBlocRoot.add(handleBlocGauche);
 
@@ -553,15 +597,6 @@ get epaisseurCadre() {
     //portes
     if (this.type == "Portes") {
       
-    /*   let h,l;
-      if (this.isRentrant) {
-        h=this.meuble.hauteur-2*this.epaisseurCadre;
-        l=this.elements[0].xl;
-      }
-      else {
-        h=this.meuble.hauteur;
-        l=this.taille;
-      }  */
       let portes=this.elements[this.etageres].getPorte(true);
       portes.translateX(this.elements[this.etageres].xTiroir);
       this.blocRoot.add(portes);}
@@ -590,7 +625,7 @@ get epaisseurCadre() {
       }
       sousMeuble.isSousMeuble = true;
       //sousMeuble.createGeometryRoot();
-      sousMeuble.updateMeuble();
+      sousMeuble.update();
       sousMeuble.root.translateZ(-this.profondeur / 2);
       this.blocRoot.add(sousMeuble.root);
     }
@@ -679,7 +714,7 @@ class Meuble {
     this.localStyle = undefined;
     this.isSelected = false;
     this.selectionBox = undefined;
-    this.etageres=3;
+    this.etageres=1;
     
     //commun à la classe bloc
     this.ouverturePorte = "gauche";
@@ -789,8 +824,8 @@ class Meuble {
   getMaxAllowedSpaceOnSides() {
     let deltaLeft = 10e34;
     let deltaRight = 10e34;
-    let maxLeft = 10e34;
-    let maxRight = 10e34;
+    let maxLeft =  (largeurPiece/2) + ( this.x - this.largeur/2);
+    let maxRight = (largeurPiece/2) - ( this.x + this.largeur/2);
     for (var i = 0; i < meubles.length; i++) {
       if (i != this.numero) {
         if (this.intersectY(i)) {
@@ -815,7 +850,9 @@ class Meuble {
     //var bY;
     //var aY = meubles[num].y + meubles[num].hauteur / 2;
     var deltaX;
-    var maxWidth = 10e34;
+    let maxLeft =  (largeurPiece/2) + ( this.x );//- this.largeur/2);
+    let maxRight = (largeurPiece/2) - ( this.x );//+ this.largeur/2);
+    var maxWidth = Math.min(maxLeft,maxRight);
     for (var i = 0; i < meubles.length; i++) {
       if (i != this.numero) {
         //bY = meubles[i].y + meubles[i].hauteur / 2;
@@ -835,8 +872,8 @@ class Meuble {
 
   getLimitTranslationX(num) {
     var bY;
-    var minXGlobal=-10e34;
-    var maxXGlobal=+10e34;
+    var minXGlobal=-largeurPiece/2+this.largeur/2;
+    var maxXGlobal=largeurPiece/2-this.largeur/2;
     var minX=-10e34;
     var maxX=10e34;
     for (var i = 0; i < meubles.length; i++) {
@@ -922,14 +959,27 @@ class Meuble {
   }
 
   placeMeuble() {
+    if (this.isSousMeuble==true) {
+      this.root.position.set(this.element.xTiroir,this.element.yTiroir,-this.epaisseur);
+      //this.element.bloc.blocRoot.attach(this.root);
+      return;
+    }
     let y=this.hauteur / 2 + this.y;
     if (this.hasCadre) y+=this.epaisseurCadre;
     if (this.hasSocle) y+=hauteurSocle;
     if (this.hasPied) y+=hauteurPied;
-    this.root.position.set(
+     this.root.position.set(
       this.x,
       y,
-      this.profondeur / 2);
+      this.profondeur / 2); 
+      
+    if (onMurGauche) {
+      this.root.position.set(
+        this.profondeur/2-largeurPiece/2,
+        y,
+        -this.x+this.largeur/2);
+      this.root.rotation.set(0, Math.PI / 2, 0);
+    }
   }
 
   getPlateau() {
@@ -1018,42 +1068,35 @@ class Meuble {
     return pieds
   }
 
-  getNewCadre () {
+  getCadre() {
     //cadre meuble
-    //if (this.hasCadre) {
+    geometry = new THREE.BoxGeometry(
+      this.largeur + 2 * this.epaisseurCadre - 0.05,
+      this.epaisseurCadre,
+      this.profondeur + debordCadre + 0.05);
 
-      geometry = new THREE.BoxGeometry(
-        this.largeur + 2 * this.epaisseurCadre - 0.05,
-        this.epaisseurCadre,
-        this.profondeur + debordCadre + 0.05);
+    let cadreHaut = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
+    cadreHaut.position.set(0, this.hauteur / 2 + this.epaisseurCadre / 2, debordCadre);
+    cadreHaut.name = "cadreHaut";
 
-      let cadreHaut = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreHaut.position.set(0, this.hauteur / 2 + this.epaisseurCadre / 2, debordCadre);
-      cadreHaut.name = "cadreHaut";
-      //blocs.add(cadreHaut);
+    let cadreBas = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
+    cadreBas.position.set(0, -this.hauteur / 2 - this.epaisseurCadre / 2, debordCadre);
+    cadreBas.name = "cadreBas";
 
-      let cadreBas = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreBas.position.set(0, -this.hauteur / 2 - this.epaisseurCadre / 2, debordCadre);
-      cadreBas.name = "cadreBas";
-      //blocs.add(cadreBas);
+    geometry = new THREE.BoxGeometry(
+      this.epaisseurCadre,
+      this.hauteur + 2 * this.epaisseurCadre - 0.05,
+      this.profondeur + debordCadre);
 
-      geometry = new THREE.BoxGeometry(
-        this.epaisseurCadre,
-        this.hauteur + 2 * this.epaisseurCadre - 0.05,
-        this.profondeur + debordCadre);
+    let cadreGauche = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
+    cadreGauche.position.set(-this.largeur / 2 - this.epaisseurCadre / 2, 0, debordCadre);
+    cadreGauche.name = "cadreGauche";
 
-      let cadreGauche = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreGauche.position.set(-this.largeur / 2 - this.epaisseurCadre / 2, 0, debordCadre);
-      cadreGauche.name = "cadreGauche";
-      //blocs.add(cadreGauche);
-
-      let cadreDroit = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreDroit.position.set(this.largeur / 2 + this.epaisseurCadre / 2, 0, debordCadre);
-      cadreDroit.name = "cadreDroit";
-      //blocs.add(cadreDroit);
-    //}
-    let cadres=new THREE.Group();
-    cadres.add(cadreHaut,cadreBas,cadreDroit,cadreGauche);
+    let cadreDroit = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
+    cadreDroit.position.set(this.largeur / 2 + this.epaisseurCadre / 2, 0, debordCadre);
+    cadreDroit.name = "cadreDroit";
+    let cadres = new THREE.Group();
+    cadres.add(cadreHaut, cadreBas, cadreDroit, cadreGauche);
     return cadres;
   }
 
@@ -1066,7 +1109,6 @@ class Meuble {
     let cadreSimpleHaut = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
     cadreSimpleHaut.position.set(0, this.hauteur / 2 - this.epaisseurCadre/2 , 0);
     cadreSimpleHaut.name = "cadreSimpleHaut";
-    //blocs.add(cadreHaut);
 
     geometry = new THREE.BoxGeometry(
       this.largeur - this.epaisseurCadre,
@@ -1076,23 +1118,19 @@ class Meuble {
     let cadreSimpleBas = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
     cadreSimpleBas.position.set(0, -this.hauteur / 2 + this.epaisseurCadre/2, 0);
     cadreSimpleBas.name = "cadreSimpleBas";
-    //blocs.add(cadreBas);
 
     geometry = new THREE.BoxGeometry(
       this.epaisseurCadre,
-      this.hauteur - 0.05,
+      this.hauteur, // - 0.05,
       this.profondeur);
 
     let cadreSimpleGauche = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleGauche.position.set(-this.largeur / 2+this.epaisseurCadre/2, -this.epaisseurCadre/2, 0);
+    cadreSimpleGauche.position.set(-this.largeur / 2+this.epaisseurCadre/2, 0, 0);
     cadreSimpleGauche.name = "cadreSimpleGauche";
-    //blocs.add(cadreGauche);
 
     let cadreSimpleDroit = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleDroit.position.set(this.largeur / 2-this.epaisseurCadre/2, -this.epaisseurCadre/2, 0);
+    cadreSimpleDroit.position.set(this.largeur / 2-this.epaisseurCadre/2, 0, 0);
     cadreSimpleDroit.name = "cadreSimpleDroit";
-    //blocs.add(cadreDroit);
-    //}
 
     let cadres = new THREE.Group();
     let cadreIntermediaire = [];
@@ -1117,13 +1155,13 @@ class Meuble {
   }
   
   updateGeometry() {
+    //if (!geometries) this.createGeometryRoot;
     let geometries = this.root.getObjectByName("geometries");
     geometries.children = [];
     geometry.dispose();
     material.dispose();
     scene.remove(geometries);
 
-    //renderer.render( scene, camera );
     renderer.renderLists.dispose();
     //plateau
     if (this.hasPlateau) { geometries.add(this.getPlateau()); }
@@ -1132,7 +1170,7 @@ class Meuble {
     //pieds
     if (this.hasPied) { geometries.add(this.getPieds()); }
     //cadre meuble
-    if (this.hasCadre) { geometries.add(this.getNewCadre()); }
+    if (this.hasCadre) { geometries.add(this.getCadre()); }
     //cadre blocs
     if (this.isSimple) { geometries.add(this.getCadreSimple()); }
     // blocs
@@ -1145,10 +1183,7 @@ class Meuble {
       this.bloc[i].disposeGeometry();
     //positionnement bloc dans meuble
     if (this.disposition=="horizontal") {
-      //if (!this.meuble.isSimple) {
         var blocPosition = -this.largeur / 2.0;
-      //}
-      //else var blocPosition = (-this.largeur+epaisseurCadreSimple) / 2;
     }
     else {var blocPosition = -this.hauteur / 2 ;}
       if (i > 0) {
@@ -1166,19 +1201,19 @@ class Meuble {
     }
   }
 
-  getBoiteSelectionMeuble() {
-    if (this.isSousMeuble) return;
+  getBoiteSelection() {
+    //if (this.isSousMeuble) return;
     let delta = 0.1 * this.numero;
     let x=this.largeur + delta + epsilon;
     let y=this.hauteur + delta + epsilon;
     let z=this.profondeur + delta + epsilon;
     geometry = roundEdgedBox(x, y, z, 3, 2, 2, 2, 2)
-    cube = new THREE.Mesh(geometry, materialSelectionMeuble);
-    cube.name = "boiteSelectionMeuble" + this.numero;
-    cube.shortName = "boiteSelectionMeuble";
-    cube.category = "boiteSelection";
-    cube.meuble = this;
-    cube.visible = false;
+    let boite = new THREE.Mesh(geometry, materialSelectionMeuble);
+    boite.name = "boiteSelection" + this.numero;
+    boite.shortName = "boiteSelection";
+    boite.category = "boiteSelection";
+    boite.meuble = this;
+    boite.visible = false;
 
     let coneHautMain=new THREE.Mesh(geometryConeHelper, materialHelper);
     let coneBasMain=new THREE.Mesh(geometryConeHelper, materialHelper);
@@ -1198,8 +1233,8 @@ class Meuble {
     coneDroitMain.rotateZ(-Math.PI/2);
     coneGaucheMain.rotateZ(Math.PI/2);
 
-    cube.add(coneHautMain,coneBasMain,coneGaucheMain,coneDroitMain);
-    return cube;
+    boite.add(coneHautMain,coneBasMain,coneGaucheMain,coneDroitMain);
+    return boite;
   }
 
   getHandlesMeuble () {
@@ -1273,7 +1308,7 @@ class Meuble {
     return handleMeubleRoot;
   }
 
-  updateMeuble() {
+  update() {
     this.updateGeometry();
     let handlesMeuble = this.root.getObjectByName("handlesMeuble");
     handlesMeuble.children=[];
@@ -1282,15 +1317,16 @@ class Meuble {
     if (!isPreviewOn) {
       //boite de sélection
       console.log("isSousMeuble=",this.isSousMeuble,this.name);
-      let boiteSelectionMeuble = this.getBoiteSelectionMeuble();
-      handlesMeuble.add(boiteSelectionMeuble);
-      this.selectionBox = boiteSelectionMeuble;
-      boiteSelectionMeuble.meuble=this;
+      let boiteSelection = this.getBoiteSelection();
+      console.log(boiteSelection);
+      handlesMeuble.add(boiteSelection);
+      this.selectionBox = boiteSelection;
+      boiteSelection.meuble=this;
       selectableHandleMeuble = [];
       handlesMeuble.add(this.getHandlesMeuble());
       updateAllSelectable();
     }
-    this.placeMeuble();
+    if (!this.isSousMeuble) this.placeMeuble();
   }
 
   destroyBloc(numBloc) {
@@ -1329,7 +1365,6 @@ class Meuble {
   addBloc() {
     if (!this.bloc[this.bloc.length]) {
       this.bloc[this.bloc.length] = new Bloc(this,this.bloc.length);
-      console.log(this.bloc[this.bloc.length-1]);
     }
     return this.bloc[this.bloc.length-1].taille;
   }
@@ -1345,7 +1380,7 @@ class Meuble {
     for (var i=0; i<num; i++) {
       if (!this.bloc[i]) {
         this.bloc[i] = new Bloc(this,i);
-        console.log(this.bloc[i].taille);}
+        }
     }
 
     if (indiceCurrentBloc>(this.nbBlocs-1)) {indiceCurrentBloc=this.nbBlocs-1;}
@@ -1433,6 +1468,189 @@ class Meuble {
   }
 }
 
+class SousMeuble extends Meuble {
+  constructor (num) {
+    super(num);
+    this.numero = num;
+    //this.rename();
+    this.name="sousMeuble"+num;
+    this.shotName="sousMeuble";
+    //this.hauteur = 50;
+    //this.largeur = 140;
+    //this.profondeur = 50;
+    this.nbBlocs = 3;
+    this.x = 0;
+    this.y = 0;
+    this.bloc = new Array;
+    this.disposition = "horizontal";
+    //valeurs possibles "horizontal" ou "vertical"
+    this.epaisseur=epaisseur;
+    this.epaisseurCadre=epaisseurCadre;
+    for (var i=0; i<this.nbBlocs; i++) {this.bloc[i] = new Bloc(this,i)}
+    this.updateTaille();
+    //this.hasPlateau=false;
+    //this.hasCadre=false;
+    //this.hasSocle=false;
+    //this.hasPied=false;
+    //this.IsSuspendu=true;
+    this.offsetPoignees=0;
+    this.isSousMeuble=true;
+    this.meubleRoot=undefined;
+    this.createGeometryRoot();
+    //this.bloc = bloc;
+    //this.meuble=this.bloc.meuble; /////!!!!!!!!!!!
+    this.meuble=this;
+
+    this.type="Etageres";
+    //valeurs possibles : "Etageres", "Tiroirs", "Portes", "Panneau", "SousMeuble"
+
+    this.isRentrant = true;
+    this.isSimple = true;
+
+    //commun aux autres classes
+    this.localStyle = undefined;
+    this.isSelected = false;
+    this.selectionBox = undefined;
+    this.etageres=1;
+    
+    //commun à la classe bloc
+    this.ouverturePorte = "gauche";
+    this.nombrePortes = "1";
+    this.etageresVerticales = false;
+  }
+
+   update() {
+    this.updateGeometry();
+    let handlesMeuble = this.root.getObjectByName("handlesMeuble");
+    handlesMeuble.children=[];
+    geometry.dispose();
+    material.dispose();
+    if (!isPreviewOn) {
+      //boite de sélection
+      //console.log("isSousMeuble=",this.isSousMeuble,this.name);
+      let boiteSelection = this.getBoiteSelection();
+      console.log(boiteSelection);
+      handlesMeuble.add(boiteSelection);
+      this.selectionBox = boiteSelection;
+      boiteSelection.meuble=this;
+      //selectableHandleMeuble = [];
+      //handlesMeuble.add(this.getHandlesMeuble());
+      //updateAllSelectable();
+    }
+    console.log(selectableSousMeubles);
+    //if (!this.isSousMeuble) this.placeMeuble();
+  } 
+
+  updateGeometry() {
+    let geometries = this.root.getObjectByName("geometries");
+    geometries.children = [];
+    geometry.dispose();
+    material.dispose();
+    scene.remove(geometries);
+
+    renderer.renderLists.dispose();
+
+    //cadre blocs
+    if (this.isSimple) { geometries.add(this.getCadreSimple()); }
+    // blocs
+    var blocs = new THREE.Object3D();
+    blocs.name = "blocs";
+    geometries.add(blocs);
+    for (var i = 0; i < this.nbBlocs; i++) {
+      let blocRoot = this.bloc[i].initializeBloc();
+      blocs.add(blocRoot);
+      this.bloc[i].disposeGeometry();
+    //positionnement bloc dans meuble
+    if (this.disposition=="horizontal") {
+        var blocPosition = -this.largeur / 2.0;
+    }
+    else {var blocPosition = -this.hauteur / 2 ;}
+      if (i > 0) {
+        for (var j = 0; j < i; j++) {
+          blocPosition += this.bloc[j].taille;
+        }
+      }
+      blocPosition += this.bloc[i].taille / 2.0;
+      if (this.disposition=="horizontal") { 
+        blocRoot.position.set(blocPosition, 0, 0)
+      } 
+      else {
+        blocRoot.position.set(0, blocPosition, 0);
+      }
+    }
+  }
+
+  getCadreSimple() {
+    geometry = new THREE.BoxGeometry(
+      this.largeur + 0.01,
+      this.epaisseurCadre,
+      this.profondeur +  0.01);
+
+    geometry = new THREE.BoxGeometry(
+      this.epaisseurCadre,
+      this.hauteur - 0.05,
+      this.profondeur);
+
+    let cadres = new THREE.Group();
+    let cadreIntermediaire = [];
+    let somme = 0;
+    for (var i=1;i<this.nbBlocs;i++) {
+      somme+=this.bloc[i-1].taille;
+      cadreIntermediaire[i] = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
+      cadreIntermediaire[i].position.set(-this.largeur / 2 + somme, 0, 0);
+      cadres.add(cadreIntermediaire[i]);
+    }
+    
+     //shadows
+     cadres.traverse(function (child) {
+      child.receiveShadow = true;
+      child.castShadow = true;
+    })
+    return cadres;
+  }
+
+  getBoiteSelection() {
+    let delta = 0.1 * this.numero;
+    let x=this.largeur + epsilon +1; //+ delta
+    let y=this.hauteur + epsilon +1; //+ delta
+    let z=this.profondeur + epsilon; //+ delta
+    geometry = roundEdgedBox(x, y, z, 3, 2, 2, 2, 2)
+    let boite = new THREE.Mesh(geometry, materialSelectionSousMeuble);
+    boite.name = "boiteSelectionSousMeuble" + this.numero;
+    boite.shortName = "boiteSelectionSousMeuble";
+    boite.category = "boiteSelectionSousMeuble";
+    boite.sousMeuble = this;
+    boite.visible = false;
+
+    /* let coneHautMain=new THREE.Mesh(geometryConeHelper, materialHelper);
+    let coneBasMain=new THREE.Mesh(geometryConeHelper, materialHelper);
+    coneHautMain.shortName="cone";
+    coneBasMain.shortName="cone";
+    coneHautMain.position.set(0,3*epaisseurHandleBlocs+y/2,0);
+    coneBasMain.position.set(0,-3*epaisseurHandleBlocs-y/2,0);
+
+    let coneDroitMain=new THREE.Mesh(geometryConeHelper, materialHelper);
+    let coneGaucheMain=new THREE.Mesh(geometryConeHelper, materialHelper);
+    coneDroitMain.shortName="cone";
+    coneGaucheMain.shortName="cone";
+    coneDroitMain.position.set(3*epaisseurHandleBlocs+x/2,0,0);
+    coneGaucheMain.position.set(-3*epaisseurHandleBlocs-x/2,0,0);
+
+    coneBasMain.rotateX(Math.PI);
+    coneDroitMain.rotateZ(-Math.PI/2);
+    coneGaucheMain.rotateZ(Math.PI/2); */
+
+    //boite.add(coneHautMain,coneBasMain,coneGaucheMain,coneDroitMain);
+    return boite;
+  }
+
+
+
+
+
+}
+
+
 //fonctions meuble
 
 function recomputeMeublesId() {
@@ -1494,7 +1712,7 @@ function createNewMeuble() {
   meubles[indiceCurrentMeuble] = new Meuble(indiceCurrentMeuble);
   selectedMeuble=meubles[indiceCurrentMeuble];
   placeNewMeuble(indiceCurrentMeuble);
-  selectedMeuble.updateMeuble();
+  selectedMeuble.update();
   select(meubles[indiceCurrentMeuble],true);
   frameCamera();
 }
@@ -1520,7 +1738,7 @@ function duplicateMeuble(num) {
   meubles[indiceNewMeuble].name = "Meuble "+(indiceNewMeuble+1);
   //meubles[indiceNewMeuble].createGeometryRoot();
   //indiceCurrentMeuble = indiceNewMeuble;
-  meubles[indiceNewMeuble].updateMeuble();
+  meubles[indiceNewMeuble].update();
   placeNewMeuble(indiceNewMeuble);
   scene.add(meubles[indiceNewMeuble].root);
   changeCurrentMeuble(indiceNewMeuble,true);
@@ -1580,14 +1798,16 @@ var globalStyle="Arrondi";
 //valeurs possibles : "Basique", "Arrondi", "Suédois 1", "Suédois 2"
 
 var selectionMode="meubles";
-//valeurs possibles : "meubles", "blocs", "etageres", "elements", "ajusteMeubles", "ajusteBlocs"
+//valeurs possibles : "meubles", "blocs", "etageres", 'sousMeubles", "elements", "ajusteMeubles", "ajusteBlocs"
 var selectedMeuble;
+var selectedSousMeuble;
 var selectedObjects=[];
 
 var isPreviewOn = false;
 
 var indiceCurrentBloc = -1;
 var indiceCurrentMeuble = 0;
+var indiceCurrentSousMeubles = -1;
 
 const hasPlancheBas = true;
 const epaisseurHandleBlocs = 6;
@@ -1612,6 +1832,9 @@ const taillePoignees = 1.5;
 const focale=60;
 const decalagePoignee=0.4;
 
+const largeurPiece=400;
+const onMurGauche=true;
+
 var geometryConeHelper=new THREE.ConeGeometry(2*epaisseurHandleBlocs,4*epaisseurHandleBlocs);
 var offsetSuedois=0;
 
@@ -1634,6 +1857,7 @@ var selectableEtagere=[];
 var selectableHandleBloc=[];
 var selectableHandleMeuble=[];
 var selectableElements=[];
+var selectableSousMeubles=[];
 
 var pressedKey=undefined;
 
@@ -1703,8 +1927,9 @@ function onPointerMove( event ) {
 function add3DListener() {
   //listener espace 3D et keyboard
   canvas.addEventListener('mousemove', onPointerMove);
+  //canvas.addEventListener('wheel', onMouseWheel);
   window.addEventListener('resize', onWindowResize);
-  //canvas.addEventListener('click', onCanvasClick);
+  canvas.addEventListener('click', onCanvasClick);
   //canvas.addEventListener('dragstart', onCanvasDrag, false);
   canvas.addEventListener('contextmenu', onOpenContextMenu);
   //canvas.addEventListener('mouseleave', function leaving() {});
@@ -1718,10 +1943,44 @@ function onCanvasDrag () {
 }
 
 function onCanvasClick() {
-  //
+  if (raycastedSousMeuble) {
+    select(raycastedSousMeuble);
+    selectedSousMeuble=raycastedSousMeuble;
+    selectedMeuble=raycastedSousMeuble;
+    console.log(raycastedSousMeuble);
+    refreshInterfaceSousMeuble();
+  }
 }
 
+
+
+
+function checkKey(e) {
+
+    e = e || window.event;
+
+    if (e.keyCode == '38') {
+        // up arrow
+    }
+    else if (e.keyCode == '40') {
+        // down arrow
+    }
+    else if (e.keyCode == '37') {
+       // left arrow
+    }
+    else if (e.keyCode == '39') {
+       // right arrow
+    }
+
+}
+
+
+
+
+
+
 function onKeyDown(event) {
+  console.log(event.keyCode);
 if (event.key=="Escape") {
   hideAllContextMenu();
   clearSelectionList();
@@ -1730,7 +1989,10 @@ if (event.key=="Escape") {
   indiceCurrentBloc=-1;
   refreshInterface();
 }
-pressedKey=event.key;
+
+if (event.keyCode == '34')
+  {console.log("arrow pressed");
+  onArrowDown();}
 }
 
 function onKeyUp(event) {
@@ -1786,6 +2048,7 @@ var intersectedBox;
 var raycastedBloc=undefined;
 var raycastedMeuble=undefined;
 var raycastedEtagere=undefined;
+var raycastedSousMeuble=undefined;
 var raycastedHandleBloc=undefined;
 var raycastedHandleMeuble=undefined;
 var raycastedElement=undefined;
@@ -1830,14 +2093,14 @@ if (!rayCastEnabled) return;
   const intersectsMeuble = raycaster.intersectObjects(selectableMeuble, true);
   if (intersectsMeuble.length > 0) {
     if (intersectedMeuble != intersectsMeuble[0].object) {
-      if (intersectedMeuble && selectionMode == "meubles" && intersectedMeuble.shortName=="boiteSelectionMeuble") intersectedMeuble.visible = false;
+      if (intersectedMeuble && selectionMode == "meubles" && intersectedMeuble.shortName=="boiteSelection") intersectedMeuble.visible = false;
       intersectedMeuble = intersectsMeuble[0].object;
       if (selectionMode == "meubles") {intersectedMeuble.visible = true;}
       raycastedMeuble = intersectsMeuble[0].object;
     }
   }
   else {
-    if (intersectedMeuble && intersectedMeuble.shortName=="boiteSelectionMeuble") intersectedMeuble.visible = false;
+    if (intersectedMeuble && intersectedMeuble.shortName=="boiteSelection") intersectedMeuble.visible = false;
     intersectedMeuble = null;
     raycastedMeuble = undefined;
   }
@@ -1897,18 +2160,60 @@ function checkRaycastHandle(selectableList) {
     intersectedHandle = null;
     raycastedHandle = undefined;
   }
-  console.log(raycastedHandle);
   return raycastedHandle;
 }
 
 function checkRaycast() {
-  if (!rayCastEnabled) return;
+  /* if (!rayCastEnabled) return;
+  if (raycastMode==0) raycastedMeuble=checkRaycastObject(selectableMeuble,"meuble");
+  if (raycastMode==1) raycastedBloc=checkRaycastObject(selectableBloc,"bloc");
+  if (raycastMode==2) raycastedElement=checkRaycastObject(selectableElements,"element"); */
+  //raycastedBloc=checkRaycastObject(selectableBloc,"bloc");
+
+  //raycastedMeuble=checkRaycastObject(selectableMeuble,"meuble");
   if (selectionMode=="elements") {raycastedElement=checkRaycastObject(selectableElements,"element");}
   if (selectionMode=="blocs") {raycastedBloc=checkRaycastObject(selectableBloc,"bloc");}
   if (selectionMode=="meubles") {raycastedMeuble=checkRaycastObject(selectableMeuble,"meuble");}
   if (selectionMode=="ajusteMeubles") {raycastedHandleMeuble=checkRaycastHandle(selectableHandleMeuble);}
   if (selectionMode=="ajusteBlocs") {raycastedHandleBloc=checkRaycastHandle(selectableHandleBloc);}
   if (selectionMode=="etageres") checkRaycastEtageres();
+  if (selectionMode=="sousMeubles") {raycastedSousMeuble=checkRaycastObject(selectableSousMeubles,"sousMeuble");}
+
+}
+
+var raycastMode=0;
+
+function onArrowDown() {
+  console.log("scrolling");
+  //updateAllSelectable();
+
+  if (raycastedMeuble) {
+    hideRaycastedBox(raycastedMeuble);
+    raycastMode=1;
+    raycastedMeuble=undefined;
+    checkRaycast();
+    //raycastedBloc=checkRaycastObject(selectableBloc,"bloc");
+    //console.log(raycastedBloc);
+    return;
+  }
+  if (raycastedBloc) {
+    hideRaycastedBox(raycastedBloc);
+    raycastedBloc=undefined;
+
+    raycastMode=2;
+    checkRaycast();
+
+    //raycastedElement=checkRaycastObject(selectableElements,"element");
+    return;  }
+
+    if (raycastedElement) {
+      hideRaycastedBox(raycastedElement);
+      raycastedElement=undefined;
+      raycastMode=0;
+      checkRaycast();
+
+      //raycastedElement=checkRaycastObject(selectableElements,"element");
+      return;  }
 }
 
 function listenToRaycast() {
@@ -1940,6 +2245,7 @@ function hideAllRaycastedBoxes() {
   hideRaycastedBox(raycastedMeuble);
   hideRaycastedBox(raycastedElement);
   hideRaycastedBox(raycastedBloc);
+  hideRaycastedBox(raycastedSousMeuble);
   if (raycastedHandleBloc) {raycastedHandleBloc.visible=false;}
   if (raycastedHandleMeuble) {raycastedHandleMeuble.visible=false;}
 }
@@ -1958,6 +2264,8 @@ function clearRaycast() {
     allBoxes[i].visible=false;
   }
 } */
+
+
 
 //drag
 var newHelper;
@@ -2052,7 +2360,7 @@ function initDragHandleBloc() {
   dragHandleBlocControls.addEventListener('drag', function (event) {
     if (selectionMode!="ajusteBlocs") return;
     var obj1 = event.object;
-    console.log(obj1);
+    //console.log(obj1);
     var meuble = obj1.bloc.meuble;
     var blocId = obj1.bloc.numero;
     scene.add(newHelper);
@@ -2061,7 +2369,7 @@ function initDragHandleBloc() {
       x = x > event.object.xMax ? event.object.xMax : x;
       x = x < event.object.xMin ? event.object.xMin : x;
       var delta = x - obj1.xInitial;
-
+      console.log(delta);
       //poignee située entre 2 blocs :
       if (blocId > 0 && obj1.name != "handleBlocDroit") {
         meuble.bloc[blocId - 1].taille = obj1.tailleBlocPrecedent + delta;
@@ -2088,6 +2396,7 @@ function initDragHandleBloc() {
         meuble.x = obj1.xMeubleInitial + delta / 2;
       }
       meuble.bloc[blocId].taille = fact * (x + obj1.xInitial);
+      console.log(meuble.bloc[blocId].taille);
       obj1.position.set(x, 0, 0);
       newHelper.position.x=obj1.newHelperXInit+delta;
     }
@@ -2101,12 +2410,14 @@ function initDragHandleBloc() {
           {meuble.bloc[blocId+1].taille = obj1.tailleBlocSuivant - delta}
         newHelper.position.y=obj1.newHelperYInit+delta;
     }
-    if (meuble.isSousMeuble) {
-      //meuble.updateMeuble();
-      meuble.meubleRoot.updateMeuble();}
-    else {
+    /* if (meuble.isSousMeuble) {
+      //meuble.update();
+      meuble.meubleRoot.update();}
+    else { */
     meuble.updateTaille();
-    meuble.updateMeuble(); }
+    meuble.update(); 
+    console.log(meuble.name,"updated");
+  //}
     refreshInterface();
   });
 
@@ -2117,10 +2428,11 @@ function initDragHandleBloc() {
     if (selectionMode!="ajusteBlocs") return;
     isPreviewOn=false;
     //event.object.material.emissive.set(0x000000);
-    if (event.object.bloc.meuble.isSousMeuble) {
-      event.object.bloc.meuble.meubleRoot.updateMeuble();
-    }
-    else event.object.bloc.meuble.updateMeuble();
+    /* if (event.object.bloc.meuble.isSousMeuble) {
+      event.object.bloc.meuble.meubleRoot.update();
+    } 
+    else*/
+    event.object.bloc.meuble.update();
     resetRaycast();
     updateAllSelectable();
     controls.enabled = true;
@@ -2203,7 +2515,7 @@ function initDragHandleMeuble() {
     controls.enabled = true;
     rayCastEnabled = true;
     isPreviewOn=false;
-    event.object.meuble.updateMeuble();
+    event.object.meuble.update();
   });
 }
 
@@ -2286,10 +2598,7 @@ function initDragEtagere() {
   dragEtagereControls.addEventListener('drag', function (event) {
     if (selectionMode!="etageres") return;
     var etagere = event.object;
-    console.log(etagere);
-
     let meuble = etagere.element.bloc.meuble;
-    console.log(meuble);
 
     if (!etagere.element.bloc.etageresVerticales) {
       let y = etagere.position.y;
@@ -2297,7 +2606,6 @@ function initDragEtagere() {
       y = y < event.object.yMin ? event.object.yMin : y;
       etagere.position.set(0, y, 0);
       etagere.element.y = y;
-      console.log("y set");
     }
     else {
       let x = etagere.position.x;
@@ -2306,7 +2614,7 @@ function initDragEtagere() {
       etagere.position.set(x, 0, 0);
       etagere.element.x = x;
     }
-    meuble.updateMeuble();
+    meuble.update();
   });
 
   dragEtagereControls.addEventListener('dragend', function (event) {
@@ -2317,7 +2625,7 @@ function initDragEtagere() {
     let x = etagere.position.x;
     etagere.element.x = x;
     resetRaycast();
-    etagere.element.bloc.meuble.updateMeuble();
+    etagere.element.bloc.meuble.update();
     controls.enabled = true;
     rayCastEnabled = true;
   });
@@ -2336,12 +2644,15 @@ function initDragMeuble() {
     //event.object.material.emissive.set(0xaaaaaa);
     var boxMeuble=event.object;
     var meuble = boxMeuble.meuble;
-    var num=boxMeuble.meuble.numero;
+    console.log("drag meuble ",meuble.name);
+    //var num=boxMeuble.meuble.numero;
     changeCurrentMeubleFromClick(meuble,true);
     boxMeuble.xMeubleInit=meuble.x;
     boxMeuble.yMeubleInit=meuble.y;
-    boxMeuble.xOk=boxMeuble.xMeubleInit;
-    boxMeuble.yOk=boxMeuble.yMeubleInit;
+    boxMeuble.xBoxOk=boxMeuble.position.x;
+    boxMeuble.yBoxOk=boxMeuble.position.y;
+    boxMeuble.xMeubleOk=meuble.x;
+    boxMeuble.yMeubleOk=meuble.y;
     boxMeuble.zOk=boxMeuble.position.z;
     var posInitiale = new THREE.Vector3;
     posInitiale = [...boxMeuble.position];
@@ -2355,8 +2666,10 @@ function initDragMeuble() {
     let socleA = meuble.hasSocle*hauteurSocle;
     let offsetHautA = Math.max(cadreA,plateauA);
     let offsetBasA = cadreA + piedA + socleA;
-    wA=meuble.largeur+cadreA*2;
-    hA=meuble.hauteur+offsetHautA+offsetBasA;
+    //wA=meuble.largeur+cadreA*2;
+    wA=meuble.getLargeurReelle();
+    //hA=meuble.hauteur+offsetHautA+offsetBasA;
+    hA=meuble.getHauteurReelle();
     boxMeuble.offsetHautA=offsetHautA;
     boxMeuble.offsetBasA=offsetBasA;
   });
@@ -2368,21 +2681,60 @@ function initDragMeuble() {
     let wpos = new THREE.Vector3();
     var pos=boxMeuble.position;
     boxMeuble.localToWorld(wpos);
-    aX=wpos.x;
+    
+    if (onMurGauche) aX=wpos.z;
+    else aX=wpos.x;
+
     aY=wpos.y-boxMeuble.offsetBasA/2+boxMeuble.offsetHautA/2; // centre du bloc complet
     adjustObjectPosition(boxMeuble,num,aX,aY,wA,hA,pos,0);
     meuble.x=boxMeuble.xMeubleInit+boxMeuble.position.x;
+    
     meuble.y=boxMeuble.yMeubleInit+boxMeuble.position.y;
     refreshInterfaceX(num);
     refreshInterfaceY(num);
   });
 
+  function intersectWithMursOrSol(obj,wA,hA) {
+    var aaX,aaY;
+    var pos = new THREE.Vector3();
+    obj.localToWorld(pos);
+    if (onMurGauche) aaX = pos.z
+    else aaX=pos.x;
+    aaY = pos.y-obj.offsetBasA/2+obj.offsetHautA/2;
+    console.log(aaX,aaY);
+
+    //test collision sol
+    if (aaY < hA / 2) { 
+      console.log("ça retouche le sol");
+      return true;
+    }
+    //test si on sort des limites de la piece
+    if (!onMurGauche) {
+      if (aaX > (-wA / 2 + largeurPiece / 2)) {
+        console.log("ça retouche le mur");
+
+        return true;
+      }
+      if (aaX < (wA / 2 - largeurPiece / 2)) {
+        console.log("ça retouche le mur");
+
+        return true;
+      }
+    }
+    if (onMurGauche) {
+      if (aaX < (wA / 2)) {
+        return true;
+      }
+    }
+  }
+  
   function intersectWithOneOfAll(obj, num, aaX, aaY, wwA, hhA) {
     var pos = new THREE.Vector3();
     obj.localToWorld(pos);
-    aaX = pos.x;
-    aaY = pos.y-obj.offsetBasA/2+obj.offsetHautA/2;
+
     var intersectB = false;
+    var bbX;
+    var wposBB = new THREE.Vector3();
     for (var i = 0; i < meubles.length; i++) {
       if (i != num) {
         var cadreB =meubles[i].hasCadre*meubles[i].epaisseurCadre;
@@ -2395,12 +2747,63 @@ function initDragMeuble() {
         var hhB = offsetBasB+meubles[i].hauteur+offsetHautB;
         var bbY = meubles[i].y + meubles[i].hauteur / 2 + offsetBasB/2 + offsetHautB/2;
         var bbX = meubles[i].x;
+
+/*         let boxMeubleBB=scene.getObjectByName("boiteSelection"+i);
+        boxMeubleBB.localToWorld(wposBB);
+        
+        if (onMurGauche) {
+          bbX = wposBB.z;
+          //fact=-1;
+        }
+        else {
+          bbX = wposBB.x;
+          //fact=1;
+        }  */
+
         if ((Math.abs(aaX - bbX) * 2 < (wwA + wwB)) && (Math.abs(aaY - bbY) * 2 < (hhA + hhB))) intersectB = true;
-        if (intersectB) { console.log("intersect with ", i, " num=", num) }
+        if (intersectB) { console.log("intersect with ", i, " num=", num);
+          console.log("delta=", Math.abs(aaX - bbX) * 2-(wwA + wwB),Math.abs(aaY - bbY) * 2 - (hhA + hhB));
+         }
       }
     } return intersectB;
   }
   
+  function recaleSurMursEtSol(pos,aX,aY) {
+    //correction en y si on rentre dans le sol
+    if (aY < hA / 2) { 
+      console.log("ça touche le sol");
+      pos.y += (hA / 2 - aY); aY = hA / 2;
+      return [true,pos,aX,aY];
+    }
+    //correction si on sort des limites de la piece
+    if (!onMurGauche) {
+      if (aX > (-wA / 2 + largeurPiece / 2)) {
+        console.log("ça touche le mur");
+        let deltaX = aX - (largeurPiece / 2 - wA / 2);
+        pos.x -= deltaX; aX = largeurPiece / 2 - wA / 2;
+        return [true,pos,aX,aY];
+      }
+      if (aX < (wA / 2 - largeurPiece / 2)) {
+        console.log("ça touche le mur");
+        let deltaX = aX - (-largeurPiece / 2 + wA / 2);
+        pos.x -= deltaX; aX = wA / 2 - largeurPiece / 2;
+        return [true,pos,aX,aY];
+      }
+    }
+    if (onMurGauche) {
+      console.log(aX,wA,pos);
+      if (aX < (wA / 2)) {
+        console.log("ça touche le mur");
+        let deltaX = aX - (wA / 2);
+        pos.x += deltaX; aX = wA / 2;
+        return [true,pos,aX,aY];
+      }
+    }
+    return [false,pos,aX,aY];
+  }
+
+
+
   function adjustObjectPosition(obj1, num, aX, aY, wA, hA, pos, count) {
     pos.z = obj1.zOk;
     if (count > meubles.length) return;
@@ -2408,9 +2811,18 @@ function initDragMeuble() {
     var bX, bY, cadreB, plateauB, piedB, socleB;
     var offsetHautB, offsetBasB;
     var replace = false;
-    //correction en y si on rentre dans le sol
-    if (aY < hA / 2) { pos.y += (hA / 2 - aY); aY = hA / 2; replace = true }
+
+    let valeurSorties=[];
+    valeurSorties=recaleSurMursEtSol(pos,aX,aY);
+    replace=valeurSorties[0];
+    pos=valeurSorties[1];
+    aX=valeurSorties[2];
+    aY=valeurSorties[3];
+
     for (var i = 0; i < meubles.length; i++) {
+      var wposB = new THREE.Vector3();
+      //var boxMeubleB;
+      var fact=1;
       if (i != num) {
         cadreB = meubles[i].hasCadre * meubles[i].epaisseurCadre;
         plateauB = meubles[i].hasPlateau * epaisseurPlateau;
@@ -2418,29 +2830,74 @@ function initDragMeuble() {
         socleB = meubles[i].hasSocle * hauteurSocle;
         offsetHautB = Math.max(cadreB, plateauB);
         offsetBasB = socleB + piedB + cadreB;
-        bX = meubles[i].x;
+
+        let boxMeubleB=scene.getObjectByName("boiteSelection"+i);
+        boxMeubleB.localToWorld(wposB);
+        
+        if (onMurGauche) {
+          bX = wposB.z;
+          fact=-1;
+        }
+        else {
+          bX = wposB.x;
+          fact=1;
+        }
+
+        //bX = meubles[i].x;
         wB = meubles[i].largeur + cadreB * 2;
         hB = offsetBasB + meubles[i].hauteur + offsetHautB;
         bY = meubles[i].y + meubles[i].hauteur / 2 + offsetBasB / 2 + offsetHautB / 2;  // centre du bloc B
         var intersect = (Math.abs(aX - bX) * 2 < (wA + wB)) && (Math.abs(aY - bY) * 2 < (hA + hB));
+        console.log(aX,aY,pos.x,pos.y);
         if (intersect) {
+          console.log("ça traverse !");
+          //if (intersectWithMursOrSol(obj1,wA,hA)) break;
           if (aX > bX) { var decalX = (aX - wA / 2) - (bX + wB / 2) }
           else { var decalX = (aX + wA / 2) - (bX - wB / 2) }
           if (aY > bY) { var decalY = (aY - hA / 2) - (bY + hB / 2) }
           else { var decalY = (aY + hA / 2) - (bY - hB / 2) }
           if ((Math.abs(decalX) > Math.abs(decalY)) && (obj1.yMeubleInit + pos.y > 0)) { pos.y -= decalY; aY -= decalY; }
-          else { pos.x -= decalX; aX -= decalX; }
+          else { pos.x -= fact*decalX; aX -= decalX; }
           replace = true;
+          console.log("nouvelles valeurs",aX,aY,pos.x,pos.y);
         }
-        //correction en y si on rentre dans le sol, après ajustement
-        if (aY < hA / 2) { pos.y += (hA / 2 - aY); aY = hA / 2; replace = true }
       }
     }
-    if (replace) {
-      if (intersectWithOneOfAll(obj1, num, pos.x, pos.y, wA, hA) == false) {
-        obj1.xOk = pos.x; obj1.yOk = pos.y;
+     var replaceB=false;
+     if (replace) {
+      valeurSorties = [];
+      valeurSorties = recaleSurMursEtSol(pos,aX,aY);
+      replaceB = valeurSorties[0];
+      //console.log(valeurSorties);
+      console.log("deuxième recalage mur/sol",replaceB);
+      console.log("valeurs deuxieme passage",valeurSorties[1],valeurSorties[2],valeurSorties[3]);
+      if (replaceB) {
+        console.log("recalé une 2ieme fois sur mur/sol");
+        pos = valeurSorties[1];
+      aX = valeurSorties[2];
+      aY = valeurSorties[3];
+      console.log("nouvelles valeurs après recalage sur mur sol",aX,aY);
+    } 
+  }
+    //console.log(replace,replaceB);
+    //if (replaceB) console.log("ça retouche le mur !!!");
+    if (!replace && !replaceB) {
+      console.log("position ok !");
+      obj1.xBoxOk = pos.x; obj1.yBoxOk = pos.y; obj1.zBoxOk=pos.z;
+      obj1.xMeubleOk = aX; obj1.yMeubleOk = aY;
+    }
+    if (replace || replaceB) {
+      console.log("on recalcule");
+      if ((intersectWithOneOfAll(obj1, num, aX, aY, wA, hA) == false)) {
+        console.log("position ok aussi !");
+        obj1.xBoxOk = pos.x; obj1.yBoxOk = pos.y; obj1.zBoxOk = pos.z;
+        obj1.xMeubleOk = aX; obj1.yMeubleOk = aY;
       }
-      else { pos.x = obj1.xOk; pos.y = obj1.yOk; }
+       else { 
+        console.log("on deplace pas !!!!");
+        pos.x = obj1.xBoxOk; pos.y = obj1.yBoxOk; pos.z=obj1.zBoxOk;
+        aX = obj1.xMeubleOk; aY = obj1.yMeubleOk;
+      }
     }
   }
 
@@ -2457,11 +2914,13 @@ function initDragMeuble() {
     boxMeuble.position.set(0, 0, 0);
     /* boxMeuble.visible=false;*/
     meuble.isSelected=false; 
-    meuble.updateMeuble();
+    meuble.update();
     meuble.placeMeuble();
     //resetRaycast();
     checkRaycast();
     frameCamera();
+    meuble.placeMeuble();
+
   });
 }
 
@@ -2529,7 +2988,7 @@ function frameCamera () {
 function updateScene () {
   console.log("updateScene");
   for (var i=0; i<meubles.length; i++) {
-    meubles[i].updateMeuble();
+    meubles[i].update();
   }
 }
 
@@ -2542,7 +3001,7 @@ function updateSelectableBlocs() {
 
 function updateSelectableMeubles() {
   selectableMeuble = [];
-  scene.getObjectsByProperty("shortName", "boiteSelectionMeuble", selectableMeuble);
+  scene.getObjectsByProperty("shortName", "boiteSelection", selectableMeuble);
   dragMeubleControls.setObjects(selectableMeuble);
 }
 
@@ -2570,6 +3029,13 @@ function updateSelectableHandleMeuble() {
   if (dragHandleMeubleControls) dragHandleMeubleControls.setObjects(selectableHandleMeuble);
 }
 
+function updateSelectableSousMeubles() {
+  selectableSousMeubles = [];
+  scene.getObjectsByProperty("shortName", "boiteSelectionSousMeuble", selectableSousMeubles);
+  //if (selectableSousMeubles) selectableSousMeubles.setObjects(selectableSousMeubles);
+  console.log(selectableSousMeubles);
+}
+
 function updateAllSelectable() {
   updateSelectableElements();
   updateSelectableBlocs();
@@ -2577,6 +3043,7 @@ function updateAllSelectable() {
   updateSelectableHandleMeuble();
   updateSelectableEtagere();
   updateSelectableHandleBloc();
+  updateSelectableSousMeubles();
 }
 
 //selection functions
@@ -2661,6 +3128,9 @@ const materialSelectionEtagereParams = structuredClone(materialSelection);
 materialSelectionEtagereParams.color='#0000ff';
 const materialSelectionMeubleParams = structuredClone(materialSelection);
 materialSelectionMeubleParams.color='#00ff00';
+const materialSelectionSousMeubleParams = structuredClone(materialSelection);
+materialSelectionSousMeubleParams.color = '#ffaa00';
+
 const materialHelperParams = structuredClone(materialSelection);
 materialHelperParams.color='#00ffff';
 materialHelperParams.opacity=0.5;
@@ -2680,6 +3150,7 @@ const materialCadreCote = new THREE.MeshStandardMaterial( materialCadreParams);
 const materialSelectionBloc = new THREE.MeshBasicMaterial( materialSelectionBlocParams);
 const materialSelectionEtagere = new THREE.MeshBasicMaterial( materialSelectionEtagereParams);
 const materialSelectionMeuble = new THREE.MeshBasicMaterial( materialSelectionMeubleParams);
+const materialSelectionSousMeuble = new THREE.MeshBasicMaterial( materialSelectionSousMeubleParams);
 const materialHelper = new THREE.MeshBasicMaterial(materialHelperParams);
 var materialSelectionBlocAnim = new THREE.MeshStandardMaterial( materialSelectionBlocParams );
 materialSelectionMeuble.depthTest=false;
@@ -2747,12 +3218,12 @@ function buildEnvironnement () {
   murFond.receiveShadow = true;
   environnement.add( murFond );
   const murDroit = new THREE.Mesh( geometry, materialMur );
-  murDroit.translateX(500);
+  murDroit.translateX(largeurPiece/2);
   murDroit.rotateY(-Math.PI/2);
   murDroit.name="murDroit";
   environnement.add( murDroit );
   const murGauche = new THREE.Mesh( geometry, materialMur );
-  murGauche.translateX(-500);
+  murGauche.translateX(-largeurPiece/2);
   murGauche.rotateY(Math.PI/2);
   murGauche.name="murGauche";
   environnement.add( murGauche );
@@ -2762,7 +3233,7 @@ function buildEnvironnement () {
 //Interface
 var body;
 var interfaceDiv;
-var meubleDiv;
+//var meubleDiv;
 var divEtageres;
 var buttonNewMeuble,buttonDupliquerMeuble,buttonDeleteMeuble;
 var buttonAjouterBloc,buttonSupprimerBloc,buttonDecalerGauche,buttonDecalerDroite;
@@ -2782,7 +3253,7 @@ var divPortes,divEtageres;
 var checkboxRentrant;
 var listPoigneesPopup;
 var listPoigneesName;
-var meubleSliders,blocsSliders,nbBlocsSlider,etageresSliders;
+var meubleSliders,blocsSliders,nbBlocsSlider,etageresSliders,sousMeublesSliders;
 var largeurDiv,largeurSlider,largeurDivInput;
 var hauteurDiv,hauteurDivSlider,hauteurDivInput;
 var XDiv,XDivSlider,XDivInput;
@@ -2790,19 +3261,19 @@ var YDiv,YDivSlider,YDivInput;
 var styleMenu;
 var slidersAspect;
 var checkboxVertical;
-var checkboxSimple;
+// var checkboxSimple;
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
 var menuPoignees;
 var menuTexturesPlateau,menuTexturesCadre,menuTexturesMeuble,menuTexturesTiroirs;
 var dropDownPoignees, dropDownMeuble, dropDownTiroirs, dropDownPlateau, dropDownCadre;
-var buttonSelectMeuble,buttonSelectBloc,buttonSelectElement;
-var buttonAdjustBloc,buttonAdjustMeuble,buttonAdjustEtagere;
+var buttonSelectMeuble,buttonSelectBloc,buttonSelectElement,buttonSelectSousMeuble;
+var buttonAdjustBloc,buttonAdjustMeuble,buttonAdjustEtagere,buttonAdjustSousMeuble;
 var buttonSousMeuble;
 var buttonResetEtageres;
-var expandDimensions, expandBloc, expandMeubleData, expandAspect, expandEtageres, expandContenu, expandEnregistrement, expandParametres;
-var blocsData,contenuData,meubleData,etageresData,aspectData,enregistrementData,parametresData;
+var expandDimensions, expandBloc, expandMeubleData, expandAspect, expandEtageres, expandSousMeubles, expandContenu, expandEnregistrement, expandParametres;
+var blocsData,contenuData,meubleData,etageresData,sousMeublesData,aspectData,enregistrementData,parametresData;
 var contextMenuGeneral,contextMenuMeuble,contextMenuBloc,contextMenuEtagere;
-var warningContenu,warningBloc,warningEtageres,warningMeuble;
+var warningContenu,warningBloc,warningEtageres,warningMeuble,warningSousMeubles;
 var meubleHiddenIfEmpty;
 
 function initializeScene() {
@@ -2848,7 +3319,7 @@ function initializeScene() {
 function getHTMLElements () {
   body=document.getElementById("body");
   interfaceDiv = document.getElementById("interface");
-  meubleDiv = document.getElementById("meuble");
+  //meubleDiv = document.getElementById("meuble");
 
   selectListMeubles =document.getElementById("selectListMeubles");
   buttonNewMeuble = document.getElementById("buttonNewMeuble");
@@ -2882,6 +3353,7 @@ function getHTMLElements () {
   sensOuverture = document.getElementById("sensOuverture");
   buttonEtageresVerticales = document.getElementById("checkBoxEtageresVerticales");
   meubleSliders = document.getElementById("meubleSliders");
+  sousMeublesSliders = document.getElementById("sousMeublesSliders");
   blocsSliders = document.getElementById("blocsSliders");
   nbBlocsSlider = document.getElementById("nbBlocsSlider");
   etageresSliders = document.getElementById("etageresSliders");
@@ -2893,7 +3365,6 @@ function getHTMLElements () {
   styleMenu = document.getElementById("style");
   slidersAspect = document.getElementById("slidersAspect");
   checkboxVertical = document.getElementById("checkboxVertical");
-  checkboxSimple = document.getElementById("checkboxSimple");
   colorDrawer = document.getElementById("colorDrawer");
   colorMeuble = document.getElementById("colorMeuble");
   colorPlateau = document.getElementById("colorPlateau");
@@ -2909,6 +3380,7 @@ function getHTMLElements () {
   dropDownPlateau = document.getElementById("dropDownPlateau");
   dropDownCadre = document.getElementById("dropDownCadre");
   buttonSelectMeuble = document.getElementById("buttonSelectMeuble");
+  buttonSelectSousMeuble = document.getElementById("buttonSelectSousMeuble");
   buttonAdjustMeuble = document.getElementById("buttonAdjustMeuble");
   buttonSelectBloc = document.getElementById("buttonSelectBloc");
   buttonAdjustBloc = document.getElementById("buttonAdjustBloc");
@@ -2929,6 +3401,8 @@ function getHTMLElements () {
   meubleData=document.getElementById("meubleData");
   expandMeubleData=document.getElementById("expandMeubleData");
   etageresData=document.getElementById("etageresData");
+  sousMeublesData=document.getElementById("sousMeublesData");
+  expandSousMeubles=document.getAnimations("expandSousMeubles");
   contenuData=document.getElementById("contenuData");
   aspectData=document.getElementById("aspectData");
   enregistrementData=document.getElementById("enregistrementData");
@@ -2938,6 +3412,7 @@ function getHTMLElements () {
   warningBloc=document.getElementById("warningBloc");
   warningEtageres=document.getElementById("warningEtageres");
   warningMeuble=document.getElementById("warningMeuble");
+  warningSousMeubles=document.getElementById("warningSousMeubles");
 
   console.log(warningContenu);
 
@@ -2973,13 +3448,13 @@ function initializeInterface() {
     if (selectedMeuble.disposition == "vertical") selectedMeuble.disposition = "horizontal";
     else selectedMeuble.disposition = "vertical";
     selectedMeuble.computeBlocsSize();
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
     frameCamera()
   }
 
   function switchSimple() {
     selectedMeuble.isSimple = !selectedMeuble.isSimple;
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
   }
 
   function switchSocle(num) {
@@ -2989,7 +3464,7 @@ function initializeInterface() {
       meubles[num].IsSuspendu=false;
     }
     refreshButtonFixationGroup(num);
-    meubles[num].updateMeuble();
+    meubles[num].update();
   }
 
   function switchPied(num) { meubles[num].hasPied=!meubles[num].hasPied;
@@ -2998,7 +3473,7 @@ function initializeInterface() {
       meubles[num].IsSuspendu=false;
     }
     refreshButtonFixationGroup(num);
-    meubles[num].updateMeuble();
+    meubles[num].update();
   }
 
   function switchSuspendu(num) {
@@ -3008,19 +3483,19 @@ function initializeInterface() {
       meubles[num].hasSocle=false;
     }
     refreshButtonFixationGroup(num);
-    meubles[num].updateMeuble();
+    meubles[num].update();
   }
 
   function switchPlateau(num) {
     meubles[num].hasPlateau=!meubles[num].hasPlateau;
     refreshButtonPlateau(num);
-    meubles[num].updateMeuble();
+    meubles[num].update();
   }
 
   function switchCadre(num) {
     meubles[num].hasCadre=!meubles[num].hasCadre;
     refreshButtonCadre(num);
-    meubles[num].updateMeuble();
+    meubles[num].update();
   }
 
   //buttons blocs
@@ -3043,7 +3518,7 @@ function initializeInterface() {
     else {
       meuble.nbBlocs+=1;
       meuble.updateTaille();
-      meuble.updateMeuble();
+      meuble.update();
     }
     clearSelectionList();
     indiceCurrentBloc=-1;
@@ -3081,7 +3556,7 @@ function initializeInterface() {
         if (bloc.numero > 0) {
           [meuble.bloc[bloc.numero], meuble.bloc[bloc.numero-1]] = [meuble.bloc[bloc.numero-1], meuble.bloc[bloc.numero]];
           bloc.meuble.recomputeBlocsId();
-          meuble.updateMeuble();
+          meuble.update();
         }
       }
     }
@@ -3096,7 +3571,7 @@ function initializeInterface() {
         if (bloc.numero < meuble.nbBlocs-1) {
           [meuble.bloc[bloc.numero+1], meuble.bloc[bloc.numero]] = [meuble.bloc[bloc.numero], meuble.bloc[bloc.numero+1]];
           bloc.meuble.recomputeBlocsId();
-          meuble.updateMeuble();
+          meuble.update();
         }
       }
     }
@@ -3124,36 +3599,16 @@ function initializeInterface() {
     for (var i = selectedObjects.length; i > 0; i--) {
       let object = selectedObjects[i - 1];
       object.type = value;
-      object.meuble.updateMeuble();
+      object.meuble.update();
     }
     refreshInterfaceBlocs();
-  }
-
-  function setNombreDePortes(value) {
-    for (var i = selectedObjects.length; i > 0; i--) {
-      let object = selectedObjects[i - 1];
-      object.nombrePortes = value;
-      object.meuble.updateMeuble();
-    }
-    refreshInterfaceBlocs();
-    updateSelection();
-  }
-
-  function setTypeDePortes(value) {
-    for (var i = selectedObjects.length; i > 0; i--) {
-      let object = selectedObjects[i - 1];
-      object.ouverturePorte = value;
-      object.meuble.updateMeuble();
-    }
-    refreshInterfaceBlocs();
-    updateSelection();
   }
 
   function setValueOnSelection(key, value) {
     for (var i = selectedObjects.length; i > 0; i--) {
       let object = selectedObjects[i - 1];
       object[key] = value;
-      object.meuble.updateMeuble();
+      object.meuble.update();
     }
     refreshInterfaceBlocs();
     updateSelection();
@@ -3162,7 +3617,8 @@ function initializeInterface() {
   function updateSelection() {
     for (var i = selectedObjects.length; i > 0; i--) {
       let object = selectedObjects[i - 1];
-      object.meuble.updateMeuble();
+      object.meuble.update();
+      console.log("updateSelection");
     }
   }
 
@@ -3184,7 +3640,7 @@ function initializeInterface() {
 
   function switchEtagereVerticale() {
     selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales=!selectedMeuble.bloc[indiceCurrentBloc].etageresVerticales;
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
   }
 
   function switchRentrant() {
@@ -3275,6 +3731,11 @@ function initializeInterface() {
     setSelectionMode("elements");
   },false);
 
+  buttonSelectSousMeuble.addEventListener("click", function clickSelectElements(event) {
+    //updateAllSelectable();
+    setSelectionMode("sousMeubles");
+  },false);
+
   let listOptionsContextMenu = document.getElementsByClassName("contextMenuOption");
   for (let item of listOptionsContextMenu) {
     item.addEventListener('click',onClickOptionMenu);
@@ -3332,6 +3793,11 @@ function expand(divSwitch,divData) {
   expandEtageres.addEventListener("click",function expandFn(event)
   {expand(expandEtageres,etageresData)});
 
+  warningSousMeubles.style.display="none";
+  sousMeublesData.style.display="none";
+  //expandSousMeubles.addEventListener("click",function expandFnSM(event)
+  //{expand(expandSousMeubles,sousMeublesData)});
+
   contenuData.style.display="none";
   warningContenu.style.display="none";
   expandContenu.addEventListener("click",function expandFn(event)
@@ -3361,6 +3827,7 @@ function setSelectionMode(value) {
   clearSelectionList();
   updateAllSelectable();
   refreshSelectButtons();
+  console.log(selectableSousMeubles);
 }
 
 function refreshSelectButtons() {
@@ -3382,6 +3849,9 @@ function refreshSelectButtons() {
 
   if (selectionMode=="elements") {buttonSelectElement.className="buttonOn";}
   else {buttonSelectElement.className="buttonOff"}
+
+  if (selectionMode=="sousMeubles") {buttonSelectSousMeuble.className="buttonOn";}
+  else {buttonSelectSousMeuble.className="buttonOff"}
 }
 
 
@@ -3568,8 +4038,84 @@ function createSliderWithoutListener(objet,key,nom,value,type,min,max) {
 function refreshInterface() {
   refreshInterfaceMeuble();
   refreshInterfaceBlocs();
+  refreshInterfaceSousMeuble();
   refreshInterfaceAspect();  
 }
+
+
+
+
+function clearInterfaceSousMeuble() {
+  sousMeublesSliders.innerHTML="";
+  //selectListSousMeubles.innerHTML="";
+  //selectListMeubles.classList.remove("animationMeublesName");
+}
+
+function refreshInterfaceSousMeuble() {
+  clearInterfaceSousMeuble();
+  createInterfaceSousMeuble(); // Rebuild HTML content
+  if (displayWarning(expandSousMeubles,sousMeublesData,warningSousMeubles,(selectedSousMeuble))) return;
+}
+
+function createInterfaceSousMeuble() { // Rebuild HTML content
+  //return;
+  //let meuble = selectedMeuble;
+  //console.log("createinterfacemeuble",selectedSousMeuble.name);
+
+ /*  
+  if (displayWarning(expandSousMeubles,sousMeublesData,warningSousMeubles,(selectedSousMeuble))) {  blocsData.style.display="none";}
+  else {  sousMeublesData.style.display="";} */
+
+  //nbBlocs
+  if (!selectedSousMeuble) return;
+  let retour = createSliderWithoutListener(selectedSousMeuble,"nbBlocs","Nombre de blocs",selectedSousMeuble.nbBlocs,0,1,maxBlocs);
+  let nbBlocsSousMeubleDiv = retour[0];
+  nbBlocsSousMeubleDiv.querySelector("#slider").addEventListener("input",function (event) {
+    changeBlocsQuantityOnSelection(Number(event.target.value));
+    nbBlocsSousMeubleDiv.querySelector("#number").value=Number(event.target.value); //refresh
+  },false);
+  nbBlocsSousMeubleDiv.querySelector("#number").addEventListener("change",function (event) {
+    changeBlocsQuantityOnSelection(Number(event.target.value));
+    nbBlocsSousMeubleDiv.querySelector("#slider").value=Number(event.target.value); //refresh
+  },false);
+  sousMeublesSliders.append(nbBlocsSousMeubleDiv);
+
+ /*  //profondeur meuble
+  let elp=createSlider(meuble,"profondeur","Profondeur",meuble.profondeur,0,10,250);
+  elp.querySelector("#slider").addEventListener("input",function eventElpInput() {selectedMeuble.update();frameCamera();},false);
+  elp.querySelector("#number").addEventListener("change",function eventElpChange() {selectedMeuble.update();frameCamera();},false);
+  sousMeublesSliders.append(elp); */
+
+
+
+  retour = createSliderWithoutListener(selectedSousMeuble.bloc[0], "etageres", "Nombre d'étagères", selectedSousMeuble.bloc[0].etageres, 0, 0, maxEtageres);
+  let sliderEtageresSousMeuble=retour[0];
+
+  //Nombre d'étageres
+  sliderEtageresSousMeuble.querySelector("#slider").addEventListener("input", function (event) {
+    //raz des positions prédéfinies si changement de nb d'étageres ?;
+    setEtageresNumberOnSelection(Number(event.target.value));
+    sliderEtageresSousMeuble.querySelector("#number").value=Number(event.target.value); //refresh
+  }, false);
+
+  sliderEtageresSousMeuble.querySelector("#number").addEventListener("change", function (event) {
+    setEtageresNumberOnSelection(Number(event.target.value));
+    sliderEtageresSousMeuble.querySelector("#slider").value=Number(event.target.value); //refresh
+  }, false);
+
+  sousMeublesSliders.append(sliderEtageresSousMeuble);
+
+
+
+
+
+}
+
+
+
+
+
+
 
 function refreshInterfaceMeuble() {
   clearInterfaceMeuble();
@@ -3589,6 +4135,7 @@ function clearInterfaceMeuble() {
 function changeCurrentMeuble(meuble,highlight) {
   indiceCurrentMeuble = meuble.numero;
   selectedMeuble=meuble;
+  console.log("selectedMeuble=",selectedMeuble.name);
   select(meuble,highlight);
   refreshCheckboxMeuble();
   refreshInterface();
@@ -3620,13 +4167,13 @@ function hideChildren(obj) {
 function onMaterialAnimationFinish (meuble) {
   clipActionMaterial.stop();
   clipActionMaterial.reset();
-  let boiteSelectionMeuble = meuble.selectionBox;
-  boiteSelectionMeuble.visible = false;
+  let boiteSelection = meuble.selectionBox;
+  boiteSelection.visible = false;
 
-  boiteSelectionMeuble.material = materialSelectionMeuble;
+  boiteSelection.material = materialSelectionMeuble;
   mixerMaterial.removeEventListener('finished', onMaterialAnimationFinish, false);
   mixerMaterial=undefined;
-  showChildren(boiteSelectionMeuble);
+  showChildren(boiteSelection);
 }
 
 var materialSelectionMeubleAnim,offset,clipMaterial,mixerMaterial,clipActionMaterial,clock;
@@ -3639,10 +4186,10 @@ function initializeAnimations() {
 }
 
 function startMaterialAnimationMeuble(meuble) {
-  let boiteSelectionMeuble = meuble.selectionBox;
-  boiteSelectionMeuble.material = materialSelectionMeubleAnim;
-  hideChildren(boiteSelectionMeuble);
-  boiteSelectionMeuble.visible = true;
+  let boiteSelection = meuble.selectionBox;
+  boiteSelection.material = materialSelectionMeubleAnim;
+  hideChildren(boiteSelection);
+  boiteSelection.visible = true;
   mixerMaterial = new THREE.AnimationMixer( materialSelectionMeubleAnim );
   clipActionMaterial = mixerMaterial.clipAction( clipMaterial );
   clipActionMaterial.setLoop(0,1);
@@ -3657,9 +4204,9 @@ function changeCurrentMeubleFromPopup(num) {
 
 function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   let meuble = selectedMeuble;
+  console.log("createinterfacemeuble",meuble.name);
   //dropdown list meuble
   for (var i=0;i<meubles.length;i++) {
-    console.log("indice",indiceCurrentMeuble);
     let o = document.createElement("option");
     o.value = i;
     o.innerHTML = meubles[i].name;
@@ -3695,15 +4242,15 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     selectedMeuble.hauteur = (hauteur<maxHeight) ? hauteur : maxHeight;
     selectedMeuble.computeBlocsSize();
     refreshInterfaceBlocs();
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
     refreshInterfaceHauteur();
     frameCamera();
   }
 
   //profondeur meuble
   let elp=createSlider(meuble,"profondeur","Profondeur",meuble.profondeur,0,10,250);
-  elp.querySelector("#slider").addEventListener("input",function eventElpInput() {selectedMeuble.updateMeuble();frameCamera();},false);
-  elp.querySelector("#number").addEventListener("change",function eventElpChange() {selectedMeuble.updateMeuble();frameCamera();},false);
+  elp.querySelector("#slider").addEventListener("input",function eventElpInput() {selectedMeuble.update();frameCamera();},false);
+  elp.querySelector("#number").addEventListener("change",function eventElpChange() {selectedMeuble.update();frameCamera();},false);
   meubleSliders.append(elp);
 
   //largeur meuble
@@ -3720,7 +4267,7 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     selectedMeuble.largeur = (largeur<maxWidth) ? largeur : maxWidth;
     selectedMeuble.computeBlocsSize();
     refreshInterfaceBlocs();
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
     refreshInterfaceLargeur();
     frameCamera();
   }
@@ -3741,7 +4288,7 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     selectedMeuble.x = x;
     selectedMeuble.computeBlocsSize();
     refreshInterfaceBlocs();
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
     selectedMeuble.placeMeuble();
     XDivSlider.value = selectedMeuble.x;
     XDivInput.value = XDivSlider.value;
@@ -3764,7 +4311,7 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     selectedMeuble.y = y;
     selectedMeuble.computeBlocsSize();
     refreshInterfaceBlocs();
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
     YDivSlider.value = selectedMeuble.y;
     YDivInput.value = YDivSlider.value;
     frameCamera();
@@ -3780,7 +4327,7 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   epaisseurInput.addEventListener("change", function () { eventEpaisseurInput(+epaisseurInput.value) }, false);
 
   function eventEpaisseurInput(ep) {
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
   }
 
   //epaisseur cadre
@@ -3792,7 +4339,7 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   epaisseurCadreInput.addEventListener("change", function () { eventEpaisseurCadreInput(+epaisseurCadreInput.value) }, false);
 
   function eventEpaisseurCadreInput(ep) {
-    selectedMeuble.updateMeuble();
+    selectedMeuble.update();
   }
 
   refreshCheckboxMeuble();
@@ -3801,9 +4348,48 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   refreshButtonFixationGroup();
   refreshButtonDelete();
   refreshButtonDupliquerMeuble();
-  console.log("buttons refreshed");
-  console.log("indiceCurrentMeuble",indiceCurrentMeuble);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function refreshCheckboxMeuble() {
   if (selectedMeuble.disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
@@ -3875,7 +4461,21 @@ function changeCurrentBlocFromClick(bloc) {
 function changeBlocsQuantity(num) {
   selectedMeuble.setBlocsQuantity(num);
   selectedMeuble.updateTaille();
-  selectedMeuble.updateMeuble();
+  selectedMeuble.update();
+  refreshInterfaceBlocs();
+  refreshInterfaceLargeur();
+  refreshInterfaceHauteur();
+  updateScene();
+  frameCamera();
+}
+
+function changeBlocsQuantityOnSelection(num) {
+  for (var i=0; i<selectedObjects.length;i++) {
+    console.log(selectedObjects[i]);
+    selectedObjects[i].setBlocsQuantity(num);
+    selectedObjects[i].updateTaille();
+    selectedObjects[i].update();
+  }
   refreshInterfaceBlocs();
   refreshInterfaceLargeur();
   refreshInterfaceHauteur();
@@ -3892,7 +4492,6 @@ function rebuildInterfaceBlocs() {
     selectListBlocs.append(o);
   }
   if (indiceCurrentBloc==-1) {selectListBlocs.value=""}
-  console.log("indiceCurrentBloc=",indiceCurrentBloc);
 }
 
 function displayWarning(divExpand,divContent,divWarning,condition) {
@@ -3976,12 +4575,10 @@ function clearInterfaceBlocs() {
 }
 
 function refreshBlocsButtons() {
-  console.log("refreshButtonBlocs");
   if (indiceCurrentBloc == -1 || selectedMeuble.bloc.length==1 || selectedObjects.length==0) {
     buttonSupprimerBloc.disabled = true;
     buttonDecalerGauche.disabled = true;
     buttonDecalerDroite.disabled = true;
-    console.log("disabled");
   }
   else {
     buttonSupprimerBloc.disabled = false;
@@ -4041,7 +4638,6 @@ function createSlidersBlocs() {
 
 function createSlidersEtageres() {
   let numBloc=indiceCurrentBloc;
-  console.log("indiceCurrentBloc",indiceCurrentBloc);
   if (indiceCurrentBloc==-1) numBloc = 0;
   let meuble = selectedMeuble;
   let retour;
@@ -4068,7 +4664,7 @@ function setEtageresNumberOnSelection(num) {
   for (var i=0; i<selectedObjects.length; i++) {
     let object = selectedObjects[i];
     let type=object.constructor.name;
-    if (type=="Meuble" || type=="Bloc") object.setEtageresNumber(Number(num));
+    if (type=="Meuble" || type=="Bloc" || type=="SousMeuble") object.setEtageresNumber(Number(num));
     if (type=="Element") object.bloc.setEtageresNumber(Number(num));
   }
   if (selectedObjects.length==0 && indiceCurrentMeuble>-1) selectedMeuble.setEtageresNumber(Number(num));
@@ -4083,14 +4679,12 @@ function setTailleOnBloc(bloc,taille) {
   let newTaille = (deltaTaille>deltaMax) ? bloc.taille+deltaMax: taille;
   bloc.taille=newTaille;
   bloc.meuble.updateTaille();
-  bloc.meuble.updateMeuble();
+  bloc.meuble.update();
 }
 
 function setTailleOnSelection(taille) {
   taille=Number(taille);
-  console.log("selectionMode",selectionMode);
   if ((selectionMode!="blocs" && selectionMode!="elements") || selectedObjects.length==0) {
-    console.log("meuble,bloc:",indiceCurrentMeuble,indiceCurrentBloc);
     let bloc=meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc];
     setTailleOnBloc(bloc,taille);
   }
@@ -4109,7 +4703,7 @@ function refreshInterfaceAspect() {
   slidersAspect.innerHTML="";
   let sliderOffsetPoignees=createSlider(selectedMeuble,"offsetPoignees","Décalage",selectedMeuble.offsetPoignees,0,-100,100);
   slidersAspect.append(sliderOffsetPoignees);
-  sliderOffsetPoignees.addEventListener("input", function () {selectedMeuble.updateMeuble()}, false);
+  sliderOffsetPoignees.addEventListener("input", function () {selectedMeuble.update()}, false);
 }
 
 window.addEventListener("DOMContentLoaded", initializeScene);
