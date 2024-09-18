@@ -711,6 +711,7 @@ class Meuble {
     this.isSimple = true;
     this.onMurGauche = false;
     this.onMurDroit = false;
+    this.onMurFond = true;
 
     //commun aux autres classes
     this.localStyle = undefined;
@@ -872,25 +873,72 @@ class Meuble {
     return 2 * maxWidth;
   }
 
-  getLimitTranslationX(num) {
+  getLimitTranslationX() {
     var bY;
-    var minXGlobal=-largeurPiece/2+this.largeur/2;
-    var maxXGlobal=largeurPiece/2-this.largeur/2;
+    var minXGlobal,maxXGlobal;
+
+    if (this.onMurGauche) {
+      minXGlobal = -10e34;
+      maxXGlobal = -this.largeur/2;
+    }
+
+    if (this.onMurDroit) {
+      minXGlobal = this.largeur/2;
+      maxXGlobal = 10e34;
+    }
+
+    if (this.onMurFond) {
+      minXGlobal=-largeurPiece/2+this.largeur/2;
+      maxXGlobal=largeurPiece/2-this.largeur/2;
+    }
+
     var minX=-10e34;
     var maxX=10e34;
+
+    console.log(this.onMurFond,this.onMurGauche,this.onMurDroit,minXGlobal,maxXGlobal);
     for (var i = 0; i < meubles.length; i++) {
       if (i != this.numero) {
-        bY = meubles[i].y + meubles[i].hauteur / 2 + meubles[i].hasCadre*this.epaisseurCadre;
-        if (this.intersectY(i)) {
+        if (meubles[i].onMurGauche == this.onMurGauche && meubles[i].onMurDroit == this.onMurDroit) {
+          bY = meubles[i].y + meubles[i].hauteur / 2 + meubles[i].hasCadre * this.epaisseurCadre;
+          if (this.intersectY(i)) {
             if (this.x > meubles[i].x) {
-              minX = (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre*this.epaisseurCadre) + (this.largeur / 2+this.hasCadre*this.epaisseurCadre);
+              minX = (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre * this.epaisseurCadre) + (this.largeur / 2 + this.hasCadre * this.epaisseurCadre);
             }
             if (this.x < meubles[i].x) {
-              maxX = (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre*this.epaisseurCadre) - (this.largeur / 2 + this.hasCadre*this.epaisseurCadre);
+              maxX = (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre * this.epaisseurCadre) - (this.largeur / 2 + this.hasCadre * this.epaisseurCadre);
             }
-            minXGlobal=Math.max(minX,minXGlobal);
-            maxXGlobal=Math.min(maxX,maxXGlobal);
+          }
         }
+        if ((meubles[i].onMurGauche && this.onMurFond)) {
+          if (meubles[i].x > -meubles[i].largeur / 2 - this.profondeur) {
+            if (this.intersectY(i)) {
+              minXGlobal = -largeurPiece/2+meubles[i].profondeur+this.largeur/2;
+            }
+          }
+        }
+        if ((meubles[i].onMurFond && this.onMurGauche)) {
+          if (meubles[i].x < -largeurPiece/2+this.largeur/2+meubles[i].profondeur) {
+            if (this.intersectY(i)) {
+              maxXGlobal = -this.largeur/2-meubles[i].profondeur; 
+            }
+          }
+        }
+        if ((meubles[i].onMurDroit && this.onMurFond)) {
+          if (meubles[i].x < meubles[i].largeur / 2 + this.profondeur) {
+            if (this.intersectY(i)) {
+              maxXGlobal = -1*(-largeurPiece/2+meubles[i].profondeur+this.largeur/2);
+            }
+          }
+        }
+         if ((meubles[i].onMurFond && this.onMurDroit)) {
+          if (meubles[i].x > largeurPiece/2-this.largeur/2-meubles[i].profondeur) {
+            if (this.intersectY(i)) {
+              minXGlobal = this.largeur/2+meubles[i].profondeur; 
+            }
+          }
+        }
+        minXGlobal = Math.max(minX, minXGlobal);
+        maxXGlobal = Math.min(maxX, maxXGlobal);
       }
     }
     return [minXGlobal,maxXGlobal];
@@ -1646,6 +1694,10 @@ class SousMeuble extends Meuble {
   }
 }
 
+function remap(inMin, inMax, outMin, outMax, value) {
+  return (value - inMin) / (inMax - inMin) * (outMax - outMin) + outMin;
+};
+
 //fonctions meuble
 
 function recomputeMeublesId() {
@@ -1692,15 +1744,15 @@ function renameAllMeubles() {
 }
 
 function placeNewMeuble(num) {
-/*   var minX = -10e34;
+  var minX = -10e34;
   if (num>0) {
     for (var i=0; i<num; i++) {
       let currentMinX = meubles[i].x+meubles[i].getLargeurReelle()/2+ meubles[num].getLargeurReelle()/2;
       minX = Math.max(currentMinX,minX)
     }
     meubles[num].x=minX;
-  } */
- meubles[num].x=-largeurPiece/2+meubles[num].largeur;
+  }
+ //meubles[num].x=-largeurPiece/2+meubles[num].largeur;
 }
 
 function createNewMeuble() {
@@ -2712,7 +2764,7 @@ function setInitialPosition(meuble,boxMeuble) {
     }
 
     if (!meuble.onMurGauche) {
-      if (aX<-(largeurPiece/2-wA/2) && aZ>meuble.profondeur) {
+      if (aX<-(largeurPiece/2-wA/2-10) && aZ>meuble.profondeur) {
         meuble.onMurGauche=true;
         meuble.onMurDroit=false;
         meuble.x=-wA/2;
@@ -2730,7 +2782,7 @@ function setInitialPosition(meuble,boxMeuble) {
     }
 
      else if (meuble.onMurGauche) {
-      if (aX<(wA/2) && aZ<meuble.profondeur) {
+      if (aX<(wA/2-10) && aZ<meuble.profondeur) {
         meuble.onMurGauche=false;
         meuble.onMurDroit=false;
         meuble.x=-(largeurPiece/2-wA/2);
@@ -2801,7 +2853,7 @@ function setInitialPosition(meuble,boxMeuble) {
       return [true,pos,aX,aY];
     }
     //correction si on sort des limites de la piece
-    if (!meuble.onMurGauche) {
+    if (meuble.onMurFond) {
       if (aX > (-wA / 2 + largeurPiece / 2)) {
         console.log("ça touche le mur");
         let deltaX = aX - (largeurPiece / 2 - wA / 2);
@@ -2876,12 +2928,12 @@ function setInitialPosition(meuble,boxMeuble) {
           fact=-1;
         }
 
-        if (obj1.meuble.onMurDroit) {
+        else if (obj1.meuble.onMurDroit) {
           bX = wposB.z;
           fact=1;
         }
 
-        if (!obj1.meuble.onMurDroit && !obj1.meuble.onMurGauche) {
+        else if (obj1.meuble.onMurFond) {
           bX = wposB.x;
           fact=1;
         }
@@ -3513,10 +3565,14 @@ function initializeInterface() {
         selectedMeuble.x *= -1;
       }
       else {
-        selectedMeuble.x += largeurPiece/2
+        selectedMeuble.onMurFond = false;
+        selectedMeuble.x = remap(-largeurPiece/2,largeurPiece/2,0,-largeurPiece,selectedMeuble.x);
       }
     }
-    else { selectedMeuble.x = -largeurPiece/2+selectedMeuble.largeur/2}
+    else {
+      selectedMeuble.x = remap(0,-largeurPiece,-largeurPiece/2,largeurPiece/2,selectedMeuble.x);
+      selectedMeuble.onMurFond = true;
+    }
     refreshButtonsMeuble();
     selectedMeuble.update();
   }
@@ -3529,10 +3585,14 @@ function initializeInterface() {
         selectedMeuble.x *= -1;
       }
       else {
-        selectedMeuble.x += largeurPiece/2
+        selectedMeuble.onMurFond = false;
+        selectedMeuble.x = remap(-largeurPiece/2,largeurPiece/2,largeurPiece,0,selectedMeuble.x);
       }
     }
-    else { selectedMeuble.x -= largeurPiece/2}
+    else {
+      selectedMeuble.x = remap(largeurPiece,0,-largeurPiece/2,largeurPiece/2,selectedMeuble.x);
+      selectedMeuble.onMurFond = true;
+    }
     refreshButtonsMeuble();
     selectedMeuble.update();
   }
