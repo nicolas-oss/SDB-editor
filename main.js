@@ -1692,14 +1692,15 @@ function renameAllMeubles() {
 }
 
 function placeNewMeuble(num) {
-  var minX = -10e34;
+/*   var minX = -10e34;
   if (num>0) {
     for (var i=0; i<num; i++) {
       let currentMinX = meubles[i].x+meubles[i].getLargeurReelle()/2+ meubles[num].getLargeurReelle()/2;
       minX = Math.max(currentMinX,minX)
     }
     meubles[num].x=minX;
-  }
+  } */
+ meubles[num].x=-largeurPiece/2+meubles[num].largeur;
 }
 
 function createNewMeuble() {
@@ -2635,8 +2636,19 @@ function initDragEtagere() {
 
 var dragMeubleControls;
 function initDragMeuble() {
+
+function setInitialPosition(meuble,boxMeuble) {
+  boxMeuble.xMeubleInit=meuble.x;
+  boxMeuble.yMeubleInit=meuble.y;
+  boxMeuble.xBoxOk=boxMeuble.position.x;
+  boxMeuble.yBoxOk=boxMeuble.position.y;
+  boxMeuble.xMeubleOk=meuble.x;
+  boxMeuble.yMeubleOk=meuble.y;
+  boxMeuble.zOk=boxMeuble.position.z;
+}
+
   var wA,hA;
-  var aX,aY;
+  var aX,aY,aZ;
   dragMeubleControls=new DragControls(selectableMeuble, camera, renderer.domElement);
   dragMeubleControls.recursive=false;
   dragMeubleControls.addEventListener('dragstart', function (event) {
@@ -2649,16 +2661,17 @@ function initDragMeuble() {
     console.log("drag meuble ",meuble.name);
     //var num=boxMeuble.meuble.numero;
     changeCurrentMeubleFromClick(meuble,true);
-    boxMeuble.xMeubleInit=meuble.x;
+    setInitialPosition(meuble,boxMeuble);
+    /* boxMeuble.xMeubleInit=meuble.x;
     boxMeuble.yMeubleInit=meuble.y;
     boxMeuble.xBoxOk=boxMeuble.position.x;
     boxMeuble.yBoxOk=boxMeuble.position.y;
     boxMeuble.xMeubleOk=meuble.x;
     boxMeuble.yMeubleOk=meuble.y;
-    boxMeuble.zOk=boxMeuble.position.z;
-    var posInitiale = new THREE.Vector3;
+    boxMeuble.zOk=boxMeuble.position.z; */
+    /* var posInitiale = new THREE.Vector3;
     posInitiale = [...boxMeuble.position];
-    boxMeuble.posInitiale = posInitiale;
+    boxMeuble.posInitiale = posInitiale; */
     let geometries=meuble.root.getObjectByName("geometries");
     boxMeuble.attach(geometries);  //on détache pour éviter les references circulaires dans les calculs de coordonnées
     geometries.position.set(0,0,0);
@@ -2684,10 +2697,56 @@ function initDragMeuble() {
     var pos=boxMeuble.position;
     boxMeuble.localToWorld(wpos);
     
-    if (meuble.onMurGauche || meuble.onMurDroit) aX=wpos.z;
-    else aX=wpos.x;
 
     aY=wpos.y-boxMeuble.offsetBasA/2+boxMeuble.offsetHautA/2; // centre du bloc complet
+    aZ=wpos.z;
+    console.log(aX,aY,aZ);
+
+    if (meuble.onMurGauche || meuble.onMurDroit) {
+      aX=wpos.z;
+      aZ=wpos.x;
+    }
+    else {
+      aX=wpos.x;
+      aZ=wpos.z;
+    }
+
+    if (!meuble.onMurGauche) {
+      if (aX<-(largeurPiece/2-wA/2) && aZ>meuble.profondeur) {
+        meuble.onMurGauche=true;
+        meuble.onMurDroit=false;
+        meuble.x=-wA/2;
+        meuble.z=0;
+        aX=wpos.z;
+        meuble.placeMeuble();
+
+        boxMeuble.xMeubleInit=meuble.x;
+        boxMeuble.yMeubleInit=meuble.y;
+        boxMeuble.xBoxOk=boxMeuble.position.x;
+        boxMeuble.xMeubleOk=meuble.x;
+
+        refreshInterfaceMeuble();
+      }
+    }
+
+     else if (meuble.onMurGauche) {
+      if (aX<(wA/2) && aZ<meuble.profondeur) {
+        meuble.onMurGauche=false;
+        meuble.onMurDroit=false;
+        meuble.x=-(largeurPiece/2-wA/2);
+        meuble.z=0;
+        aX=wpos.x;
+        meuble.placeMeuble();
+
+        boxMeuble.xMeubleInit=meuble.x;
+        boxMeuble.yMeubleInit=meuble.y;
+        boxMeuble.xBoxOk=boxMeuble.position.x;
+        boxMeuble.xMeubleOk=meuble.x;
+
+        refreshInterfaceMeuble();
+      }
+    }
+
     adjustObjectPosition(boxMeuble,num,aX,aY,wA,hA,pos,0);
     meuble.x=boxMeuble.xMeubleInit+boxMeuble.position.x;
     
@@ -3454,10 +3513,10 @@ function initializeInterface() {
         selectedMeuble.x *= -1;
       }
       else {
-        selectedMeuble.x -= largeurPiece/2
+        selectedMeuble.x += largeurPiece/2
       }
     }
-    else { selectedMeuble.x += largeurPiece/2}
+    else { selectedMeuble.x = -largeurPiece/2+selectedMeuble.largeur/2}
     refreshButtonsMeuble();
     selectedMeuble.update();
   }
