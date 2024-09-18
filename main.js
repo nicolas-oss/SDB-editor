@@ -895,7 +895,6 @@ class Meuble {
     var minX=-10e34;
     var maxX=10e34;
 
-    console.log(this.onMurFond,this.onMurGauche,this.onMurDroit,minXGlobal,maxXGlobal);
     for (var i = 0; i < meubles.length; i++) {
       if (i != this.numero) {
         if (meubles[i].onMurGauche == this.onMurGauche && meubles[i].onMurDroit == this.onMurDroit) {
@@ -950,22 +949,47 @@ class Meuble {
     var minY=0;
     var maxY=10e34;
     var hAReelle=this.getHauteurReelle();
+    var hasLimit;
     for (var i = 0; i < meubles.length; i++) {
       if (i != this.numero) {
-        var yB=meubles[i].y
-        if (this.intersectX(i)) {
-            if (this.y > meubles[i].y) {
-              minY = meubles[i].getHauteurReelle();
-            }
-            if (this.y < meubles[i].y) {
-              maxY = yB-hAReelle;
-            }
-            minYGlobal=Math.max(minY,minYGlobal);
-            maxYGlobal=Math.min(maxY,maxYGlobal);
+        hasLimit = false;
+        if (meubles[i].onMurGauche == this.onMurGauche && meubles[i].onMurDroit == this.onMurDroit) {
+          if (this.intersectX(i)) hasLimit = true;
+        }
+        if ((meubles[i].onMurGauche && this.onMurFond)) {
+          if    ((meubles[i].x > -meubles[i].largeur / 2 - this.profondeur)
+              && (this.x < -largeurPiece/2+meubles[i].largeur/2+this.profondeur))
+             { hasLimit = true;}
+        }
+        if ((meubles[i].onMurFond && this.onMurGauche)) {
+          if    ((meubles[i].x < -largeurPiece/2+this.largeur/2+meubles[i].profondeur)
+              && (this.x > -this.largeur / 2 - meubles[i].profondeur)) 
+            { hasLimit = true;}
+        }
+        if ((meubles[i].onMurDroit && this.onMurFond)) {
+          if    ((meubles[i].x < meubles[i].largeur / 2 + this.profondeur)
+            && (this.x > largeurPiece/2-meubles[i].largeur/2-this.profondeur))
+            { hasLimit = true;}
+        }
+         if ((meubles[i].onMurFond && this.onMurDroit)) {
+          if ((meubles[i].x > largeurPiece/2-this.largeur/2-meubles[i].profondeur)
+            && (this.x < this.largeur / 2 + meubles[i].profondeur))
+            { hasLimit = true;}
+        }
+
+        if (hasLimit) {
+          if (this.y > meubles[i].y) {
+            minY = meubles[i].getHauteurReelle()+meubles[i].y;
+          }
+          if (this.y < meubles[i].y) {
+            maxY = meubles[i].y - hAReelle;
+          }
+          minYGlobal = Math.max(minY, minYGlobal);
+          maxYGlobal = Math.min(maxY, maxYGlobal);
         }
       }
     }
-    return [minYGlobal,maxYGlobal];
+    return [minYGlobal, maxYGlobal];
   }
 
   intersectY(indiceMeubleB) {
@@ -1532,6 +1556,24 @@ class Meuble {
     for (var i=0; i<this.bloc.length; i++)
     {
       this.bloc[i].numero=i;
+    }
+  }
+
+  setActiveWall(mur) {
+    if (mur=="murGauche") {
+      this.onMurGauche=true;
+      this.onMurDroit=false;
+      this.onMurFond=false;
+    }
+    if (mur=="murDroit") {
+      this.onMurGauche=false;
+      this.onMurDroit=true;
+      this.onMurFond=false;
+    }
+    if (mur=="murFond") {
+      this.onMurGauche=false;
+      this.onMurDroit=false;
+      this.onMurFond=true;
     }
   }
 }
@@ -2748,7 +2790,6 @@ function setInitialPosition(meuble,boxMeuble) {
     let wpos = new THREE.Vector3();
     var pos=boxMeuble.position;
     boxMeuble.localToWorld(wpos);
-    
 
     aY=wpos.y-boxMeuble.offsetBasA/2+boxMeuble.offsetHautA/2; // centre du bloc complet
     aZ=wpos.z;
@@ -2765,8 +2806,7 @@ function setInitialPosition(meuble,boxMeuble) {
 
     if (!meuble.onMurGauche) {
       if (aX<-(largeurPiece/2-wA/2-10) && aZ>meuble.profondeur) {
-        meuble.onMurGauche=true;
-        meuble.onMurDroit=false;
+        meuble.setActiveWall("murGauche");
         meuble.x=-wA/2;
         meuble.z=0;
         aX=wpos.z;
@@ -2783,8 +2823,7 @@ function setInitialPosition(meuble,boxMeuble) {
 
      else if (meuble.onMurGauche) {
       if (aX<(wA/2-10) && aZ<meuble.profondeur) {
-        meuble.onMurGauche=false;
-        meuble.onMurDroit=false;
+        meuble.setActiveWall("murFond");
         meuble.x=-(largeurPiece/2-wA/2);
         meuble.z=0;
         aX=wpos.x;
