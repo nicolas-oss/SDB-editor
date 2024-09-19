@@ -800,9 +800,17 @@ class Meuble {
     return (this.hauteur+this.hasCadre*this.epaisseurCadre+this.hasSocle*hauteurSocle+this.hasPied*hauteurPied+bordSup);
   }
 
+  getProfondeurReelle() {
+    return (this.profondeur+this.hasCadre*this.epaisseurCadre);
+  }
+
   //collisions
   getMaxAllowedHeight() {
-    var deltaY=10e34;
+    let translateLimit=this.getLimitTranslationY();
+    let delta = translateLimit[1]-this.y+this.hauteur;
+    console.log(delta,this.getHauteurReelle());
+    return (delta);
+/*     var deltaY=10e34;
     var maxHeight = 10e34;
     var yA=this.y;
     var cadreA = this.hasCadre*this.epaisseurCadre;
@@ -821,12 +829,27 @@ class Meuble {
         }
       }
     }
-    return maxHeight;
+    return maxHeight; */
   }
 
   getMaxAllowedSpaceOnSides() {
-    let deltaLeft = 10e34;
-    let deltaRight = 10e34;
+    let translateLimit=this.getLimitTranslationX();
+    let deltaLeft = Math.abs(this.x-translateLimit[0]);
+    let deltaRight = Math.abs(this.x-translateLimit[1]);
+    //let delta = Math.min(deltaA,deltaB);
+    //console.log(deltaA,deltaB,delta,this.getLargeurReelle());
+
+    let spaceArray=[];
+    spaceArray[0]=deltaLeft;
+    spaceArray[1]=deltaRight;
+    return spaceArray;
+
+
+    return (2*delta+this.largeur);
+
+
+    /* let deltaLeft = 10e34;
+    let deltaRight = 10e34; */
     let maxLeft =  (largeurPiece/2) + ( this.x - this.largeur/2);
     let maxRight = (largeurPiece/2) - ( this.x + this.largeur/2);
     for (var i = 0; i < meubles.length; i++) {
@@ -843,16 +866,20 @@ class Meuble {
         }
       }
     }
-    let spaceArray=[];
+    /* let spaceArray=[];
     spaceArray[0]=maxLeft;
-    spaceArray[1]=maxRight;
+    spaceArray[1]=maxRight; */
     return spaceArray;
   }
 
   getMaxAllowedWidth() {
-    //var bY;
-    //var aY = meubles[num].y + meubles[num].hauteur / 2;
-    var deltaX;
+    let translateLimit=this.getLimitTranslationX();
+    let deltaA = Math.abs(this.x-translateLimit[0]);
+    let deltaB = Math.abs(this.x-translateLimit[1]);
+    let delta = Math.min(deltaA,deltaB);
+    console.log(deltaA,deltaB,delta,this.getLargeurReelle());
+    return (2*delta+this.largeur);
+  /*   var deltaX;
     let maxLeft =  (largeurPiece/2) + ( this.x );//- this.largeur/2);
     let maxRight = (largeurPiece/2) - ( this.x );//+ this.largeur/2);
     var maxWidth = Math.min(maxLeft,maxRight);
@@ -870,7 +897,7 @@ class Meuble {
         }
       }
     }
-    return 2 * maxWidth;
+    return 2 * maxWidth; */
   }
 
   getLimitTranslationX() {
@@ -879,17 +906,17 @@ class Meuble {
 
     if (this.onMurGauche) {
       minXGlobal = -10e34;
-      maxXGlobal = -this.largeur/2;
+      maxXGlobal = -this.getLargeurReelle()/2;
     }
 
     if (this.onMurDroit) {
-      minXGlobal = this.largeur/2;
+      minXGlobal = this.getLargeurReelle()/2;
       maxXGlobal = 10e34;
     }
 
     if (this.onMurFond) {
-      minXGlobal=-largeurPiece/2+this.largeur/2;
-      maxXGlobal=largeurPiece/2-this.largeur/2;
+      minXGlobal=-largeurPiece/2+this.getLargeurReelle()/2;
+      maxXGlobal=largeurPiece/2-this.getLargeurReelle()/2;
     }
 
     var minX=-10e34;
@@ -901,38 +928,38 @@ class Meuble {
           bY = meubles[i].y + meubles[i].hauteur / 2 + meubles[i].hasCadre * this.epaisseurCadre;
           if (this.intersectY(i)) {
             if (this.x > meubles[i].x) {
-              minX = (meubles[i].x + meubles[i].largeur / 2 + meubles[i].hasCadre * this.epaisseurCadre) + (this.largeur / 2 + this.hasCadre * this.epaisseurCadre);
+              minX = (meubles[i].x + meubles[i].getLargeurReelle() / 2) + (this.getLargeurReelle()/2);
             }
             if (this.x < meubles[i].x) {
-              maxX = (meubles[i].x - meubles[i].largeur / 2 - meubles[i].hasCadre * this.epaisseurCadre) - (this.largeur / 2 + this.hasCadre * this.epaisseurCadre);
+              maxX = (meubles[i].x - meubles[i].getLargeurReelle() / 2) - (this.getLargeurReelle()/2);
             }
           }
         }
         if ((meubles[i].onMurGauche && this.onMurFond)) {
-          if (meubles[i].x > -meubles[i].largeur / 2 - this.profondeur) {
+          if (meubles[i].x > -meubles[i].getLargeurReelle() / 2 - this.getProfondeurReelle()) {
             if (this.intersectY(i)) {
-              minXGlobal = -largeurPiece/2+meubles[i].profondeur+this.largeur/2;
+              minXGlobal = -largeurPiece/2+meubles[i].getProfondeurReelle()+this.getLargeurReelle()/2;
             }
           }
         }
         if ((meubles[i].onMurFond && this.onMurGauche)) {
-          if (meubles[i].x < -largeurPiece/2+this.largeur/2+meubles[i].profondeur) {
+          if (meubles[i].x < -largeurPiece/2+this.getLargeurReelle()/2+meubles[i].getProfondeurReelle()) {
             if (this.intersectY(i)) {
-              maxXGlobal = -this.largeur/2-meubles[i].profondeur; 
+              maxXGlobal = -this.getLargeurReelle()/2-meubles[i].getProfondeurReelle(); 
             }
           }
         }
         if ((meubles[i].onMurDroit && this.onMurFond)) {
-          if (meubles[i].x < meubles[i].largeur / 2 + this.profondeur) {
+          if (meubles[i].x < meubles[i].getLargeurReelle() / 2 + this.getProfondeurReelle()) {
             if (this.intersectY(i)) {
-              maxXGlobal = -1*(-largeurPiece/2+meubles[i].profondeur+this.largeur/2);
+              maxXGlobal = -1*(-largeurPiece/2+meubles[i].getProfondeurReelle()+this.getLargeurReelle()/2);
             }
           }
         }
          if ((meubles[i].onMurFond && this.onMurDroit)) {
-          if (meubles[i].x > largeurPiece/2-this.largeur/2-meubles[i].profondeur) {
+          if (meubles[i].x > largeurPiece/2-this.getLargeurReelle()/2-meubles[i].getProfondeurReelle()) {
             if (this.intersectY(i)) {
-              minXGlobal = this.largeur/2+meubles[i].profondeur; 
+              minXGlobal = this.getLargeurReelle()/2+meubles[i].getProfondeurReelle(); 
             }
           }
         }
@@ -957,23 +984,23 @@ class Meuble {
           if (this.intersectX(i)) hasLimit = true;
         }
         if ((meubles[i].onMurGauche && this.onMurFond)) {
-          if    ((meubles[i].x > -meubles[i].largeur / 2 - this.profondeur)
-              && (this.x < -largeurPiece/2+meubles[i].largeur/2+this.profondeur))
+          if    ((meubles[i].x > -meubles[i].largeur / 2 - this.getProfondeurReelle())
+              && (this.x < -largeurPiece/2+meubles[i].largeur/2+this.getProfondeurReelle()))
              { hasLimit = true;}
         }
         if ((meubles[i].onMurFond && this.onMurGauche)) {
-          if    ((meubles[i].x < -largeurPiece/2+this.largeur/2+meubles[i].profondeur)
-              && (this.x > -this.largeur / 2 - meubles[i].profondeur)) 
+          if    ((meubles[i].x < -largeurPiece/2+this.largeur/2+meubles[i].getProfondeurReelle())
+              && (this.x > -this.largeur / 2 - meubles[i].getProfondeurReelle())) 
             { hasLimit = true;}
         }
         if ((meubles[i].onMurDroit && this.onMurFond)) {
-          if    ((meubles[i].x < meubles[i].largeur / 2 + this.profondeur)
-            && (this.x > largeurPiece/2-meubles[i].largeur/2-this.profondeur))
+          if    ((meubles[i].x < meubles[i].largeur / 2 + this.getProfondeurReelle())
+            && (this.x > largeurPiece/2-meubles[i].largeur/2-this.getProfondeurReelle()))
             { hasLimit = true;}
         }
          if ((meubles[i].onMurFond && this.onMurDroit)) {
-          if ((meubles[i].x > largeurPiece/2-this.largeur/2-meubles[i].profondeur)
-            && (this.x < this.largeur / 2 + meubles[i].profondeur))
+          if ((meubles[i].x > largeurPiece/2-this.largeur/2-meubles[i].getProfondeurReelle())
+            && (this.x < this.largeur / 2 + meubles[i].getProfondeurReelle()))
             { hasLimit = true;}
         }
 
@@ -2446,8 +2473,10 @@ function initDragHandleBloc() {
     event.object.newHelperXInit=newHelper.position.x;
     event.object.newHelperYInit=newHelper.position.y;
     event.object.newHelperZInit=newHelper.position.z;
-    if (event.object.bloc.meuble.onMurGauche || event.object.bloc.meuble.onMurDroit) newHelper.rotation.set(0,-Math.PI/2,0)
-      else newHelper.rotation.set(0,0,0);
+    if (meuble.onMurGauche) newHelper.rotation.set(0,-Math.PI/2,0);
+    if (meuble.onMurDroit) newHelper.rotation.set(0,Math.PI/2,0);
+    if (meuble.onMurFond) newHelper.rotation.set(0,0,0);
+    console.log(meuble.onMurGauche,meuble.onMurDroit,meuble.onMurFond);
     scene.add(newHelper);
   });
 
@@ -2493,8 +2522,9 @@ function initDragHandleBloc() {
       meuble.bloc[blocId].taille = fact * (x + obj1.xInitial);
       console.log(meuble.bloc[blocId].taille);
       obj1.position.set(x, 0, 0);
-      if (!meuble.onMurGauche) newHelper.position.x=obj1.newHelperXInit+delta
-      else if (meuble.onMurGauche || meuble.onMurDroit) newHelper.position.z=obj1.newHelperZInit-delta;
+      if (meuble.onMurFond) newHelper.position.x=obj1.newHelperXInit+delta;
+      if (meuble.onMurGauche) newHelper.position.z=obj1.newHelperZInit-delta;
+      if (meuble.onMurDroit) newHelper.position.z=obj1.newHelperZInit+delta;
     }
 
     else { //vertical
@@ -2795,6 +2825,7 @@ function setInitialPosition(meuble,boxMeuble) {
     aZ=wpos.z;
     console.log(aX,aY,aZ);
 
+    //transfert coordonnées si mur de côté
     if (meuble.onMurGauche || meuble.onMurDroit) {
       aX=wpos.z;
       aZ=wpos.x;
@@ -2804,10 +2835,24 @@ function setInitialPosition(meuble,boxMeuble) {
       aZ=wpos.z;
     }
 
-    if (!meuble.onMurGauche) {
-      if (aX<-(largeurPiece/2-wA/2-10) && aZ>meuble.profondeur) {
+    //changement de mur actif si on va dans l'angle
+    if (meuble.onMurFond) {
+      let switchMur=false;
+      if (aX<-(largeurPiece/2) && aZ>meuble.getProfondeurReelle()) {
         meuble.setActiveWall("murGauche");
         meuble.x=-wA/2;
+
+        switchMur=true;
+      }
+
+      if (aX>largeurPiece/2 && aZ>meuble.getProfondeurReelle()) {
+        meuble.setActiveWall("murDroit");
+        meuble.x=wA/2;
+
+        switchMur=true;
+      }
+
+      if (switchMur) {
         meuble.z=0;
         aX=wpos.z;
         meuble.placeMeuble();
@@ -2819,10 +2864,11 @@ function setInitialPosition(meuble,boxMeuble) {
 
         refreshInterfaceMeuble();
       }
+
     }
 
      else if (meuble.onMurGauche) {
-      if (aX<(wA/2-10) && aZ<meuble.profondeur) {
+      if (aX<(0) && aZ<meuble.getLargeurReelle()) {
         meuble.setActiveWall("murFond");
         meuble.x=-(largeurPiece/2-wA/2);
         meuble.z=0;
@@ -2837,6 +2883,25 @@ function setInitialPosition(meuble,boxMeuble) {
         refreshInterfaceMeuble();
       }
     }
+
+    else if (meuble.onMurDroit) {
+      console.log(aX, aZ);
+      if (aX < (0) && aZ < meuble.getLargeurReelle()) {
+        meuble.setActiveWall("murFond");
+        meuble.x = (largeurPiece / 2 - wA / 2);
+        meuble.z = 0;
+        aX = wpos.x;
+        meuble.placeMeuble();
+
+        boxMeuble.xMeubleInit = meuble.x;
+        boxMeuble.yMeubleInit = meuble.y;
+        boxMeuble.xBoxOk = boxMeuble.position.x;
+        boxMeuble.xMeubleOk = meuble.x;
+
+        refreshInterfaceMeuble();
+      }
+    }
+  
 
     adjustObjectPosition(boxMeuble,num,aX,aY,wA,hA,pos,0);
     meuble.x=boxMeuble.xMeubleInit+boxMeuble.position.x;
@@ -2949,9 +3014,11 @@ function setInitialPosition(meuble,boxMeuble) {
 
     for (var i = 0; i < meubles.length; i++) {
       var wposB = new THREE.Vector3();
-      //var boxMeubleB;
-      var fact=1;
-      if (i != num && (meubles[i].onMurGauche == meubles[num].onMurGauche) && (meubles[i].onMurDroit == meubles[num].onMurDroit)) {
+      var fact = 1;
+      var fact2 = 1;
+
+      if (i != num) {
+
         cadreB = meubles[i].hasCadre * meubles[i].epaisseurCadre;
         plateauB = meubles[i].hasPlateau * epaisseurPlateau;
         piedB = meubles[i].hasPied * hauteurPied;
@@ -2959,33 +3026,72 @@ function setInitialPosition(meuble,boxMeuble) {
         offsetHautB = Math.max(cadreB, plateauB);
         offsetBasB = socleB + piedB + cadreB;
 
-        let boxMeubleB=scene.getObjectByName("boiteSelection"+i);
+        let boxMeubleB = scene.getObjectByName("boiteSelection" + i);
         boxMeubleB.localToWorld(wposB);
-        
-        if (obj1.meuble.onMurGauche) {
-          bX = wposB.z;
-          fact=-1;
+
+        //meubles sur le même mur
+        if ((meubles[i].onMurGauche == meubles[num].onMurGauche) && (meubles[i].onMurDroit == meubles[num].onMurDroit)) {
+          
+          wB = meubles[i].largeur + cadreB * 2;
+          
+          if (obj1.meuble.onMurGauche) {
+            bX = wposB.z;
+            fact = -1;
+          }
+
+          else if (obj1.meuble.onMurDroit) {
+            bX = wposB.z;
+            fact = 1;
+          }
+
+          else if (obj1.meuble.onMurFond) {
+            bX = wposB.x;
+            fact = 1;
+          }
+          wB = meubles[i].largeur + cadreB * 2;
         }
 
-        else if (obj1.meuble.onMurDroit) {
-          bX = wposB.z;
-          fact=1;
+        //meubles sur des murs differents
+        if (obj1.meuble.onMurFond && meubles[i].onMurGauche) {
+          if ((-meubles[i].x - meubles[i].getLargeurReelle() / 2) < obj1.meuble.getProfondeurReelle()) {
+            wB = meubles[i].getProfondeurReelle();
+            bX = -largeurPiece / 2 + wB / 2;
+            fact = 1;
+          }
         }
 
-        else if (obj1.meuble.onMurFond) {
-          bX = wposB.x;
-          fact=1;
+        if (obj1.meuble.onMurGauche && meubles[i].onMurFond) {
+          if (meubles[i].x<(-largeurPiece/2+meubles[i].getLargeurReelle()/2+obj1.meuble.getProfondeurReelle())) {
+            wB = meubles[i].getProfondeurReelle();
+            bX = wB/2;
+            fact = -1;
+          }
         }
 
-        //bX = meubles[i].x;
-        wB = meubles[i].largeur + cadreB * 2;
+        if (obj1.meuble.onMurFond && meubles[i].onMurDroit) {
+          if ((meubles[i].x - meubles[i].getLargeurReelle() / 2) < obj1.meuble.getProfondeurReelle()) {
+            wB = meubles[i].getProfondeurReelle();
+            bX = largeurPiece / 2 - wB / 2;
+            fact = 1;
+          }
+        }
+
+        if (obj1.meuble.onMurDroit && meubles[i].onMurFond) {
+          if (meubles[i].x>(largeurPiece/2-meubles[i].getLargeurReelle()/2-obj1.meuble.getProfondeurReelle())) {
+            wB = meubles[i].getProfondeurReelle();
+            bX = wB/2;
+            fact = 1;
+          }
+        }
+
         hB = offsetBasB + meubles[i].hauteur + offsetHautB;
         bY = meubles[i].y + meubles[i].hauteur / 2 + offsetBasB / 2 + offsetHautB / 2;  // centre du bloc B
+
+        //ajustement si intersection
         var intersect = (Math.abs(aX - bX) * 2 < (wA + wB)) && (Math.abs(aY - bY) * 2 < (hA + hB));
         console.log(aX,aY,pos.x,pos.y);
         if (intersect) {
           console.log("ça traverse !");
-          //if (intersectWithMursOrSol(obj1,wA,hA)) break;
           if (aX > bX) { var decalX = (aX - wA / 2) - (bX + wB / 2) }
           else { var decalX = (aX + wA / 2) - (bX - wB / 2) }
           if (aY > bY) { var decalY = (aY - hA / 2) - (bY + hB / 2) }
@@ -2997,22 +3103,21 @@ function setInitialPosition(meuble,boxMeuble) {
         }
       }
     }
-     var replaceB=false;
-     if (replace) {
+    var replaceB = false;
+    if (replace) {
       valeurSorties = [];
-      valeurSorties = recaleSurMursEtSol(obj1.meuble,pos,aX,aY);
+      valeurSorties = recaleSurMursEtSol(obj1.meuble, pos, aX, aY);
       replaceB = valeurSorties[0];
-      //console.log(valeurSorties);
-      console.log("deuxième recalage mur/sol",replaceB);
-      console.log("valeurs deuxieme passage",valeurSorties[1],valeurSorties[2],valeurSorties[3]);
-       if (replaceB) {
-         console.log("recalé une 2ieme fois sur mur/sol");
-         pos = valeurSorties[1];
-         aX = valeurSorties[2];
-         aY = valeurSorties[3];
-        console.log("nouvelles valeurs après recalage sur mur sol",aX,aY);
+      console.log("deuxième recalage mur/sol", replaceB);
+      console.log("valeurs deuxieme passage", valeurSorties[1], valeurSorties[2], valeurSorties[3]);
+      if (replaceB) {
+        console.log("recalé une 2ieme fois sur mur/sol");
+        pos = valeurSorties[1];
+        aX = valeurSorties[2];
+        aY = valeurSorties[3];
+        console.log("nouvelles valeurs après recalage sur mur sol", aX, aY);
+      }
     } 
-  }
     //console.log(replace,replaceB);
     //if (replaceB) console.log("ça retouche le mur !!!");
     if (!replace && !replaceB) {
@@ -3054,7 +3159,6 @@ function setInitialPosition(meuble,boxMeuble) {
     checkRaycast();
     frameCamera();
     //meuble.placeMeuble();
-
   });
 }
 
@@ -4427,18 +4531,32 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   meubleSliders.append(largeurDiv);
   largeurSlider=largeurDiv.querySelector("#slider");
   largeurDivInput=largeurDiv.querySelector("#number");
-  largeurSlider.addEventListener("input",function() {eventLargeurInput()},false);
-  largeurDivInput.addEventListener("change",function() {eventLargeurInput()},false);
+  largeurSlider.addEventListener("change",function() {eventLargeurSliderReleased()},false);
+  largeurSlider.addEventListener("input",function() {eventLargeurSliderInput()},false);
+  largeurDivInput.addEventListener("change",function() {eventLargeurDivInput()},false);
 
-  function eventLargeurInput() {
+  var maxWidth = undefined;
+  function eventLargeurSliderReleased() {
+    console.log("slider released");
+    maxWidth = undefined;
+  }
+  
+  function eventLargeurSliderInput() {
+    if (!maxWidth) maxWidth=selectedMeuble.getMaxAllowedWidth();
     var largeur=+largeurSlider.value; //forçage de type
-    var maxWidth = selectedMeuble.getMaxAllowedWidth();  //calcul collision sur input
+    console.log(maxWidth);
+    //var maxWidth = selectedMeuble.getMaxAllowedWidth();  //calcul collision sur input
     selectedMeuble.largeur = (largeur<maxWidth) ? largeur : maxWidth;
     selectedMeuble.computeBlocsSize();
     refreshInterfaceBlocs();
     selectedMeuble.update();
     refreshInterfaceLargeur();
     frameCamera();
+  }
+
+  function eventLargeurDivInput() {
+    eventLargeurSliderInput();
+    eventLargeurSliderReleased();
   }
 
   //placement horizontal meuble
