@@ -2928,33 +2928,46 @@ function initDragEtagere() {
 var dragMeubleControls;
 function initDragMeuble() {
 
-function setInitialPosition(meuble,boxMeuble) {
+
+function setInitialPosition(meuble,boxMeuble,wpos) {
   boxMeuble.xMeubleInit=meuble.x;
   boxMeuble.yMeubleInit=meuble.y;
   boxMeuble.zMeubleInit=meuble.z;
-  boxMeuble.xBoxOk=boxMeuble.position.x;
-  boxMeuble.yBoxOk=boxMeuble.position.y;
-  boxMeuble.zBoxOk=boxMeuble.position.y;
+  boxMeuble.xLocalInit=boxMeuble.position.x;
+  boxMeuble.yLocalInit=boxMeuble.position.y;
+  boxMeuble.zLocalInit=boxMeuble.position.z;
+  boxMeuble.xBoxInit=wpos.x;
+  boxMeuble.yBoxInit=wpos.y;
+  boxMeuble.zBoxInit=wpos.z;
   boxMeuble.xMeubleOk=meuble.x;
   boxMeuble.yMeubleOk=meuble.y;
   boxMeuble.zMeubleOk=meuble.z;
   boxMeuble.zOk=boxMeuble.position.z;
+  console.log("xBoxInit,yBoxInit,zBoxInit",boxMeuble.xBoxInit,boxMeuble.yBoxInit,boxMeuble.zBoxInit);
 }
 
-  var wA,hA;
+  var wA,hA,dA;
   var aX,aY,aZ;
   dragMeubleControls=new DragControls(selectableMeuble, camera, renderer.domElement);
   dragMeubleControls.recursive=false;
+
   dragMeubleControls.addEventListener('dragstart', function (event) {
     if (selectionMode!="meubles") return;
+    
+    let wpos = new THREE.Vector3();
+
     controls.enabled=false;
     rayCastEnabled=false;
-    //event.object.material.emissive.set(0xaaaaaa);
-    var boxMeuble=event.object;
+
+    var boxMeuble = event.object;
     var meuble = boxMeuble.meuble;
-    //console.log("drag meuble ",meuble.name);
-    changeCurrentMeubleFromClick(meuble,true);
-    setInitialPosition(meuble,boxMeuble);
+
+    //boxMeuble.material.emissive.set(0xaaaaaa);
+    changeCurrentMeubleFromClick(meuble, true);
+
+    boxMeuble.localToWorld(wpos);
+    
+    setInitialPosition(meuble,boxMeuble,wpos);
     let geometries=meuble.root.getObjectByName("geometries");
     boxMeuble.attach(geometries);  //on détache pour éviter les references circulaires dans les calculs de coordonnées
     geometries.position.set(0,0,0);
@@ -2964,8 +2977,9 @@ function setInitialPosition(meuble,boxMeuble) {
     let socleA = meuble.hasSocle*hauteurSocle;
     let offsetHautA = Math.max(cadreA,plateauA);
     let offsetBasA = cadreA + piedA + socleA;
-    wA=meuble.getLargeurReelle();
-    hA=meuble.getHauteurReelle();
+    wA=meuble.getLargeurBoundingBox();
+    hA=meuble.getHauteurBoundingBox();
+    dA=meuble.getProfondeurBoundingBox();
     boxMeuble.offsetHautA=offsetHautA;
     boxMeuble.offsetBasA=offsetBasA;
   });
@@ -2974,26 +2988,15 @@ function setInitialPosition(meuble,boxMeuble) {
     var boxMeuble=event.object;
     var meuble = boxMeuble.meuble;
     var num=meuble.numero;
-    let wpos = new THREE.Vector3();
     var pos=boxMeuble.position;
-    boxMeuble.localToWorld(wpos);
+    //boxMeuble.localToWorld(wpos);
 
+/*     aX=wpos.x;
     aY=wpos.y-boxMeuble.offsetBasA/2+boxMeuble.offsetHautA/2; // centre du bloc complet
-    aZ=wpos.z;
-    //console.log(aX,aY,aZ);
-
-    //transfert coordonnées si mur de côté
-    if (meuble.onMurGauche || meuble.onMurDroit) {
-      aX=wpos.z;
-      aZ=wpos.x;
-    }
-    else {
-      aX=wpos.x;
-      aZ=wpos.z;
-    }
+    aZ=wpos.z; */
 
     //changement de mur actif si on va dans l'angle
-    if (meuble.onMurFond) {
+/*     if (meuble.onMurFond) {
       let switchMur=false;
       if (aX<-(largeurPiece/2) && aZ>meuble.getProfondeurReelle()) {
         meuble.setActiveWall("murGauche");
@@ -3057,20 +3060,56 @@ function setInitialPosition(meuble,boxMeuble) {
 
         refreshInterfaceMeuble();
       }
-    }
+    } */
+
+
+
+
+      if (meuble.onMurFond) {
+        pos.z=boxMeuble.zBoxInit;
+        meuble.z=boxMeuble.zMeubleInit;
+        boxMeuble.position.z=boxMeuble.zLocalInit;
+      }
+
+
+
+      else if (meuble.onMurGauche || meuble.onMurDroit) {
+        //pos.z=boxMeuble.zBoxInit;
+        meuble.x=boxMeuble.xMeubleInit;
+        boxMeuble.position.z=-boxMeuble.zLocalInit;
+      }
+
+
+
+
+      else if (meuble.surSol) {
+        console.log("la");
+        pos.y=boxMeuble.yBoxInit;
+        meuble.y=boxMeuble.yMeubleInit;
+        boxMeuble.position.y=boxMeuble.yLocalInit;
+      }
+
+
+
+
+
 
     adjustObjectPosition(boxMeuble,num,aX,aY,aZ,wA,hA,pos);
 
-    meuble.x=boxMeuble.xMeubleInit+boxMeuble.position.x;
+
+    
+
+    /* meuble.x=boxMeuble.xMeubleInit+boxMeuble.position.x;
     meuble.y=boxMeuble.yMeubleInit+boxMeuble.position.y;
-    meuble.z=boxMeuble.zMeubleInit+boxMeuble.position.z;
+    meuble.z=boxMeuble.zMeubleInit+boxMeuble.position.z; */
 
 /*     meuble.x=aX;
     meuble.y=aY;
     meuble.z=aZ;
  */
-    refreshInterfaceX(num);
+    /* refreshInterfaceX(num);
     refreshInterfaceY(num);
+    refreshInterfaceZ(num); */
   });
   
   function intersectWithOneOfAll(obj, num, aaX, aaY, wwA, hhA) {
@@ -3185,33 +3224,99 @@ function setInitialPosition(meuble,boxMeuble) {
     return [false,pos,aX,aY,aZ];
   }
 
-  function adjustObjectPosition(obj1, num, aX, aY, aZ, wA, hA, pos) {
-    let meuble = obj1.meuble;
-    //console.log(pos,aX,aY,aZ);
+  function adjustObjectPosition(box, num, aX, aY, aZ, wA, hA, boxPos) {
+    let meuble = box.meuble;
+    let deltaBoxX,deltaBoxY,deltaBoxZ;
+    let deltaMeubleX,deltaMeubleY,deltaMeubleZ;
+    let pos = new THREE.Vector3();
+    let deltaMeuble = new THREE.Vector3();
+    let deltaBox = new THREE.Vector3();
+    let currentPos = new THREE.Vector3();
+    let localPos = new THREE.Vector3();
+
+    //var wboxPos = new THREE.Vector3();
+    box.localToWorld(pos);
+
+    getDeltaBox();
+
+    function getDeltaBox() {
+      deltaBox.x=-box.xBoxInit+pos.x;
+      deltaBox.y=-box.yBoxInit+pos.y;
+      deltaBox.z=-box.zBoxInit+pos.z;
+      console.log("pos = ",pos.x,pos.y,pos.z);
+      console.log("deltaBox = ",deltaBox.x,deltaBox.y,deltaBox.z);
+    }
+
+    applyDeltaToMeuble();
+
+    function applyDeltaToMeuble() {
+      meuble.x=box.xMeubleInit+deltaBox.x;
+      meuble.y=box.yMeubleInit+deltaBox.y;
+      meuble.z=box.zMeubleInit+deltaBox.z;
+      currentPos.x=meuble.x;
+      currentPos.y=meuble.y;
+      currentPos.z=meuble.z;
+    }
+  
+    meuble.recaleDansPiece();
+    
+    getDeltaMeuble();
+
+    function getDeltaMeuble() {
+      deltaMeuble.x=currentPos.x-meuble.x;
+      deltaMeuble.y=currentPos.y-meuble.y;
+      deltaMeuble.z=currentPos.z-meuble.z;
+    }
+
+    applyDeltaToBox();
+
+    function applyDeltaToBox() {
+      let obj = new THREE.Object3D();
+      obj.position.copy(deltaMeuble);
+      box.attach(obj);
+      let rot = new THREE.Euler();
+      rot = meuble.root.getObjectByName("pivot").rotation;
+      let rotB = new THREE.Euler( rot.x, rot.y, rot.z, 'XYZ' );
+      rotB.y*=-1;
+      deltaMeuble.applyEuler(rotB);
+      box.position.x-=deltaMeuble.x;
+      box.position.y-=deltaMeuble.y;
+      box.position.z-=deltaMeuble.z;
+
+    }
+
+    refreshInterfaceMeuble();
+
+    return;
 
     if (meuble.surSol) {
-      pos.y = obj1.yMeubleInit;
+      boxPos.y = box.yMeubleInit;
       aY = 0;
     }
 
-    else {pos.z = obj1.zOk;}
+    if (meuble.murFond) {
+      boxPos.y = box.yMeubleInit;
+      aY = 0;
+    }
+
+    else {boxPos.z = box.zOk;}
     var wB, hB;
     var bX, bY, cadreB, plateauB, piedB, socleB;
     var offsetHautB, offsetBasB;
     var replace = false;
 
     let valeurSorties=[];
-    valeurSorties=recaleSurMursEtSol(meuble,pos,aX,aY,aZ);
+    valeurSorties=recaleSurMursEtSol(meuble,boxPos,aX,aY,aZ);
     replace=valeurSorties[0];
     if (replace) {
-      pos = valeurSorties[1];
+      boxPos = valeurSorties[1];
       aX = valeurSorties[2];
       aY = valeurSorties[3];
       aZ = valeurSorties[4];
     }
 
     for (var i = 0; i < meubles.length; i++) {
-      var wposB = new THREE.Vector3();
+      var wboxPosB = new THREE.Vector3();
       var fact = 1;
 
       if (i != num) {
@@ -3224,7 +3329,7 @@ function setInitialPosition(meuble,boxMeuble) {
         offsetBasB = socleB + piedB + cadreB;
 
         let boxMeubleB = scene.getObjectByName("boiteSelection" + i);
-        boxMeubleB.localToWorld(wposB);
+        boxMeubleB.localToWorld(wboxPosB);
 
         //meubles sur le même mur
         if ((meubles[i].onMurGauche == meubles[num].onMurGauche) && (meubles[i].onMurDroit == meubles[num].onMurDroit)) {
@@ -3232,17 +3337,17 @@ function setInitialPosition(meuble,boxMeuble) {
           wB = meubles[i].largeur + cadreB * 2;
           
           if (meuble.onMurGauche) {
-            bX = wposB.z;
+            bX = wboxPosB.z;
             fact = -1;
           }
 
           else if (meuble.onMurDroit) {
-            bX = wposB.z;
+            bX = wboxPosB.z;
             fact = 1;
           }
 
           else if (meuble.onMurFond) {
-            bX = wposB.x;
+            bX = wboxPosB.x;
             fact = 1;
           }
           wB = meubles[i].largeur + cadreB * 2;
@@ -3286,30 +3391,30 @@ function setInitialPosition(meuble,boxMeuble) {
 
         //ajustement si intersection
         var intersect = (Math.abs(aX - bX) * 2 < (wA + wB)) && (Math.abs(aY - bY) * 2 < (hA + hB));
-        console.log(aX,aY,pos.x,pos.y);
+        console.log(aX,aY,boxPos.x,boxPos.y);
         if (intersect) {
           console.log("ça traverse !");
           if (aX > bX) { var decalX = (aX - wA / 2) - (bX + wB / 2) }
           else { var decalX = (aX + wA / 2) - (bX - wB / 2) }
           if (aY > bY) { var decalY = (aY - hA / 2) - (bY + hB / 2) }
           else { var decalY = (aY + hA / 2) - (bY - hB / 2) }
-          if ((Math.abs(decalX) > Math.abs(decalY)) && (obj1.yMeubleInit + pos.y > 0)) { pos.y -= decalY; aY -= decalY; }
-          else { pos.x -= fact*decalX; aX -= decalX; }
+          if ((Math.abs(decalX) > Math.abs(decalY)) && (box.yMeubleInit + boxPos.y > 0)) { boxPos.y -= decalY; aY -= decalY; }
+          else { boxPos.x -= fact*decalX; aX -= decalX; }
           replace = true;
-          console.log("nouvelles valeurs",aX,aY,pos.x,pos.y);
+          console.log("nouvelles valeurs",aX,aY,boxPos.x,boxPos.y);
         }
       }
     }
     var replaceB = false;
     if (replace) {
       valeurSorties = [];
-      valeurSorties = recaleSurMursEtSol(meuble, pos, aX, aY);
+      valeurSorties = recaleSurMursEtSol(meuble, boxPos, aX, aY);
       replaceB = valeurSorties[0];
       console.log("deuxième recalage mur/sol", replaceB);
       console.log("valeurs deuxieme passage", valeurSorties[1], valeurSorties[2], valeurSorties[3]);
       if (replaceB) {
         console.log("recalé une 2ieme fois sur mur/sol");
-        pos = valeurSorties[1];
+        boxPos = valeurSorties[1];
         aX = valeurSorties[2];
         aY = valeurSorties[3];
         console.log("nouvelles valeurs après recalage sur mur sol", aX, aY);
@@ -3319,20 +3424,20 @@ function setInitialPosition(meuble,boxMeuble) {
     //if (replaceB) console.log("ça retouche le mur !!!");
     if (!replace && !replaceB) {
       console.log("position ok !");
-      obj1.xBoxOk = pos.x; obj1.yBoxOk = pos.y; obj1.zBoxOk=pos.z;
-      obj1.xMeubleOk = aX; obj1.yMeubleOk = aY;
+      box.xBoxOk = boxPos.x; box.yBoxOk = boxPos.y; box.zBoxOk=boxPos.z;
+      box.xMeubleOk = aX; box.yMeubleOk = aY;
     }
     if (replace || replaceB) {
       console.log("on recalcule");
-      if ((intersectWithOneOfAll(obj1, num, aX, aY, wA, hA) == false)) {
-        console.log("position ok aussi !");
-        obj1.xBoxOk = pos.x; obj1.yBoxOk = pos.y; obj1.zBoxOk = pos.z;
-        obj1.xMeubleOk = aX; obj1.yMeubleOk = aY;
+      if ((intersectWithOneOfAll(box, num, aX, aY, wA, hA) == false)) {
+        console.log("boxPosition ok aussi !");
+        box.xBoxOk = boxPos.x; box.yBoxOk = boxPos.y; box.zBoxOk = boxPos.z;
+        box.xMeubleOk = aX; box.yMeubleOk = aY;
       }
        else { 
         console.log("on deplace pas !!!!");
-        pos.x = obj1.xBoxOk; pos.y = obj1.yBoxOk; pos.z=obj1.zBoxOk;
-        aX = obj1.xMeubleOk; aY = obj1.yMeubleOk;
+        boxPos.x = box.xBoxOk; boxPos.y = box.yBoxOk; boxPos.z=box.zBoxOk;
+        aX = box.xMeubleOk; aY = box.yMeubleOk;
       }
     }
   }
@@ -3352,6 +3457,7 @@ function setInitialPosition(meuble,boxMeuble) {
     meuble.isSelected=false; 
     meuble.update();
     meuble.placeMeuble();
+    refreshInterfaceMeuble();
     //resetRaycast();
     checkRaycast();
     frameCamera();
