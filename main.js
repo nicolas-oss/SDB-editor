@@ -1162,25 +1162,219 @@ class Meuble {
   }
 
   recaleDansPiece() {
-    let xMax = largeurPiece/2-this.getLargeurBoundingBox()/2;
-    let xMin = -largeurPiece/2+this.getLargeurBoundingBox()/2;
+    let xMax = largeurPiece / 2 - this.getLargeurBoundingBox() / 2;
+    let xMin = -largeurPiece / 2 + this.getLargeurBoundingBox() / 2;
     let yMin = 0;
-    let yMax = hauteurPiece-this.getHauteurBoundingBox();
-    let zMin = this.getProfondeurBoundingBox()/2;
-    let zMax = profondeurPiece-this.getProfondeurBoundingBox()/2;
+    let yMax = hauteurPiece - this.getHauteurBoundingBox();
+    let zMin = this.getProfondeurBoundingBox() / 2;
+    let zMax = profondeurPiece - this.getProfondeurBoundingBox() / 2;
 
-    if (this.onMurFond) this.z=zMin;
-    if (this.onMurGauche) this.x=xMin;
-    if (this.onMurDroit) this.x=xMax;
-    if (this.surSol) this.y=yMin;
+    if (this.onMurFond) this.z = zMin;
+    if (this.onMurGauche) this.x = xMin;
+    if (this.onMurDroit) this.x = xMax;
+    if (this.surSol) this.y = yMin;
 
-    this.x = this.x>xMin ? this.x : xMin;
-    this.x = this.x<xMax ? this.x : xMax;
-    this.y = this.y>yMin ? this.y : yMin;
-    this.y = this.y<yMax ? this.y : yMax;
-    this.z = this.z>zMin ? this.z : zMin;
-    this.z = this.z<zMax ? this.z : zMax;
+    this.x = this.x > xMin ? this.x : xMin;
+    this.x = this.x < xMax ? this.x : xMax;
+    this.y = this.y > yMin ? this.y : yMin;
+    this.y = this.y < yMax ? this.y : yMax;
+    this.z = this.z > zMin ? this.z : zMin;
+    this.z = this.z < zMax ? this.z : zMax;
+  }
+
+  recale() {
+    let cadreB,plateauB,piedB,socleB,offsetHautB,offsetBasB;
+    let bX,bY,bZ,hB,wB,dB;
+    let aX,aY,aZ,hA,wA,dA;
+    let decalX,decalY,decalZ;
+    let cX,cY,cZ;
+    let offset = new THREE.Vector3(0,0,0);
+
+    hA=this.getHauteurBoundingBox();
+    wA=this.getLargeurBoundingBox();
+    dA=this.getProfondeurBoundingBox();
+
+    aX = this.getBoundingBoxCenterX();
+    aY = this.getBoundingBoxCenterY();
+    aZ = this.getBoundingBoxCenterZ();
+
+
+    for (var i = 0; i < meubles.length; i++) {
+      var wboxPosB = new THREE.Vector3();
+      var fact = 1;
+
+      if (i != this.numero) {
+
+        cadreB = meubles[i].hasCadre * meubles[i].epaisseurCadre;
+        plateauB = meubles[i].hasPlateau * epaisseurPlateau;
+        piedB = meubles[i].hasPied * hauteurPied;
+        socleB = meubles[i].hasSocle * hauteurSocle;
+        offsetHautB = Math.max(cadreB, plateauB);
+        offsetBasB = socleB + piedB + cadreB;
+
+        let boxMeubleB = scene.getObjectByName("boiteSelection" + i);
+        boxMeubleB.localToWorld(wboxPosB);
+
+        hB=meubles[i].getHauteurBoundingBox();
+        wB=meubles[i].getLargeurBoundingBox();
+        dB=meubles[i].getProfondeurBoundingBox();
+
+        bX = meubles[i].getBoundingBoxCenterX();
+        bY = meubles[i].getBoundingBoxCenterY();
+        bZ = meubles[i].getBoundingBoxCenterZ();
+
+/*         //meubles sur le même mur
+        if ((meubles[i].onMurGauche == meubles[num].onMurGauche) && (meubles[i].onMurDroit == meubles[num].onMurDroit)) {
+
+          wB = meubles[i].largeur + cadreB * 2;
+
+          if (meuble.onMurGauche) {
+            bX = wboxPosB.z;
+            fact = -1;
+          }
+
+          else if (meuble.onMurDroit) {
+            bX = wboxPosB.z;
+            fact = 1;
+          }
+
+          else if (meuble.onMurFond) {
+            bX = wboxPosB.x;
+            fact = 1;
+          }
+          wB = meubles[i].largeur + cadreB * 2;
+        }
+
+        //meubles sur des murs differents
+        if (meuble.onMurFond && meubles[i].onMurGauche) {
+          if ((-meubles[i].x - meubles[i].getLargeurReelle() / 2) < meuble.getProfondeurReelle()) {
+            wB = meubles[i].getProfondeurReelle();
+            bX = -largeurPiece / 2 + wB / 2;
+            fact = 1;
+          }
+        }
+
+        if (meuble.onMurGauche && meubles[i].onMurFond) {
+          if (meubles[i].x < (-largeurPiece / 2 + meubles[i].getLargeurReelle() / 2 + meuble.getProfondeurReelle())) {
+            wB = meubles[i].getProfondeurReelle();
+            bX = wB / 2;
+            fact = -1;
+          }
+        }
+
+        if (meuble.onMurFond && meubles[i].onMurDroit) {
+          if ((meubles[i].x - meubles[i].getLargeurReelle() / 2) < meuble.getProfondeurReelle()) {
+            wB = meubles[i].getProfondeurReelle();
+            bX = largeurPiece / 2 - wB / 2;
+            fact = 1;
+          }
+        }
+
+        if (meuble.onMurDroit && meubles[i].onMurFond) {
+          if (meubles[i].x > (largeurPiece / 2 - meubles[i].getLargeurReelle() / 2 - meuble.getProfondeurReelle())) {
+            wB = meubles[i].getProfondeurReelle();
+            bX = wB / 2;
+            fact = 1;
+          }
+        } */
+
+        //hB = offsetBasB + meubles[i].hauteur + offsetHautB;
+        //bY = meubles[i].y + meubles[i].hauteur / 2 + offsetBasB / 2 + offsetHautB / 2;  // centre du bloc B
+
+
+        //ajustement si intersection
+        var intersect = (this.intersectX(i) && this.intersectY(i) && this.intersectZ(i));
+        //var intersect = (Math.abs(aX - bX) * 2 < (wA + wB)) && (Math.abs(aY - bY) * 2 < (hA + hB));
+        //console.log(aX, aY, boxPos.x, boxPos.y);
+        //let valid=true;
+        if (intersect) {
+          console.log("Collision !!!");
+          if (aX > bX) { decalX = (aX - wA / 2) - (bX + wB / 2) }
+          else { decalX = (aX + wA / 2) - (bX - wB / 2) }
+          if (aY > bY) { decalY = (aY - hA / 2) - (bY + hB / 2) }
+          else { decalY = (aY + hA / 2) - (bY - hB / 2) }
+          if (aZ > bZ) { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
+          else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) }
+          if ((Math.abs(decalX) < Math.abs(decalY)) && (Math.abs(decalX) < Math.abs(decalZ))) // && (box.yMeubleInit + boxPos.y > 0)) 
+            { 
+              offset.x=decalX;
+              this.x-=decalX;
+            }
+          else if ((Math.abs(decalY) < Math.abs(decalX)) && (Math.abs(decalY) < Math.abs(decalZ))) // && (box.yMeubleInit + boxPos.y > 0)) 
+          { 
+            offset.y=decalY;
+            this.y-=decalY;
+          }
+          else {
+            offset.z=decalZ;
+            this.z-=decalZ;
+          }
+        }
+        return offset;
+      }
     }
+
+/*     var replaceB = false;
+    if (replace) {
+      valeurSorties = [];
+      valeurSorties = recaleSurMursEtSol(meuble, boxPos, aX, aY);
+      replaceB = valeurSorties[0];
+      console.log("deuxième recalage mur/sol", replaceB);
+      console.log("valeurs deuxieme passage", valeurSorties[1], valeurSorties[2], valeurSorties[3]);
+      if (replaceB) {
+        console.log("recalé une 2ieme fois sur mur/sol");
+        boxPos = valeurSorties[1];
+        aX = valeurSorties[2];
+        aY = valeurSorties[3];
+        console.log("nouvelles valeurs après recalage sur mur sol", aX, aY);
+      }
+    }
+    //console.log(replace,replaceB);
+    //if (replaceB) console.log("ça retouche le mur !!!");
+    if (!replace && !replaceB) {
+      console.log("position ok !");
+      box.xBoxOk = boxPos.x; box.yBoxOk = boxPos.y; box.zBoxOk = boxPos.z;
+      box.xMeubleOk = aX; box.yMeubleOk = aY;
+    }
+    if (replace || replaceB) {
+      console.log("on recalcule");
+      if ((intersectWithOneOfAll(box, num, aX, aY, wA, hA) == false)) {
+        console.log("boxPosition ok aussi !");
+        box.xBoxOk = boxPos.x; box.yBoxOk = boxPos.y; box.zBoxOk = boxPos.z;
+        box.xMeubleOk = aX; box.yMeubleOk = aY;
+      }
+      else {
+        console.log("on deplace pas !!!!");
+        boxPos.x = box.xBoxOk; boxPos.y = box.yBoxOk; boxPos.z = box.zBoxOk;
+        aX = box.xMeubleOk; aY = box.yMeubleOk;
+      }
+    } */
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
 
   createGeometryRoot() {
     this.root = new THREE.Object3D();
@@ -3259,8 +3453,12 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
     }
   
     meuble.recaleDansPiece();
+    meuble.recale();
+    //let offset=meuble.recale();
     
     getDeltaMeuble();
+
+    //meuble.recaleSurCollisions();
 
     function getDeltaMeuble() {
       deltaMeuble.x=currentPos.x-meuble.x;
