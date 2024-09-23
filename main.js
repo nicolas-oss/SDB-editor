@@ -1136,8 +1136,6 @@ class Meuble {
     var lA = this.getLargeurBoundingBox();
     var lB = meubles[indiceMeubleB].getLargeurBoundingBox();
     var intersectX = (Math.abs(xA - xB) * 2 < (lA + lB));
-    console.log("intersectX",intersectX);
-    console.log("intersectX",xA,xB,lA,lB);
     return intersectX;
   }
 
@@ -1147,7 +1145,6 @@ class Meuble {
     var hA = this.getHauteurBoundingBox();
     var hB = meubles[indiceMeubleB].getHauteurBoundingBox();
     var intersectY = (Math.abs(aY - bY) * 2 < (hA + hB));
-    console.log("intersectY",intersectY);
     return intersectY;
   }
 
@@ -1157,8 +1154,19 @@ class Meuble {
     var pA = this.getProfondeurBoundingBox();
     var pB = meubles[indiceMeubleB].getProfondeurBoundingBox();
     var intersectZ = (Math.abs(zA - zB) * 2 < (pA + pB));
-    console.log("intersectZ",intersectZ);
     return intersectZ;
+  }
+
+  getIntersectionList() {
+    let collisionList=[];
+    for (var i = 0; i < meubles.length; i++) {
+      if (i != this.numero) {
+        if (this.intersectX(i) && this.intersectY(i) && this.intersectZ(i)) {
+          collisionList.push(meubles[i]);
+        }
+      }
+    }
+    return collisionList;
   }
 
   recaleDansPiece() {
@@ -1168,6 +1176,10 @@ class Meuble {
     let yMax = hauteurPiece - this.getHauteurBoundingBox();
     let zMin = this.getProfondeurBoundingBox() / 2;
     let zMax = profondeurPiece - this.getProfondeurBoundingBox() / 2;
+
+    let x0=this.x;
+    let y0=this.y;
+    let z0=this.z;
 
     if (this.onMurFond) this.z = zMin;
     if (this.onMurGauche) this.x = xMin;
@@ -1180,139 +1192,123 @@ class Meuble {
     this.y = this.y < yMax ? this.y : yMax;
     this.z = this.z > zMin ? this.z : zMin;
     this.z = this.z < zMax ? this.z : zMax;
+
+    if (x0==this.x && y0==this.y && z0==this.z) return false
+    else return true;
   }
 
-  recale() {
-    let cadreB,plateauB,piedB,socleB,offsetHautB,offsetBasB;
-    let bX,bY,bZ,hB,wB,dB;
-    let aX,aY,aZ,hA,wA,dA;
-    let decalX,decalY,decalZ;
-    let cX,cY,cZ;
-    let offset = new THREE.Vector3(0,0,0);
+  recale(preferedAxe) {
+    let cadreB, plateauB, piedB, socleB, offsetHautB, offsetBasB;
+    let bX, bY, bZ, hB, wB, dB;
+    let aX, aY, aZ, hA, wA, dA;
+    let decalX, decalY, decalZ;
+    let collisionList = [];
+    //let cX,cY,cZ;
+    //let offset = new THREE.Vector3(0,0,0);
 
-    hA=this.getHauteurBoundingBox();
-    wA=this.getLargeurBoundingBox();
-    dA=this.getProfondeurBoundingBox();
+    hA = this.getHauteurBoundingBox();
+    wA = this.getLargeurBoundingBox();
+    dA = this.getProfondeurBoundingBox();
 
     aX = this.getBoundingBoxCenterX();
     aY = this.getBoundingBoxCenterY();
     aZ = this.getBoundingBoxCenterZ();
 
+    collisionList = this.getIntersectionList();
 
-    for (var i = 0; i < meubles.length; i++) {
-      var wboxPosB = new THREE.Vector3();
-      var fact = 1;
+    for (var i = 0; i < collisionList.length; i++) {
 
-      if (i != this.numero) {
+      let meubleB = collisionList[i];
 
-        cadreB = meubles[i].hasCadre * meubles[i].epaisseurCadre;
-        plateauB = meubles[i].hasPlateau * epaisseurPlateau;
-        piedB = meubles[i].hasPied * hauteurPied;
-        socleB = meubles[i].hasSocle * hauteurSocle;
-        offsetHautB = Math.max(cadreB, plateauB);
-        offsetBasB = socleB + piedB + cadreB;
+      cadreB = meubleB.hasCadre * meubleB.epaisseurCadre;
+      plateauB = meubleB.hasPlateau * epaisseurPlateau;
+      piedB = meubleB.hasPied * hauteurPied;
+      socleB = meubleB.hasSocle * hauteurSocle;
+      offsetHautB = Math.max(cadreB, plateauB);
+      offsetBasB = socleB + piedB + cadreB;
 
-        let boxMeubleB = scene.getObjectByName("boiteSelection" + i);
-        boxMeubleB.localToWorld(wboxPosB);
+      hB = meubleB.getHauteurBoundingBox();
+      wB = meubleB.getLargeurBoundingBox();
+      dB = meubleB.getProfondeurBoundingBox();
 
-        hB=meubles[i].getHauteurBoundingBox();
-        wB=meubles[i].getLargeurBoundingBox();
-        dB=meubles[i].getProfondeurBoundingBox();
+      bX = meubleB.getBoundingBoxCenterX();
+      bY = meubleB.getBoundingBoxCenterY();
+      bZ = meubleB.getBoundingBoxCenterZ();
 
-        bX = meubles[i].getBoundingBoxCenterX();
-        bY = meubles[i].getBoundingBoxCenterY();
-        bZ = meubles[i].getBoundingBoxCenterZ();
+      if (aX >= bX) { decalX = (aX - wA / 2) - (bX + wB / 2) }
+      else { decalX = (aX + wA / 2) - (bX - wB / 2) }
+      if (aY >= bY) { decalY = (aY - hA / 2) - (bY + hB / 2) }
+      else { decalY = (aY + hA / 2) - (bY - hB / 2) }
+      if (aZ >= bZ) { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
+      else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) }
 
-/*         //meubles sur le même mur
-        if ((meubles[i].onMurGauche == meubles[num].onMurGauche) && (meubles[i].onMurDroit == meubles[num].onMurDroit)) {
-
-          wB = meubles[i].largeur + cadreB * 2;
-
-          if (meuble.onMurGauche) {
-            bX = wboxPosB.z;
-            fact = -1;
-          }
-
-          else if (meuble.onMurDroit) {
-            bX = wboxPosB.z;
-            fact = 1;
-          }
-
-          else if (meuble.onMurFond) {
-            bX = wboxPosB.x;
-            fact = 1;
-          }
-          wB = meubles[i].largeur + cadreB * 2;
-        }
-
-        //meubles sur des murs differents
-        if (meuble.onMurFond && meubles[i].onMurGauche) {
-          if ((-meubles[i].x - meubles[i].getLargeurReelle() / 2) < meuble.getProfondeurReelle()) {
-            wB = meubles[i].getProfondeurReelle();
-            bX = -largeurPiece / 2 + wB / 2;
-            fact = 1;
-          }
-        }
-
-        if (meuble.onMurGauche && meubles[i].onMurFond) {
-          if (meubles[i].x < (-largeurPiece / 2 + meubles[i].getLargeurReelle() / 2 + meuble.getProfondeurReelle())) {
-            wB = meubles[i].getProfondeurReelle();
-            bX = wB / 2;
-            fact = -1;
-          }
-        }
-
-        if (meuble.onMurFond && meubles[i].onMurDroit) {
-          if ((meubles[i].x - meubles[i].getLargeurReelle() / 2) < meuble.getProfondeurReelle()) {
-            wB = meubles[i].getProfondeurReelle();
-            bX = largeurPiece / 2 - wB / 2;
-            fact = 1;
-          }
-        }
-
-        if (meuble.onMurDroit && meubles[i].onMurFond) {
-          if (meubles[i].x > (largeurPiece / 2 - meubles[i].getLargeurReelle() / 2 - meuble.getProfondeurReelle())) {
-            wB = meubles[i].getProfondeurReelle();
-            bX = wB / 2;
-            fact = 1;
-          }
-        } */
-
-        //hB = offsetBasB + meubles[i].hauteur + offsetHautB;
-        //bY = meubles[i].y + meubles[i].hauteur / 2 + offsetBasB / 2 + offsetHautB / 2;  // centre du bloc B
-
-
-        //ajustement si intersection
-        var intersect = (this.intersectX(i) && this.intersectY(i) && this.intersectZ(i));
-        //var intersect = (Math.abs(aX - bX) * 2 < (wA + wB)) && (Math.abs(aY - bY) * 2 < (hA + hB));
-        //console.log(aX, aY, boxPos.x, boxPos.y);
-        //let valid=true;
-        if (intersect) {
-          console.log("Collision !!!");
-          if (aX > bX) { decalX = (aX - wA / 2) - (bX + wB / 2) }
-          else { decalX = (aX + wA / 2) - (bX - wB / 2) }
-          if (aY > bY) { decalY = (aY - hA / 2) - (bY + hB / 2) }
-          else { decalY = (aY + hA / 2) - (bY - hB / 2) }
-          if (aZ > bZ) { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
-          else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) }
-          if ((Math.abs(decalX) < Math.abs(decalY)) && (Math.abs(decalX) < Math.abs(decalZ))) // && (box.yMeubleInit + boxPos.y > 0)) 
-            { 
-              offset.x=decalX;
-              this.x-=decalX;
-            }
-          else if ((Math.abs(decalY) < Math.abs(decalX)) && (Math.abs(decalY) < Math.abs(decalZ))) // && (box.yMeubleInit + boxPos.y > 0)) 
-          { 
-            offset.y=decalY;
-            this.y-=decalY;
+      if (this.onMurFond) {
+        if ((Math.abs(decalX) <= Math.abs(decalY)) || preferedAxe == "X" || preferedAxe=="-X") // && (box.yMeubleInit + boxPos.y > 0)) 
+          if (preferedAxe == "-X") {
+            this.x += decalX;
+            aX += decalX;
           }
           else {
-            offset.z=decalZ;
-            this.z-=decalZ;
+            //offset.x=decalX;
+            this.x -= decalX;
+            aX -= decalX;
           }
+        else // && (box.yMeubleInit + boxPos.y > 0)) 
+        {
+          //offset.y=decalY;
+          this.y -= decalY;
+          aY -= decalY;
         }
-        return offset;
       }
+
+      if (this.onMurDroit || this.onMurGauche) {
+        if ((Math.abs(decalZ) <= Math.abs(decalY)) || preferedAxe == "Z") // && (box.yMeubleInit + boxPos.y > 0)) 
+        {
+          //offset.z=decalZ;
+          this.z -= decalZ;
+          aZ -= decalZ;
+        }
+        else // && (box.yMeubleInit + boxPos.y > 0)) 
+        {
+          //offset.y=decalY;
+          this.y -= decalY;
+          aY -= decalY;
+        }
+      }
+
+      if (this.surSol) {
+        if ((Math.abs(decalZ) <= Math.abs(decalX)) || preferedAxe == "Z") // && (box.yMeubleInit + boxPos.y > 0)) 
+        {
+          //offset.z=decalZ;
+          this.z -= decalZ;
+          aZ -= decalZ;
+        }
+        else // && (box.yMeubleInit + boxPos.y > 0)) 
+        {
+          //offset.x=decalX;
+          this.x -= decalX;
+          aX -= decalX;
+        }
+      }
+
+
+      /*           if ((Math.abs(decalX) < Math.abs(decalY)) && (Math.abs(decalX) < Math.abs(decalZ))) // && (box.yMeubleInit + boxPos.y > 0)) 
+                  { 
+                    offset.x=decalX;
+                    this.x-=decalX;
+                  }
+                else if ((Math.abs(decalY) < Math.abs(decalX)) && (Math.abs(decalY) < Math.abs(decalZ))) // && (box.yMeubleInit + boxPos.y > 0)) 
+                { 
+                  offset.y=decalY;
+                  this.y-=decalY;
+                }
+                else {
+                  offset.z=decalZ;
+                  this.z-=decalZ;
+                } */
     }
+    return (collisionList.length == 0);
+  }
 
 /*     var replaceB = false;
     if (replace) {
@@ -1349,32 +1345,41 @@ class Meuble {
         aX = box.xMeubleOk; aY = box.yMeubleOk;
       }
     } */
+
+
+  findGoodPosition() {
+    this.recaleDansPiece();
+    let x0=this.x;
+    let y0=this.y;
+    let z0=this.z;
+    for (var i = 0; i < meubles.length; i++) {
+      if (!this.recale("X")) break;
+    }
+    let isPositionOk = (!this.recaleDansPiece() && this.getIntersectionList().length == 0);
+    if (!isPositionOk) {
+      this.x=x0;
+      for (var i = 0; i < meubles.length; i++) {
+        if (!this.recale("-X")) break;
+      }
+      let isPositionOk = (!this.recaleDansPiece() && this.getIntersectionList().length == 0);
+      if (!isPositionOk) {
+        this.x=x0;
+        for (var i = 0; i < meubles.length; i++) {
+          if (!this.recale("Y")) break;
+        }
+        let isPositionOk = (!this.recaleDansPiece() && this.getIntersectionList().length == 0);
+        if (!isPositionOk) {
+          //this.y=this.y0;
+          for (var i = 0; i < meubles.length; i++) {
+            if (!this.recale("Z")) break;
+          }
+          let isPositionOk = (!this.recaleDansPiece() && this.getIntersectionList().length == 0);
+
+          if (!isPositionOk) console.log("Pas de position trouvée !!!");
+        }
+      }
+    }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
 
   createGeometryRoot() {
     this.root = new THREE.Object3D();
@@ -1603,9 +1608,6 @@ class Meuble {
   }
   
   updateGeometry() {
-    //if (!geometries) this.createGeometryRoot;
-    //this.root.position.set(0,0,0);
-    //this.root.rotation.set(0,0,0);
     let geometries = this.root.getObjectByName("geometries");
     geometries.children = [];
     geometry.dispose();
@@ -2170,9 +2172,13 @@ function createNewMeuble() {
   indiceCurrentMeuble=meubles.length;
   meubles[indiceCurrentMeuble] = new Meuble(indiceCurrentMeuble);
   selectedMeuble=meubles[indiceCurrentMeuble];
-  placeNewMeuble(indiceCurrentMeuble);
-  selectedMeuble.update();
+  //placeNewMeuble(indiceCurrentMeuble);
+  //selectedMeuble.update();
   selectedMeuble.recaleDansPiece();
+  selectedMeuble.findGoodPosition();
+  selectedMeuble.update();
+  let isPositionOk=(!selectedMeuble.recaleDansPiece() && selectedMeuble.getIntersectionList().length==0);
+  if (!isPositionOk) console.log("Pas de position trouvée !!!");
   select(meubles[indiceCurrentMeuble],true);
   frameCamera();
 }
@@ -3130,6 +3136,9 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
   boxMeuble.xLocalInit=boxMeuble.position.x;
   boxMeuble.yLocalInit=boxMeuble.position.y;
   boxMeuble.zLocalInit=boxMeuble.position.z;
+  boxMeuble.xBoxOk=wpos.x;
+  boxMeuble.yBoxOk=wpos.y;
+  boxMeuble.zBoxOk=wpos.z;
   boxMeuble.xBoxInit=wpos.x;
   boxMeuble.yBoxInit=wpos.y;
   boxMeuble.zBoxInit=wpos.z;
@@ -3187,10 +3196,11 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
 
 /*     aX=wpos.x;
     aY=wpos.y-boxMeuble.offsetBasA/2+boxMeuble.offsetHautA/2; // centre du bloc complet
-    aZ=wpos.z; */
+    aZ=wpos.z;
 
     //changement de mur actif si on va dans l'angle
-/*     if (meuble.onMurFond) {
+
+    if (meuble.onMurFond) {
       let switchMur=false;
       if (aX<-(largeurPiece/2) && aZ>meuble.getProfondeurReelle()) {
         meuble.setActiveWall("murGauche");
@@ -3256,16 +3266,11 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
       }
     } */
 
-
-
-
       if (meuble.onMurFond) {
         pos.z=boxMeuble.zBoxInit;
         meuble.z=boxMeuble.zMeubleInit;
         boxMeuble.position.z=boxMeuble.zLocalInit;
       }
-
-
 
       else if (meuble.onMurGauche || meuble.onMurDroit) {
         //pos.z=boxMeuble.zBoxInit;
@@ -3273,23 +3278,15 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
         boxMeuble.position.z=-boxMeuble.zLocalInit;
       }
 
-
-
-
       else if (meuble.surSol) {
-        console.log("la");
         pos.y=boxMeuble.yBoxInit;
         meuble.y=boxMeuble.yMeubleInit;
         boxMeuble.position.y=boxMeuble.yLocalInit;
       }
 
-
-
-
-
-
     adjustObjectPosition(boxMeuble,num,aX,aY,aZ,wA,hA,pos);
 
+    refreshInterfaceMeuble();
 
     
 
@@ -3428,7 +3425,6 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
     let currentPos = new THREE.Vector3();
     let localPos = new THREE.Vector3();
 
-    //var wboxPos = new THREE.Vector3();
     box.localToWorld(pos);
 
     getDeltaBox();
@@ -3437,8 +3433,6 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
       deltaBox.x=-box.xBoxInit+pos.x;
       deltaBox.y=-box.yBoxInit+pos.y;
       deltaBox.z=-box.zBoxInit+pos.z;
-      console.log("pos = ",pos.x,pos.y,pos.z);
-      console.log("deltaBox = ",deltaBox.x,deltaBox.y,deltaBox.z);
     }
 
     applyDeltaToMeuble();
@@ -3452,13 +3446,14 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
       currentPos.z=meuble.z;
     }
   
-    meuble.recaleDansPiece();
-    meuble.recale();
-    //let offset=meuble.recale();
+    let hasBeenReplacedInRoom = meuble.recaleDansPiece();
+    let hasBeenReplaced = meuble.recale();
+    let hasBeenReplacedInRoomB = meuble.recaleDansPiece();
+    let isPositionOk = (meuble.getIntersectionList().length==0);
+
+console.log(hasBeenReplacedInRoom,hasBeenReplaced,hasBeenReplacedInRoomB);
     
     getDeltaMeuble();
-
-    //meuble.recaleSurCollisions();
 
     function getDeltaMeuble() {
       deltaMeuble.x=currentPos.x-meuble.x;
@@ -3480,10 +3475,60 @@ function setInitialPosition(meuble,boxMeuble,wpos) {
       box.position.x-=deltaMeuble.x;
       box.position.y-=deltaMeuble.y;
       box.position.z-=deltaMeuble.z;
-
     }
 
-    refreshInterfaceMeuble();
+    if (isPositionOk) {
+      console.log("position ok !");
+      box.xMeubleOk=meuble.x;
+      box.yMeubleOk=meuble.y;
+      box.zMeubleOk=meuble.z;
+      box.xBoxOk=box.position.x;
+      box.yBoxOk=box.position.y;
+      box.zBoxOk=box.position.z;
+    }
+
+    else { 
+      console.log("on deplace pas !!!!");
+      box.position.x = box.xBoxOk;
+      box.position.y = box.yBoxOk;
+      box.position.z = box.zBoxOk;
+      meuble.x = box.xMeubleOk;
+      meuble.y = box.yMeubleOk;
+      meuble.z = box.zMeubleOk;
+    }
+
+    return;
+
+     if (!hasBeenReplaced && !hasBeenReplacedInRoom) {
+      console.log("position ok !");
+      /* box.xBoxOk = boxPos.x;
+      box.yBoxOk = boxPos.y;
+      box.zBoxOk=boxPos.z;
+      box.xMeubleOk = meuble.x;
+      box.yMeubleOk = meuble.y;
+      box.zMeubleOk = meuble.z; */
+    }
+    if (hasBeenReplaced || hasBeenReplacedInRoom) {
+      console.log("on recalcule");
+      if (meuble.getIntersectionList().length==0) {
+        console.log("Position ok aussi !");
+        /* box.xBoxOk = boxPos.x;
+        box.yBoxOk = boxPos.y;
+        box.zBoxOk = boxPos.z;
+        box.xMeubleOk = meuble.x;
+        box.yMeubleOk = aY;
+        box.zMeubleOk = aZ; */
+      }
+       else { 
+        console.log("on deplace pas !!!!");
+        boxPos.x = box.xBoxOk;
+        boxPos.y = box.yBoxOk;
+        boxPos.z=box.zBoxOk;
+        aX = box.xMeubleOk;
+        aY = box.yMeubleOk;
+        aZ = box.zMeubleOk;
+      }
+    }
 
     return;
 
