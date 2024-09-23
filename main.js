@@ -1233,12 +1233,19 @@ class Meuble {
       bY = meubleB.getBoundingBoxCenterY();
       bZ = meubleB.getBoundingBoxCenterZ();
 
-      if (aX >= bX) { decalX = (aX - wA / 2) - (bX + wB / 2) }
-      else { decalX = (aX + wA / 2) - (bX - wB / 2) }
-      if (aY >= bY) { decalY = (aY - hA / 2) - (bY + hB / 2) }
-      else { decalY = (aY + hA / 2) - (bY - hB / 2) }
-      if (aZ >= bZ) { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
-      else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) }
+        if (aX >= bX) { decalX = (aX - wA / 2) - (bX + wB / 2) }
+        else { decalX = (aX + wA / 2) - (bX - wB / 2) }
+        if (aY >= bY) { decalY = (aY - hA / 2) - (bY + hB / 2) }
+        else { decalY = (aY + hA / 2) - (bY - hB / 2) }
+        if (aZ >= bZ) { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
+        else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) }
+
+/*      if (aX >= bX || preferedAxe == "X") { decalX = (aX - wA / 2) - (bX + wB / 2) }
+        else { decalX = (aX + wA / 2) - (bX - wB / 2) }
+        if (aY >= bY || preferedAxe == "Y") { decalY = (aY - hA / 2) - (bY + hB / 2) }
+        else { decalY = (aY + hA / 2) - (bY - hB / 2) }
+        if (aZ >= bZ || preferedAxe == "Z") { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
+        else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) } */
 
       if (this.onMurFond) {
         if ((Math.abs(decalX) <= Math.abs(decalY)) || preferedAxe == "X" || preferedAxe=="-X")
@@ -1286,43 +1293,6 @@ class Meuble {
     return (this.getIntersectionList().length == 0);
   }
 
-/*     var replaceB = false;
-    if (replace) {
-      valeurSorties = [];
-      valeurSorties = recaleSurMursEtSol(meuble, boxPos, aX, aY);
-      replaceB = valeurSorties[0];
-      console.log("deuxième recalage mur/sol", replaceB);
-      console.log("valeurs deuxieme passage", valeurSorties[1], valeurSorties[2], valeurSorties[3]);
-      if (replaceB) {
-        console.log("recalé une 2ieme fois sur mur/sol");
-        boxPos = valeurSorties[1];
-        aX = valeurSorties[2];
-        aY = valeurSorties[3];
-        console.log("nouvelles valeurs après recalage sur mur sol", aX, aY);
-      }
-    }
-    //console.log(replace,replaceB);
-    //if (replaceB) console.log("ça retouche le mur !!!");
-    if (!replace && !replaceB) {
-      console.log("position ok !");
-      box.xBoxOk = boxPos.x; box.yBoxOk = boxPos.y; box.zBoxOk = boxPos.z;
-      box.xMeubleOk = aX; box.yMeubleOk = aY;
-    }
-    if (replace || replaceB) {
-      console.log("on recalcule");
-      if ((intersectWithOneOfAll(box, num, aX, aY, wA, hA) == false)) {
-        console.log("boxPosition ok aussi !");
-        box.xBoxOk = boxPos.x; box.yBoxOk = boxPos.y; box.zBoxOk = boxPos.z;
-        box.xMeubleOk = aX; box.yMeubleOk = aY;
-      }
-      else {
-        console.log("on deplace pas !!!!");
-        boxPos.x = box.xBoxOk; boxPos.y = box.yBoxOk; boxPos.z = box.zBoxOk;
-        aX = box.xMeubleOk; aY = box.yMeubleOk;
-      }
-    } */
-
-
   findGoodPosition() {
     this.recaleDansPiece();
     let x0=this.x;
@@ -1355,6 +1325,49 @@ class Meuble {
         }
       }
     }
+  }
+
+  findFirstXplacement() {
+    let demiLargeur=this.getLargeurBoundingBox()/2;
+    let list=[];
+    let ySup=0;
+    let y=0;
+    for (var i=0;i<meubles.length;i++) {
+      if (i!=this.numero) {
+        if (this.intersectY(i) && this.intersectZ(i)) {
+          list.push(meubles[i]);
+          y=meubles[i].y+meubles[i].getHauteurBoundingBox();
+          ySup=Math.max(y,ySup);
+        }
+      }
+    }
+    
+    if (list.length==0) return [-largeurPiece/2+demiLargeur,ySup];
+
+    list.sort(function(a, b) {
+      return [a.x-b.x,ySup];
+    });
+
+    console.log(list);
+
+    let previous = -largeurPiece/2;
+    let last = largeurPiece/2;
+    let next;
+    let width;
+
+    for (var i=0;i<list.length;i++) {
+      let demiLargeurCurrent=list[i].getLargeurBoundingBox()/2;
+      next = list[i].x-demiLargeurCurrent;
+      let width=next-previous;
+      if (width>=this.largeur) return [(previous+demiLargeur),ySup];
+      previous=list[i].x+demiLargeurCurrent;;
+    }
+
+    width=last-previous;
+    if (width>=this.largeur) return [(previous+demiLargeur),ySup];
+
+    console.log("pas de X trouvé");
+    return [undefined,ySup];
   }
 
   createGeometryRoot() {
@@ -2151,10 +2164,24 @@ function createNewMeuble() {
   //placeNewMeuble(indiceCurrentMeuble);
   //selectedMeuble.update();
   selectedMeuble.recaleDansPiece();
-  selectedMeuble.findGoodPosition();
+  let result=selectedMeuble.findFirstXplacement();
+  let x=result[0];
+  let y=result[1];
+  console.log(result);
+  console.log("first X=",x);
+  if (x) selectedMeuble.x=x
+  else {
+    selectedMeuble.y=y;
+    let result=selectedMeuble.findFirstXplacement();
+    x=result[0];
+    y=result[1];
+    console.log("result deuxième passage X=",result);
+    if (x) selectedMeuble.x=x
+    else selectedMeuble.findGoodPosition();
+  }
   selectedMeuble.update();
-  let isPositionOk=(!selectedMeuble.recaleDansPiece() && selectedMeuble.getIntersectionList().length==0);
-  if (!isPositionOk) console.log("Pas de position trouvée !!!");
+ /*  let isPositionOk=(!selectedMeuble.recaleDansPiece() && selectedMeuble.getIntersectionList().length==0);
+  if (!isPositionOk) console.log("Pas de position trouvée !!!"); */
   select(meubles[indiceCurrentMeuble],true);
   frameCamera();
 }
@@ -3941,11 +3968,11 @@ function initializeInterface() {
   function switchMurGauche() {
     if (!selectedMeuble.onMurGauche) {
       selectedMeuble.setActiveWall("murGauche");
-      if (!selectedMeuble.recale("Z") && !selectedMeuble.recale("Y")) console.log("pas de position trouvée");
+      if (!selectedMeuble.recale("Z") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
     }
     else {
       selectedMeuble.setActiveWall("murFond");
-      if (!selectedMeuble.recale("X") && !selectedMeuble.recale("Y")) console.log("pas de position trouvée");
+      if (!selectedMeuble.recale("X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
     }
     refreshInterfaceMeuble();
     selectedMeuble.update();
@@ -3954,11 +3981,11 @@ function initializeInterface() {
   function switchMurDroit() {
     if (!selectedMeuble.onMurDroit) {
       selectedMeuble.setActiveWall("murDroit");
-      if (!selectedMeuble.recale("Z") && !selectedMeuble.recale("Y")) console.log("pas de position trouvée");
+      if (!selectedMeuble.recale("Z") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
     }
     else {
       selectedMeuble.setActiveWall("murFond");
-      if (!selectedMeuble.recale("-X") && !selectedMeuble.recale("Y")) console.log("pas de position trouvée");
+      if (!selectedMeuble.recale("-X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
     }
       refreshInterfaceMeuble();
       selectedMeuble.update();
@@ -3968,7 +3995,7 @@ function initializeInterface() {
 
     if (!selectedMeuble.surSol) {
       selectedMeuble.setActiveWall("surSol");
-      if (!selectedMeuble.recale("X") && !selectedMeuble.recale("-X") && !selectedMeuble.recale("Y")) console.log("pas de position trouvée");
+      if (!selectedMeuble.recale("X") && !selectedMeuble.recale("-X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
     }
     else selectedMeuble.setActiveWall("murFond");
 
