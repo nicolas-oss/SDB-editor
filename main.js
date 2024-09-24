@@ -317,14 +317,8 @@ getPorte(isPorteBloc) {
   }
 
   getSousMeuble() {
-    //let sousMeubleRoot = new THREE.Object3D();
-    //console.log(this.sousMeuble);
     if (!this.sousMeuble) {
       this.sousMeuble=new SousMeuble(this.numero);
-      //console.log("sousMeuble created");
-    
-    //this.sousMeuble.x=this.x;
-    //this.sousMeuble.y=this.y;
     this.sousMeuble.etageres=1;
     this.sousMeuble.type="Etageres";
     this.sousMeuble.nbBlocs=3;
@@ -1948,21 +1942,21 @@ class Meuble {
   }
 
   setActiveWall(mur) {
-    if (mur=="murFond") {
+    if (mur=="onMurFond") {
       this.onMurGauche=false;
       this.onMurDroit=false;
       this.onMurFond=true;
       this.surSol=false;
       this.orientation=0;
     }
-    if (mur=="murGauche") {
+    if (mur=="onMurGauche") {
       this.onMurGauche=true;
       this.onMurDroit=false;
       this.onMurFond=false;
       this.surSol=false;
       this.orientation=1;
     }
-    if (mur=="murDroit") {
+    if (mur=="onMurDroit") {
       this.onMurGauche=false;
       this.onMurDroit=true;
       this.onMurFond=false;
@@ -1980,14 +1974,14 @@ class Meuble {
   switchMur(mur) {
     this.setActiveWall(mur);
     this.recaleDansPiece();
-    if (mur == "murGauche" || mur == "murDroit") {
+    if (mur == "onMurGauche" || mur == "onMurDroit") {
       let z = this.findFirstZplacement()[0];
       if (z) this.z = z
       else {
         this.automaticPlacement();
       }
     }
-    if (mur=="murFond") {
+    if (mur=="onMurFond") {
       let x = this.findFirstXplacement()[0];
       if (x) this.x = x
       else {
@@ -2221,31 +2215,64 @@ function createNewMeuble() {
   if (indiceCurrentMeuble>0) flashMeuble(meubles[indiceCurrentMeuble]);
 }
 
-function duplicatePropertiesValues(fromObj,toObj) {
-  Object.keys(fromObj,toObj).forEach(key => {
-    if (typeof toObj[key]=="object") {
-      duplicatePropertiesValues(fromObj[key],toObj[key]);
+function duplicatePropertiesValues(fromObj, toObj) {
+  Object.keys(fromObj, toObj).forEach(key => {
+    if (typeof toObj[key] == "object") {
+      duplicatePropertiesValues(fromObj[key], toObj[key]);
     }
-    else {toObj[key]=fromObj[key]}
+    else { toObj[key] = fromObj[key] }
   });
 }
 
 function duplicateMeuble(num) {
-  var indiceNewMeuble=meubles.length;
+  var num = selectedMeuble.numero;
+  var indiceNewMeuble = meubles.length;
+
   meubles[indiceNewMeuble] = new Meuble(indiceNewMeuble);
-  for (var i=0; i<meubles[num].nbBlocs; i++) {
-    meubles[indiceNewMeuble].bloc[i]=new Bloc(i);
-    duplicatePropertiesValues(meubles[num].bloc[i],meubles[indiceNewMeuble].bloc[i])
+  var newMeuble = meubles[indiceNewMeuble];
+  var oldMeuble = selectedMeuble;
+
+  var listKeysElement = ["numero", "unherited", "xPredefini", "yPredefini", "yTiroirPredefini", "localType", "localStyle", "isSelected", "selectionBox", "isRentrantLocal", "ouverturePorteLocal", "nombrePortesLocal"];
+  var listKeysBloc = ["numero", "taille", "unherited", "etageresLocal", "localType", "localStyle", "isSelected", "isRentrantLocal", "ouverturePorteLocal", "nombrePortesLocal", "etageresVerticalesLocal"];
+  var listKeysMeuble = ["hauteur", "largeur", "profondeur", "nbBlocs", "x", "y", "z", "disposition", "epaisseur", "epaisseurCadre", "hasPlateau", "hasCadre", "hasSocle", "hasPied", "IsSuspendu", "offsetPoignees", "isSousMeuble", "type", "isRentrant", "isSimple", "onMurFond", "onMurGauche", "onMurDroit", "surSol", "orientation", "localStyle", "isSelected", "etageres", "ouverturePorte", "nombrePortes", "etageresVerticales"];
+
+  newMeuble.setBlocsQuantity(oldMeuble.nbBlocs);
+
+  //copie des blocs
+  for (var i = 0; i < oldMeuble.nbBlocs; i++) {
+    let currentBloc = newMeuble.bloc[i];
+    listKeysBloc.forEach(key => {
+      currentBloc[key] = oldMeuble.bloc[i][key];
+      //console.log(key,newMeuble.bloc[i][key]);
+    });
+    currentBloc.elements = [];
+
+    //copie des elements
+    for (var j = 0; j < currentBloc.etageres + 4; j++) {
+      console.log("copie elements,i,j=", i, j);
+      currentBloc.elements[j] = new Element(currentBloc, j);
+      if (j < currentBloc.etageres + 1) listKeysElement.forEach(key => {
+        newMeuble.bloc[i].elements[j][key] = oldMeuble.bloc[i].elements[j][key];
+        console.log(key, newMeuble.bloc[i].elements[j][key]);
+      });
+    }
+    newMeuble.bloc[i].isSelected = false;
   }
-  duplicatePropertiesValues(meubles[num],meubles[indiceNewMeuble])
-  meubles[indiceNewMeuble].numero = indiceNewMeuble;
-  meubles[indiceNewMeuble].name = "Meuble "+(indiceNewMeuble+1);
-  //meubles[indiceNewMeuble].createGeometryRoot();
-  //indiceCurrentMeuble = indiceNewMeuble;
-  meubles[indiceNewMeuble].update();
-  placeNewMeuble(indiceNewMeuble);
-  scene.add(meubles[indiceNewMeuble].root);
-  changeCurrentMeuble(indiceNewMeuble,true);
+
+  listKeysMeuble.forEach(key => {
+    newMeuble[key] = oldMeuble[key];
+    //console.log(key,newMeuble[key]);
+  });
+
+  console.log(newMeuble);
+
+  newMeuble.numero = indiceNewMeuble;
+  newMeuble.rename();
+  newMeuble.update();
+  if (newMeuble.onMurFond) newMeuble.switchMur("onMurFond");
+  if (newMeuble.onMurGauche) newMeuble.switchMur("onMurGauche");
+  if (newMeuble.onMurDroit) newMeuble.switchMur("onMurDroit");
+  if (newMeuble.surSol) newMeuble.switchMur("surSol");
   updateScene();
   frameCamera();
 }
@@ -3181,7 +3208,7 @@ function setInitialPosition(meuble, boxMeuble, wpos) {
   boxMeuble.yMeubleOk = meuble.y;
   boxMeuble.zMeubleOk = meuble.z;
   boxMeuble.zOk = boxMeuble.position.z;
-  console.log("xBoxInit,yBoxInit,zBoxInit", boxMeuble.xBoxInit, boxMeuble.yBoxInit, boxMeuble.zBoxInit);
+  //console.log("xBoxInit,yBoxInit,zBoxInit", boxMeuble.xBoxInit, boxMeuble.yBoxInit, boxMeuble.zBoxInit);
 }
 
 
@@ -3258,7 +3285,7 @@ function initDragMeuble() {
     if (meuble.onMurFond) {
       let switchMur = false;
       if (aX < -(largeurPiece / 2) && aZ > meuble.getProfondeurReelle()) {
-        meuble.setActiveWall("murGauche");
+        meuble.setActiveWall("onMurGauche");
         //meuble.x=0;
         boxMeuble.xBoxInit = -largeurPiece/2+meuble.getProfondeurReelle()/2;
 
@@ -3266,7 +3293,7 @@ function initDragMeuble() {
       }
 
       if (aX > largeurPiece / 2 && aZ > meuble.getProfondeurReelle()) {
-        meuble.setActiveWall("murDroit");
+        meuble.setActiveWall("onMurDroit");
         //meuble.x=wA/2;
         boxMeuble.xBoxInit = largeurPiece/2-meuble.getProfondeurReelle()/2;
 
@@ -3299,7 +3326,7 @@ function initDragMeuble() {
 
     else if (meuble.onMurGauche) {
       if (aX > (-largeurPiece/2) && aZ < 0) {
-        meuble.setActiveWall("murFond");
+        meuble.setActiveWall("onMurFond");
         meuble.x = -(largeurPiece / 2 - wA / 2);
         meuble.z = 0;
         aX = wpos.x;
@@ -3316,7 +3343,7 @@ function initDragMeuble() {
 
     else if (meuble.onMurDroit) {
       if (aX < (largeurPiece/2) && aZ < 0) {
-        meuble.setActiveWall("murFond");
+        meuble.setActiveWall("onMurFond");
         meuble.x = (largeurPiece / 2 - wA / 2);
         meuble.z = 0;
         aX = wpos.x;
@@ -3602,13 +3629,11 @@ function addToSelection(object,highlight) {
   //console.log(object.constructor.name);
   //if (object.constructor.name!= "Meuble")
   if (highlight) object.selectionBox.visible=true;
-  console.log("highlight=",highlight);
   const isInSelectedObjects = (objectInList) => objectInList==object;
   let index=selectedObjects.findIndex(isInSelectedObjects);
   if (index>-1) {console.log("object already in list !!!")}
   else {
     selectedObjects.push(object);
-    console.log("object added");
     refreshInterfaceContenu();
   }
 }
@@ -3749,18 +3774,18 @@ function buildEnvironnement () {
   environnement.add( plane );
   const materialMur = new THREE.MeshStandardMaterial( {color: 0xffffff} );
   const murFond = new THREE.Mesh( geometry, materialMur );
-  murFond.name = "murFond"
+  murFond.name = "onMurFond"
   murFond.receiveShadow = true;
   environnement.add( murFond );
   const murDroit = new THREE.Mesh( geometry, materialMur );
   murDroit.translateX(largeurPiece/2);
   murDroit.rotateY(-Math.PI/2);
-  murDroit.name="murDroit";
+  murDroit.name="onMurDroit";
   environnement.add( murDroit );
   const murGauche = new THREE.Mesh( geometry, materialMur );
   murGauche.translateX(-largeurPiece/2);
   murGauche.rotateY(Math.PI/2);
-  murGauche.name="murGauche";
+  murGauche.name="onMurGauche";
   environnement.add( murGauche );
   scene.add(environnement);
 }
@@ -3852,6 +3877,7 @@ function initializeScene() {
   initDragHandleMeuble();
   setSelectionMode("meubles");
   refreshInterfaceContenu();
+  console.log(selectedMeuble);
 }
 
 function getHTMLElements () {
@@ -3971,9 +3997,9 @@ function initializeInterface() {
   //buttons meuble
   checkboxVertical.addEventListener("click", switchVertical);
   checkboxSimple.addEventListener("click", switchSimple);
-  checkboxMurFond.addEventListener("click", function () { selectedMeuble.switchMur("murFond") });
-  checkboxMurGauche.addEventListener("click", function () { selectedMeuble.switchMur("murGauche") });
-  checkboxMurDroit.addEventListener("click", function () { selectedMeuble.switchMur("murDroit") });
+  checkboxMurFond.addEventListener("click", function () { selectedMeuble.switchMur("onMurFond") });
+  checkboxMurGauche.addEventListener("click", function () { selectedMeuble.switchMur("onMurGauche") });
+  checkboxMurDroit.addEventListener("click", function () { selectedMeuble.switchMur("onMurDroit") });
   checkboxSurSol.addEventListener("click", function () { selectedMeuble.switchMur("surSol") });
   buttonSocle.addEventListener("click", function () { switchSocle(indiceCurrentMeuble) });
   buttonPied.addEventListener("click", function () { switchPied(indiceCurrentMeuble) });
@@ -4659,7 +4685,6 @@ function clearInterfaceMeuble() {
 function changeCurrentMeuble(meuble,highlight) {
   indiceCurrentMeuble = meuble.numero;
   selectedMeuble=meuble;
-  console.log("selectedMeuble=",selectedMeuble.name);
   select(meuble,highlight);
   refreshCheckboxMeuble();
   refreshInterface();
