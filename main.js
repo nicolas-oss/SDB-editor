@@ -892,76 +892,6 @@ class Meuble {
     return (result);
   }
 
-  /* getLimitTranslationX() {
-    var bY;
-    var minXGlobal,maxXGlobal;
-
-    if (this.onMurGauche) {
-      minXGlobal = -10e34;
-      maxXGlobal = -this.getLargeurReelle()/2;
-    }
-
-    if (this.onMurDroit) {
-      minXGlobal = this.getLargeurReelle()/2;
-      maxXGlobal = 10e34;
-    }
-
-    if (this.onMurFond) {
-      minXGlobal=-largeurPiece/2+this.getLargeurReelle()/2;
-      maxXGlobal=largeurPiece/2-this.getLargeurReelle()/2;
-    }
-
-    var minX=-10e34;
-    var maxX=10e34;
-
-    for (var i = 0; i < meubles.length; i++) {
-      if (i != this.numero) {
-        if (meubles[i].onMurGauche == this.onMurGauche && meubles[i].onMurDroit == this.onMurDroit) {
-          bY = meubles[i].y + meubles[i].hauteur / 2 + meubles[i].hasCadre * this.epaisseurCadre;
-          if (this.intersectY(i)) {
-            if (this.x > meubles[i].x) {
-              minX = (meubles[i].x + meubles[i].getLargeurReelle() / 2) + (this.getLargeurReelle()/2);
-            }
-            if (this.x < meubles[i].x) {
-              maxX = (meubles[i].x - meubles[i].getLargeurReelle() / 2) - (this.getLargeurReelle()/2);
-            }
-          }
-        }
-        if ((meubles[i].onMurGauche && this.onMurFond)) {
-          if (meubles[i].x > -meubles[i].getLargeurReelle() / 2 - this.getProfondeurReelle()) {
-            if (this.intersectY(i)) {
-              minXGlobal = -largeurPiece/2+meubles[i].getProfondeurReelle()+this.getLargeurReelle()/2;
-            }
-          }
-        }
-        if ((meubles[i].onMurFond && this.onMurGauche)) {
-          if (meubles[i].x < -largeurPiece/2+this.getLargeurReelle()/2+meubles[i].getProfondeurReelle()) {
-            if (this.intersectY(i)) {
-              maxXGlobal = -this.getLargeurReelle()/2-meubles[i].getProfondeurReelle(); 
-            }
-          }
-        }
-        if ((meubles[i].onMurDroit && this.onMurFond)) {
-          if (meubles[i].x < meubles[i].getLargeurReelle() / 2 + this.getProfondeurReelle()) {
-            if (this.intersectY(i)) {
-              maxXGlobal = -1*(-largeurPiece/2+meubles[i].getProfondeurReelle()+this.getLargeurReelle()/2);
-            }
-          }
-        }
-         if ((meubles[i].onMurFond && this.onMurDroit)) {
-          if (meubles[i].x > largeurPiece/2-this.getLargeurReelle()/2-meubles[i].getProfondeurReelle()) {
-            if (this.intersectY(i)) {
-              minXGlobal = this.getLargeurReelle()/2+meubles[i].getProfondeurReelle(); 
-            }
-          }
-        }
-        minXGlobal = Math.max(minX, minXGlobal);
-        maxXGlobal = Math.min(maxX, maxXGlobal);
-      }
-    }
-    return [minXGlobal,maxXGlobal];
-  } */
-
   getLimitTranslationX() {
     var bY;
     var minXGlobal, maxXGlobal;
@@ -991,55 +921,6 @@ class Meuble {
     }
     return [minXGlobal, maxXGlobal];
   }
-
- /*  getLimitTranslationY() {
-    var minYGlobal=0;
-    var maxYGlobal=10e34;
-    var minY=0;
-    var maxY=10e34;
-    var hAReelle=this.getHauteurReelle();
-    var hasLimit;
-    for (var i = 0; i < meubles.length; i++) {
-      if (i != this.numero) {
-        hasLimit = false;
-        if (meubles[i].onMurGauche == this.onMurGauche && meubles[i].onMurDroit == this.onMurDroit) {
-          if (this.intersectX(i)) hasLimit = true;
-        }
-        if ((meubles[i].onMurGauche && this.onMurFond)) {
-          if    ((meubles[i].x > -meubles[i].largeur / 2 - this.getProfondeurReelle())
-              && (this.x < -largeurPiece/2+meubles[i].largeur/2+this.getProfondeurReelle()))
-             { hasLimit = true;}
-        }
-        if ((meubles[i].onMurFond && this.onMurGauche)) {
-          if    ((meubles[i].x < -largeurPiece/2+this.largeur/2+meubles[i].getProfondeurReelle())
-              && (this.x > -this.largeur / 2 - meubles[i].getProfondeurReelle())) 
-            { hasLimit = true;}
-        }
-        if ((meubles[i].onMurDroit && this.onMurFond)) {
-          if    ((meubles[i].x < meubles[i].largeur / 2 + this.getProfondeurReelle())
-            && (this.x > largeurPiece/2-meubles[i].largeur/2-this.getProfondeurReelle()))
-            { hasLimit = true;}
-        }
-         if ((meubles[i].onMurFond && this.onMurDroit)) {
-          if ((meubles[i].x > largeurPiece/2-this.largeur/2-meubles[i].getProfondeurReelle())
-            && (this.x < this.largeur / 2 + meubles[i].getProfondeurReelle()))
-            { hasLimit = true;}
-        }
-
-        if (hasLimit) {
-          if (this.y > meubles[i].y) {
-            minY = meubles[i].getHauteurReelle()+meubles[i].y;
-          }
-          if (this.y < meubles[i].y) {
-            maxY = meubles[i].y - hAReelle;
-          }
-          minYGlobal = Math.max(minY, minYGlobal);
-          maxYGlobal = Math.min(maxY, maxYGlobal);
-        }
-      }
-    }
-    return [minYGlobal, maxYGlobal];
-  } */
 
   getLimitTranslationY() {
     var hA = this.getHauteurReelle();
@@ -1352,8 +1233,10 @@ class Meuble {
     }
   }
 
+  //trouve la premier emplacement valide en x sans changer y
+  //renvoie x et y max (pour une rangée compléte au même y minimum) pour deuxième passage
   findFirstXplacement() {
-    let demiLargeur=this.getLargeurBoundingBox()/2;
+    let demiProfondeur=this.getLargeurBoundingBox()/2;
     let list=[];
     let ySup=0;
     let y=0;
@@ -1366,9 +1249,9 @@ class Meuble {
         }
       }
     }
-    if (list.length==0) return [-largeurPiece/2+demiLargeur,ySup];
+    if (list.length==0) return [-largeurPiece/2+demiProfondeur,ySup];
     list.sort(function(a, b) {
-      return [a.x-b.x,ySup];
+      return (a.x-b.x);
     });
     let previous = -largeurPiece/2;
     let last = largeurPiece/2;
@@ -1376,19 +1259,75 @@ class Meuble {
     let width;
 
     for (var i=0;i<list.length;i++) {
-      let demiLargeurCurrent=list[i].getLargeurBoundingBox()/2;
-      next = list[i].x-demiLargeurCurrent;
+      let demiProfondeurCurrent=list[i].getLargeurBoundingBox()/2;
+      next = list[i].x-demiProfondeurCurrent;
       let width=next-previous;
-      if (width>=this.getLargeurBoundingBox()) return [(previous+demiLargeur),ySup];
-      previous=list[i].x+demiLargeurCurrent;;
+      if (width>=this.getLargeurBoundingBox()) return [(previous+demiProfondeur),ySup];
+      previous=list[i].x+demiProfondeurCurrent;;
     }
 
     width=last-previous;
-    if (width>=this.getLargeurBoundingBox()) return [(previous+demiLargeur),ySup];
+    if (width>=this.getLargeurBoundingBox()) return [(previous+demiProfondeur),ySup];
 
     console.log("pas de X trouvé");
     return [undefined,ySup];
   }
+
+  //trouve le y le plus bas possible, le x le plus à gauche pour emplacement valide
+  findSecondXplacement() {
+    let demiProfondeur=this.getLargeurBoundingBox()/2;
+    let x0=this.x;
+    let y0=this.y;
+    let xMin=-largeurPiece/2+demiProfondeur;
+    this.x=xMin;
+    this.y=hauteurPiece;
+
+    let yMin=this.getLimitTranslationY()[0];
+
+    for (var i = 0; i < meubles.length; i++) {
+      if (this.numero==i) continue;
+      this.x = meubles[i].x + meubles[i].getLargeurBoundingBox() / 2 + demiProfondeur;
+      if (this.x < (largeurPiece / 2 - demiProfondeur)) {
+          let y = this.getLimitTranslationY()[0];
+          if (y<yMin) xMin=this.x;
+          if (y==yMin && this.x<xMin) xMin=this.x;
+          yMin=Math.min(y,yMin);
+      }
+    }
+      this.x = x0;
+      this.y = y0;
+      if (xMin < (largeurPiece / 2 - demiProfondeur) && (yMin < hauteurPiece - this.getHauteurBoundingBox()))
+        return [xMin, yMin]
+      else return undefined;
+  }
+
+  findSecondZplacement() {
+    let demiProfondeur=this.getProfondeurBoundingBox()/2;
+    let z0=this.z;
+    let y0=this.y;
+    let zMin=demiProfondeur;
+    this.z=zMin;
+    this.y=hauteurPiece;
+
+    let yMin=this.getLimitTranslationY()[0];
+
+    for (var i = 0; i < meubles.length; i++) {
+      if (this.numero==i) continue;
+      this.z = meubles[i].z + meubles[i].getProfondeurBoundingBox() / 2 + demiProfondeur;
+      if (this.z < (profondeurPiece / 2 - demiProfondeur)) {
+          let y = this.getLimitTranslationY()[0];
+          if (y<yMin) zMin=this.z;
+          if (y==yMin && this.z<zMin) zMin=this.z;
+          yMin=Math.min(y,yMin);
+      }
+    }
+      this.z = z0;
+      this.y = y0;
+      if (zMin < (profondeurPiece / 2 - demiProfondeur) && (yMin < hauteurPiece - this.getHauteurBoundingBox()))
+        return [zMin, yMin]
+      else return undefined;
+  }
+
 
   findFirstZplacement() {
     let demiProfondeur=this.getProfondeurBoundingBox()/2;
@@ -1429,43 +1368,27 @@ class Meuble {
   }
 
   automaticPlacement() {
-    let result,x,y,z;
+    let result;
     this.recaleDansPiece();
 
     if (this.onMurFond) {
-      result = this.findFirstXplacement();
-      x = result[0];
-      y = result[1];
-      console.log(result);
-      console.log("first X=", x);
-      if (x) this.x = x
-      else {                                 //à améliorer
-        this.y = y;
-        result = this.findFirstXplacement();
-        x = result[0];
-        y = result[1];
-        console.log("result deuxième passage X=", result);
-        if (x) this.x = x
-        else this.findGoodPosition();
+      result = this.findSecondXplacement();
+      if (!result) {
+        console.log ("WARNING : Aucun emplacement trouvé");
+        return
       }
+      this.x=result[0];
+      this.y=result[1];
     }
 
     if (this.onMurDroit || this.onMurGauche) {
-      result = this.findFirstZplacement();
-      z = result[0];
-      y = result[1];
-      console.log(result);
-      console.log("first Z=", z);
-      if (z) this.z = z
-      else {                              //à améliorer
-        this.y = y;
-        result = this.findFirstZplacement();
-        z = result[0];
-        y = result[1];
-        console.log("result deuxième passage Z=", result);
-        if (z) this.z = z
-        else this.findGoodPosition();
+      result = this.findSecondZplacement();
+      if (!result) {
+        console.log ("WARNING : Aucun emplacement trouvé");
+        return
       }
+      this.z=result[0];
+      this.y=result[1];
     }
     this.placeMeuble();
   }
@@ -1864,7 +1787,6 @@ class Meuble {
       handlesMeuble.add(this.getHandlesMeuble());
       updateAllSelectable();
     }
-    //if (!this.isSousMeuble)
       this.placeMeuble();
   }
 
@@ -1878,6 +1800,7 @@ class Meuble {
     material.dispose();
   }
 
+  //recompute blocs size from meuble width - blocs sizes adjusted proportionally
   computeBlocsSize() {
     if (this.disposition == "horizontal") {
       var largeurSommeBlocs = 0;
@@ -1901,13 +1824,31 @@ class Meuble {
     }
   }
   
-  addBloc() {
+  addNewBlocAndAdjust() {
+    let spaceArray=this.getMaxAllowedSpaceOnSides();
+    let freeSpace=Math.min(spaceArray[0],spaceArray[1]);
+    let tailleBloc=this.addNewBloc();
+    if (freeSpace<tailleBloc/2) changeBlocsQuantity(this.nbBlocs+1)
+    else {
+      this.nbBlocs+=1;
+      this.updateTaille();
+      this.update();
+    }
+    clearSelectionList();
+    indiceCurrentBloc=-1;
+    refreshInterfaceMeuble();
+    refreshInterfaceBlocs();
+  }
+
+  //adds new bloc and return size of new bloc
+  addNewBloc() {
     if (!this.bloc[this.bloc.length]) {
       this.bloc[this.bloc.length] = new Bloc(this,this.bloc.length);
     }
     return this.bloc[this.bloc.length-1].taille;
   }
 
+  //sets blocs number and keeps meuble width constant - blocs sizes adjusted proportionally
   setBlocsQuantity (num) {
     var tailleEnlevee=0;
     if (num<this.nbBlocs) {
@@ -1946,7 +1887,7 @@ class Meuble {
       }
     }
 
-    this.nbBlocs=num;console.log("this.nbBlocs=",this.nbBlocs);
+    this.nbBlocs=num;
   }
 
   changeTexture(event) {
@@ -2034,7 +1975,30 @@ class Meuble {
       this.onMurFond=false;
       this.surSol=true;
     }
+  }
+
+  switchMur(mur) {
+    this.setActiveWall(mur);
     this.recaleDansPiece();
+    if (mur == "murGauche" || mur == "murDroit") {
+      let z = this.findFirstZplacement()[0];
+      if (z) this.z = z
+      else {
+        this.automaticPlacement();
+      }
+    }
+    if (mur=="murFond") {
+      let x = this.findFirstXplacement()[0];
+      if (x) this.x = x
+      else {
+        this.automaticPlacement();
+      }
+    }
+    if (mur =="surSol") {
+      this.findGoodPosition();
+    }
+    refreshInterfaceMeuble();
+    selectedMeuble.update();
   }
 }
 
@@ -2210,33 +2174,24 @@ function recomputeMeublesId() {
   }
 }
 
-function deleteMeuble(num) {
-  console.log("delete meuble",num);
-  let rootMeuble=scene.getObjectByName("meuble "+num);
+function deleteMeuble(meuble) {
+  if (!selectedMeuble) {
+    console.log("WARNING : pas de meuble actif !");
+    return false;
+  }
+  let rootMeuble=meuble.root;
   scene.remove(rootMeuble);
-  meubles.splice(num,1);
-  geometry.dispose();
-  material.dispose();
-  //selectableMeuble.splice(num,1);
-  //meubleRoot.splice(num,1);
+  meubles.splice(meuble.numero,1);
   geometry.dispose();
   material.dispose();
   selectedObjects=[];
   indiceCurrentBloc=-1;
   indiceCurrentMeuble=-1;
-/*   if (meubles.length==0) {
-    indiceCurrentMeuble=-1;
-    selectedObjects=[];
-    indiceCurrentBloc=-1;
-  }
-  else if (meubles.length < (indiceCurrentMeuble+1)) {
-    indiceCurrentMeuble-=1;
-    select (meubles[indiceCurrentMeuble]);
-  } */
   recomputeMeublesId();
   renameAllMeubles();
   updateScene();
   updateAllSelectable();
+  return true;
 }
 
 function renameAllMeubles() {
@@ -2254,40 +2209,16 @@ function placeNewMeuble(num) {
     }
     meubles[num].x=minX;
   }
- //meubles[num].x=-largeurPiece/2+meubles[num].largeur;
 }
 
 function createNewMeuble() {
   indiceCurrentMeuble=meubles.length;
   meubles[indiceCurrentMeuble] = new Meuble(indiceCurrentMeuble);
   selectedMeuble=meubles[indiceCurrentMeuble];
-  //placeNewMeuble(indiceCurrentMeuble);
-  //selectedMeuble.update();
-  /* selectedMeuble.recaleDansPiece();
-  let result=selectedMeuble.findFirstXplacement();
-  let x=result[0];
-  let y=result[1];
-  console.log(result);
-  console.log("first X=",x);
-  if (x) selectedMeuble.x=x
-  else {
-    selectedMeuble.y=y;
-    let result=selectedMeuble.findFirstXplacement();
-    x=result[0];
-    y=result[1];
-    console.log("result deuxième passage X=",result);
-    if (x) selectedMeuble.x=x
-    else selectedMeuble.findGoodPosition();
-  } */
   selectedMeuble.automaticPlacement();
   selectedMeuble.update();
   select(meubles[indiceCurrentMeuble],false);
-
- /*  let isPositionOk=(!selectedMeuble.recaleDansPiece() && selectedMeuble.getIntersectionList().length==0);
-  if (!isPositionOk) console.log("Pas de position trouvée !!!"); */
-  select(meubles[indiceCurrentMeuble],false);
-  if (indiceCurrentMeuble>0) startMaterialAnimationMeuble(meubles[indiceCurrentMeuble]);
-  frameCamera();
+  if (indiceCurrentMeuble>0) flashMeuble(meubles[indiceCurrentMeuble]);
 }
 
 function duplicatePropertiesValues(fromObj,toObj) {
@@ -3131,7 +3062,6 @@ function initDragBloc() {
     if (selectionMode!="blocs") return;
     let clickedBloc = event.object.bloc;
     select(clickedBloc,true);
-    //changeCurrentMeubleFromClick(clickedBloc.meuble);
     console.log(selectedObjects);
     refreshInterfaceBlocs();
     controls.enabled=false;
@@ -4026,8 +3956,6 @@ function getHTMLElements () {
   warningMeuble=document.getElementById("warningMeuble");
   warningSousMeubles=document.getElementById("warningSousMeubles");
 
-  console.log(warningContenu);
-
   contextMenuGeneral = document.getElementById("contextMenuGeneral");
   contextMenuMeuble = document.getElementById("contextMenuMeuble");
   contextMenuBloc= document.getElementById("contextMenuBloc");
@@ -4043,10 +3971,10 @@ function initializeInterface() {
   //buttons meuble
   checkboxVertical.addEventListener("click", switchVertical);
   checkboxSimple.addEventListener("click", switchSimple);
-  checkboxMurFond.addEventListener("click", function () { switchMur("murFond") });
-  checkboxMurGauche.addEventListener("click", function () { switchMur("murGauche") });
-  checkboxMurDroit.addEventListener("click", function () { switchMur("murDroit") });
-  checkboxSurSol.addEventListener("click", function () { switchMur("surSol") });
+  checkboxMurFond.addEventListener("click", function () { selectedMeuble.switchMur("murFond") });
+  checkboxMurGauche.addEventListener("click", function () { selectedMeuble.switchMur("murGauche") });
+  checkboxMurDroit.addEventListener("click", function () { selectedMeuble.switchMur("murDroit") });
+  checkboxSurSol.addEventListener("click", function () { selectedMeuble.switchMur("surSol") });
   buttonSocle.addEventListener("click", function () { switchSocle(indiceCurrentMeuble) });
   buttonPied.addEventListener("click", function () { switchPied(indiceCurrentMeuble) });
   buttonSuspendu.addEventListener("click", function () { switchSuspendu() });  //à virer
@@ -4073,55 +4001,6 @@ function initializeInterface() {
     selectedMeuble.update();
   }
 
-  function switchMur(mur) {
-    selectedMeuble.setActiveWall(mur);
-    selectedMeuble.automaticPlacement();
-    refreshInterfaceMeuble();
-    selectedMeuble.update();
-  }
-
-/*   function switchMurFond() {
-    if (!selectedMeuble.onMurFond) {
-      selectedMeuble.setActiveWall("murFond");
-    }
-    else {
-      selectedMeuble.setActiveWall("murFond");
-      //if (!selectedMeuble.recale("X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
-    }
-    selectedMeuble.automaticPlacement();
-    refreshInterfaceMeuble();
-    selectedMeuble.update();
-  }
-
-  function switchMurGauche() {
-    selectedMeuble.setActiveWall("murGauche");
-    selectedMeuble.automaticPlacement();
-    refreshInterfaceMeuble();
-    selectedMeuble.update();
-  }
-
-  function switchMurDroit() {
-      selectedMeuble.setActiveWall("murDroit");
-      //if (!selectedMeuble.recale("Z") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
-      //if (!selectedMeuble.recale("-X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
-      selectedMeuble.automaticPlacement();
-      refreshInterfaceMeuble();
-      selectedMeuble.update();
-  }
-
-  function switchSurSol() {
-
-    if (!selectedMeuble.surSol) {
-      selectedMeuble.setActiveWall("surSol");
-      if (!selectedMeuble.recale("X") && !selectedMeuble.recale("-X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
-    }
-    else selectedMeuble.setActiveWall("murFond");
-
-    selectedMeuble.recaleDansPiece();
-    selectedMeuble.update();
-    refreshInterfaceMeuble();
-  } */
-
   function switchSocle(num) {
     meubles[num].hasSocle=!meubles[num].hasSocle;
     if (meubles[num].hasSocle) {
@@ -4132,7 +4011,8 @@ function initializeInterface() {
     meubles[num].update();
   }
 
-  function switchPied(num) { meubles[num].hasPied=!meubles[num].hasPied;
+  function switchPied(num) {
+    meubles[num].hasPied=!meubles[num].hasPied;
     if (meubles[num].hasPied) {
       meubles[num].hasSocle=false;
       meubles[num].IsSuspendu=false;
@@ -4164,34 +4044,21 @@ function initializeInterface() {
   }
 
   //buttons blocs
-  buttonAjouterBloc.addEventListener("click",ajouterBloc);
-  buttonSupprimerBloc.addEventListener("click",supprimerBlocs);
-  buttonDecalerGauche.addEventListener("click",decalerGauche);
-  buttonDecalerDroite.addEventListener("click",decalerDroite);
+  buttonAjouterBloc.addEventListener("click",clicAjouterBloc);
+  buttonSupprimerBloc.addEventListener("click",clicSupprimerBlocs);
+  buttonDecalerGauche.addEventListener("click",clicDecalerGauche);
+  buttonDecalerDroite.addEventListener("click",clicDecalerDroite);
 
-  function ajouterBloc() {
-    console.log("ajouter bloc meuble n°",indiceCurrentMeuble);
-    let meuble = meubles[indiceCurrentMeuble];
-    console.log('ajouter',meuble.numero);
-    let spaceArray=[];
-    spaceArray=meuble.getMaxAllowedSpaceOnSides();
-    console.log(spaceArray);
-    let freeSpace=Math.min(spaceArray[0],spaceArray[1]);
-    let tailleBloc=meuble.addBloc();
-    console.log(freeSpace,tailleBloc);
-    if (freeSpace<tailleBloc/2) changeBlocsQuantity(meuble.nbBlocs+1)
-    else {
-      meuble.nbBlocs+=1;
-      meuble.updateTaille();
-      meuble.update();
-    }
+  //ajoute nouveau bloc, si taille disponible insuffisante les blocs sont réajustés en taille
+  function clicAjouterBloc() {
+    meubles[indiceCurrentMeuble].addNewBlocAndAdjust();
     clearSelectionList();
     indiceCurrentBloc=-1;
     refreshInterfaceMeuble();
     refreshInterfaceBlocs();
   }
 
-  function supprimerBlocs() {
+  function clicSupprimerBlocs() {
     for (var i = selectedObjects.length - 1; i > -1; i--) {
       let bloc = selectedObjects[i];
       if (bloc.constructor.name == "Bloc") {
@@ -4213,7 +4080,7 @@ function initializeInterface() {
     refreshInterfaceBlocs();
   }
 
-  function decalerGauche() {
+  function clicDecalerGauche() {
     for (var i = selectedObjects.length - 1; i > -1; i--) {
       let bloc = selectedObjects[i];
       let meuble = bloc.meuble;
@@ -4228,7 +4095,7 @@ function initializeInterface() {
     refreshInterfaceBlocs();
   }
 
-  function decalerDroite() {
+  function clicDecalerDroite() {
     for (var i = selectedObjects.length - 1; i > -1; i--) {
       let bloc = selectedObjects[i];
       let meuble = bloc.meuble;
@@ -4296,10 +4163,10 @@ function initializeInterface() {
   function switchPorteGauche() { setValueOnSelection("ouverturePorte","gauche"); }
   function switchPorteDroite() { setValueOnSelection("ouverturePorte","droite"); }
 
-  buttonUnePorte.addEventListener("click", switchUnePorte, false);
-  buttonDeuxPortes.addEventListener("click", switchDeuxPortes, false);
-  buttonOuverturePorteGauche.addEventListener("click", switchPorteGauche, false);
-  buttonOuverturePorteDroite.addEventListener("click", switchPorteDroite, false);
+  buttonUnePorte.addEventListener("click", switchUnePorte);
+  buttonDeuxPortes.addEventListener("click", switchDeuxPortes);
+  buttonOuverturePorteGauche.addEventListener("click", switchPorteGauche);
+  buttonOuverturePorteDroite.addEventListener("click", switchPorteDroite);
   buttonEtageresVerticales.addEventListener("click", function () {switchEtagereVerticale(indiceCurrentBloc)});
   checkboxRentrant.addEventListener("click", function () {switchRentrant()});
 
@@ -4314,10 +4181,11 @@ function initializeInterface() {
   } 
 
   selectListMeubles.addEventListener("change", function eventListMeublesPopup(event) { 
-    changeCurrentMeubleFromPopup(event.target.value,false);
-  }, false);
+    changeCurrentMeubleFromPopup(Number(event.target.value),false);
+  });
+
   selectListBlocs.addEventListener("change",function changeCurrentBlocFromPopup(event) {
-    startMaterialAnimationBloc(event.target.value);
+    flashBloc(Number(event.target.value));
     clearSelectionList();
     indiceCurrentBloc=event.target.value;
     select(meubles[indiceCurrentMeuble].bloc[indiceCurrentBloc]);
@@ -4325,25 +4193,26 @@ function initializeInterface() {
     refreshInterfaceBlocs();
     updateSelectableEtagere();
     updateSelectableHandleBloc();
-  },false);
+  });
+
   buttonNewMeuble.addEventListener("click", function eventButtonNewMeuble() {
     createNewMeuble();
     indiceCurrentBloc = -1;
     refreshInterface();
-  }, false);
+    frameCamera();
+  });
+
   buttonDupliquerMeuble.addEventListener("click", function eventButtonDupliquerMeuble() {
     duplicateMeuble();
     indiceCurrentBloc = -1;
     refreshInterface();
-  }, false);
+  });
+
   buttonDeleteMeuble.addEventListener("click", function eventButtonDeleteMeuble() {
-    deleteMeuble(indiceCurrentMeuble);
-    //recomputeMeublesId();
-    indiceCurrentBloc = -1;
+    if (deleteMeuble(selectedMeuble)) console.log("meuble deleted");
     refreshInterface();
-    updateSelectableBlocs();
     frameCamera();
-  }, false);
+  });
 
   function changeStyle(event) { 
     if (selectedObjects.length>0) {setValueOnSelection("style",event.target.value)}
@@ -4842,7 +4711,7 @@ function initializeAnimations() {
   clock = new THREE.Clock();
 }
 
-function startMaterialAnimationMeuble(meuble) {
+function flashMeuble(meuble) {
   let boiteSelection = meuble.selectionBox;
   boiteSelection.material = materialSelectionMeubleAnim;
   hideChildren(boiteSelection);
@@ -4856,7 +4725,7 @@ function startMaterialAnimationMeuble(meuble) {
   
 function changeCurrentMeubleFromPopup(num) {
   changeCurrentMeuble(meubles[num],false);
-  startMaterialAnimationMeuble(meubles[num]);
+  flashMeuble(meubles[num]);
 }
 
 function createInterfaceMeuble() { // Rebuild HTML content for list meubles
@@ -5370,7 +5239,7 @@ function onMaterialBlocAnimationFinish (num) {
   mixerMaterial=undefined;
 }
 
-function startMaterialAnimationBloc(num) {
+function flashBloc(num) {
   let bloc=selectedMeuble.root.getObjectByName("boiteSelectionBloc"+num);
   bloc.material = materialSelectionBlocAnim;
   bloc.visible = true;
