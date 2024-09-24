@@ -1197,12 +1197,13 @@ class Meuble {
     else return true;
   }
 
-  recale(preferedAxe) { //returns true if successful
+  recale(preferedAxis) { //returns true if successful
     let cadreB, plateauB, piedB, socleB, offsetHautB, offsetBasB;
     let bX, bY, bZ, hB, wB, dB;
     let aX, aY, aZ, hA, wA, dA;
     let decalX, decalY, decalZ;
     let collisionList = [];
+    let usedAxis ="";
 
     hA = this.getHauteurBoundingBox();
     wA = this.getLargeurBoundingBox();
@@ -1240,54 +1241,78 @@ class Meuble {
         if (aZ >= bZ) { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
         else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) }
 
-/*      if (aX >= bX || preferedAxe == "X") { decalX = (aX - wA / 2) - (bX + wB / 2) }
+/*      if (aX >= bX || preferedAxis == "X") { decalX = (aX - wA / 2) - (bX + wB / 2) }
         else { decalX = (aX + wA / 2) - (bX - wB / 2) }
-        if (aY >= bY || preferedAxe == "Y") { decalY = (aY - hA / 2) - (bY + hB / 2) }
+        if (aY >= bY || preferedAxis == "Y") { decalY = (aY - hA / 2) - (bY + hB / 2) }
         else { decalY = (aY + hA / 2) - (bY - hB / 2) }
-        if (aZ >= bZ || preferedAxe == "Z") { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
+        if (aZ >= bZ || preferedAxis == "Z") { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
         else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) } */
 
       if (this.onMurFond) {
-        if ((Math.abs(decalX) <= Math.abs(decalY)) || preferedAxe == "X" || preferedAxe=="-X")
-          if (preferedAxe == "-X") {
+        if ((Math.abs(decalX) <= Math.abs(decalY)) || preferedAxis == "X" || preferedAxis=="-X")
+          if (preferedAxis == "-X") {
             this.x += decalX;
             aX += decalX;
+            usedAxis="-X";
           }
           else {
             this.x -= decalX;
             aX -= decalX;
+            usedAxis="X";
           }
         else 
         {
           this.y -= decalY;
           aY -= decalY;
+          usedAxis="Y";
         }
       }
 
       if (this.onMurDroit || this.onMurGauche) {
-        if ((Math.abs(decalZ) <= Math.abs(decalY)) || preferedAxe == "Z")
+        if ((Math.abs(decalZ) <= Math.abs(decalY)) || preferedAxis == "Z" || preferedAxis=="-Z")
         {
           this.z -= decalZ;
           aZ -= decalZ;
+          usedAxis="Z";
         }
         else 
         {
           this.y -= decalY;
           aY -= decalY;
+          usedAxis="Y";
         }
       }
 
       if (this.surSol) {
-        if ((Math.abs(decalZ) <= Math.abs(decalX)) || preferedAxe == "Z")
+        if ((Math.abs(decalZ) <= Math.abs(decalX)) || preferedAxis == "Z" || preferedAxis=="-Z")
         {
           this.z -= decalZ;
           aZ -= decalZ;
+          usedAxis="Z";
         }
         else
         {
           this.x -= decalX;
           aX -= decalX;
+          usedAxis="X";
         }
+      }
+    }
+
+    //test deuxième itération sur deuxième si non concluant sur le premier axe
+    if (!preferedAxis && this.getIntersectionList().length > 0) {
+      console.log("deuxième intération");
+      if (this.onMurFond) {
+        if (usedAxis == "X" || usedAxis == "-X") this.recale("Y");   //reprendre orientation +/-
+        if (usedAxis == "Y" || usedAxis == "-Y") this.recale("X");
+      }
+      if (this.onMurDroit || this.onMurGauche) {
+        if (usedAxis == "Z" || usedAxis == "-Z") this.recale("Y");
+        if (usedAxis == "Y" || usedAxis == "-Y") this.recale("Z");
+      }
+      if (this.surSol) {
+        if (usedAxis == "X" || usedAxis == "-X") this.recale("Y");
+        if (usedAxis == "Z" || usedAxis == "-Z") this.recale("X");
       }
     }
     return (this.getIntersectionList().length == 0);
@@ -1337,19 +1362,14 @@ class Meuble {
         if (this.intersectY(i) && this.intersectZ(i)) {
           list.push(meubles[i]);
           y=meubles[i].y+meubles[i].getHauteurBoundingBox();
-          ySup=Math.max(y,ySup);
+          ySup=Math.max(y,ySup);    //à améliorer sortir inf egalement pour calage suivant
         }
       }
     }
-    
     if (list.length==0) return [-largeurPiece/2+demiLargeur,ySup];
-
     list.sort(function(a, b) {
       return [a.x-b.x,ySup];
     });
-
-    console.log(list);
-
     let previous = -largeurPiece/2;
     let last = largeurPiece/2;
     let next;
@@ -1359,15 +1379,95 @@ class Meuble {
       let demiLargeurCurrent=list[i].getLargeurBoundingBox()/2;
       next = list[i].x-demiLargeurCurrent;
       let width=next-previous;
-      if (width>=this.largeur) return [(previous+demiLargeur),ySup];
+      if (width>=this.getLargeurBoundingBox()) return [(previous+demiLargeur),ySup];
       previous=list[i].x+demiLargeurCurrent;;
     }
 
     width=last-previous;
-    if (width>=this.largeur) return [(previous+demiLargeur),ySup];
+    if (width>=this.getLargeurBoundingBox()) return [(previous+demiLargeur),ySup];
 
     console.log("pas de X trouvé");
     return [undefined,ySup];
+  }
+
+  findFirstZplacement() {
+    let demiProfondeur=this.getProfondeurBoundingBox()/2;
+    let list=[];
+    let ySup=0;
+    let y=0;
+    for (var i=0;i<meubles.length;i++) {
+      if (i!=this.numero) {
+        if (this.intersectY(i) && this.intersectX(i)) {
+          list.push(meubles[i]);
+          y=meubles[i].y+meubles[i].getHauteurBoundingBox();
+          ySup=Math.max(y,ySup);
+        }
+      }
+    }
+    if (list.length==0) return [demiProfondeur,ySup];
+    list.sort(function(a, b) {
+      return [a.z-b.z,ySup];
+    });
+    let previous = 0;
+    let last = profondeurPiece;
+    let next;
+    let width;
+
+    for (var i=0;i<list.length;i++) {
+      let demiProfondeurCurrent=list[i].getProfondeurBoundingBox()/2;
+      next = list[i].z-demiProfondeurCurrent;
+      let width=next-previous;
+      if (width>=this.getProfondeurBoundingBox()) return [(previous+demiProfondeur),ySup];
+      previous=list[i].z+demiProfondeurCurrent;;
+    }
+
+    width=last-previous;
+    if (width>=this.getProfondeurBoundingBox()) return [(previous+demiProfondeur),ySup];
+
+    console.log("pas de Z trouvé");
+    return [undefined,ySup];
+  }
+
+  automaticPlacement() {
+    let result,x,y,z;
+    this.recaleDansPiece();
+
+    if (this.onMurFond) {
+      result = this.findFirstXplacement();
+      x = result[0];
+      y = result[1];
+      console.log(result);
+      console.log("first X=", x);
+      if (x) this.x = x
+      else {                                 //à améliorer
+        this.y = y;
+        result = this.findFirstXplacement();
+        x = result[0];
+        y = result[1];
+        console.log("result deuxième passage X=", result);
+        if (x) this.x = x
+        else this.findGoodPosition();
+      }
+    }
+
+    if (this.onMurDroit || this.onMurGauche) {
+      result = this.findFirstZplacement();
+      z = result[0];
+      y = result[1];
+      console.log(result);
+      console.log("first Z=", z);
+      if (z) this.z = z
+      else {                              //à améliorer
+        this.y = y;
+        result = this.findFirstZplacement();
+        z = result[0];
+        y = result[1];
+        console.log("result deuxième passage Z=", result);
+        if (z) this.z = z
+        else this.findGoodPosition();
+      }
+    }
+    this.placeMeuble();
   }
 
   createGeometryRoot() {
@@ -2163,7 +2263,7 @@ function createNewMeuble() {
   selectedMeuble=meubles[indiceCurrentMeuble];
   //placeNewMeuble(indiceCurrentMeuble);
   //selectedMeuble.update();
-  selectedMeuble.recaleDansPiece();
+  /* selectedMeuble.recaleDansPiece();
   let result=selectedMeuble.findFirstXplacement();
   let x=result[0];
   let y=result[1];
@@ -2178,11 +2278,15 @@ function createNewMeuble() {
     console.log("result deuxième passage X=",result);
     if (x) selectedMeuble.x=x
     else selectedMeuble.findGoodPosition();
-  }
+  } */
+  selectedMeuble.automaticPlacement();
   selectedMeuble.update();
+  select(meubles[indiceCurrentMeuble],false);
+
  /*  let isPositionOk=(!selectedMeuble.recaleDansPiece() && selectedMeuble.getIntersectionList().length==0);
   if (!isPositionOk) console.log("Pas de position trouvée !!!"); */
-  select(meubles[indiceCurrentMeuble],true);
+  select(meubles[indiceCurrentMeuble],false);
+  if (indiceCurrentMeuble>0) startMaterialAnimationMeuble(meubles[indiceCurrentMeuble]);
   frameCamera();
 }
 
@@ -2441,7 +2545,7 @@ function checkKey(e) {
 }
 
 function onKeyDown(event) {
-  console.log(event.keyCode);
+  //console.log(event.keyCode);
   if (event.key == "Escape") {
     hideAllContextMenu();
     clearSelectionList();
@@ -2453,6 +2557,8 @@ function onKeyDown(event) {
 if (event.keyCode == '34')
   {console.log("arrow pressed");
   onArrowDown();}
+
+  pressedKey=event.key;
 }
 
 function onKeyUp(event) {
@@ -3152,9 +3258,6 @@ function setInitialPosition(meuble, boxMeuble, wpos) {
 
 var dragMeubleControls;
 function initDragMeuble() {
-
-
-
   var wA, hA, dA;
   var aX, aY, aZ;
   dragMeubleControls = new DragControls(selectableMeuble, camera, renderer.domElement);
@@ -3372,19 +3475,21 @@ function initDragMeuble() {
 
     function applyDeltaToBox() {
       let obj = new THREE.Object3D();
-      obj.position.copy(deltaMeuble);
-      box.attach(obj);
+      //obj.position.copy(deltaMeuble);
+      //box.attach(obj);
       let rot = new THREE.Euler();
       rot = meuble.root.getObjectByName("pivot").rotation;
       let rotB = new THREE.Euler(rot.x, rot.y, rot.z, 'XYZ');
+      //application du delta suivant la rotation inverse dans le cas ou le meuble est pivoté sur Y
       rotB.y *= -1;
-      deltaMeuble.applyEuler(rotB);
+      deltaMeuble.applyEuler(rotB); 
       box.position.x -= deltaMeuble.x;
       box.position.y -= deltaMeuble.y;
       box.position.z -= deltaMeuble.z;
     }
 
     if (isPositionOk) { //position ok
+      console.log("position ok");
       box.xMeubleOk = meuble.x;
       box.yMeubleOk = meuble.y;
       box.zMeubleOk = meuble.z;
@@ -3394,6 +3499,7 @@ function initDragMeuble() {
     }
 
     else { //on ne deplace pas
+      console.log("on ne deplace pas");
       box.position.x = box.xBoxOk;
       box.position.y = box.yBoxOk;
       box.position.z = box.zBoxOk;
@@ -3762,7 +3868,7 @@ var ZDiv,ZDivSlider,ZDivInput;
 var styleMenu;
 var slidersAspect;
 var checkboxVertical;
-var checkboxMurGauche,checkboxMurDroit,checkboxSurSol;
+var checkboxMurFond,checkboxMurGauche,checkboxMurDroit,checkboxSurSol;
 // var checkboxSimple;
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
 var menuPoignees;
@@ -3867,6 +3973,7 @@ function getHTMLElements () {
   styleMenu = document.getElementById("style");
   slidersAspect = document.getElementById("slidersAspect");
   checkboxVertical = document.getElementById("checkboxVertical");
+  checkboxMurFond = document.getElementById("checkboxMurFond");
   checkboxMurGauche = document.getElementById("checkboxMurGauche");
   checkboxSurSol = document.getElementById("checkboxSurSol");
   checkboxMurDroit = document.getElementById("checkboxMurDroit");
@@ -3936,14 +4043,15 @@ function initializeInterface() {
   //buttons meuble
   checkboxVertical.addEventListener("click", switchVertical);
   checkboxSimple.addEventListener("click", switchSimple);
-  checkboxMurGauche.addEventListener("click", switchMurGauche);
-  checkboxMurDroit.addEventListener("click", switchMurDroit);
-  checkboxSurSol.addEventListener("click", switchSurSol);
-  buttonSocle.addEventListener("click",function() {switchSocle(indiceCurrentMeuble)});
-  buttonPied.addEventListener("click",function() {switchPied(indiceCurrentMeuble)});
-  buttonSuspendu.addEventListener("click",function() {switchSuspendu()});  //à virer
-  buttonPlateau.addEventListener("click",function() {switchPlateau(indiceCurrentMeuble)});
-  buttonCadre.addEventListener("click",function() {switchCadre(indiceCurrentMeuble)});
+  checkboxMurFond.addEventListener("click", function () { switchMur("murFond") });
+  checkboxMurGauche.addEventListener("click", function () { switchMur("murGauche") });
+  checkboxMurDroit.addEventListener("click", function () { switchMur("murDroit") });
+  checkboxSurSol.addEventListener("click", function () { switchMur("surSol") });
+  buttonSocle.addEventListener("click", function () { switchSocle(indiceCurrentMeuble) });
+  buttonPied.addEventListener("click", function () { switchPied(indiceCurrentMeuble) });
+  buttonSuspendu.addEventListener("click", function () { switchSuspendu() });  //à virer
+  buttonPlateau.addEventListener("click", function () { switchPlateau(indiceCurrentMeuble) });
+  buttonCadre.addEventListener("click", function () { switchCadre(indiceCurrentMeuble) });
   //context menu meuble
   document.getElementById("switchVertical").addEventListener("click",function() {switchVertical()});
   document.getElementById("switchPlateau").addEventListener("click",function() {switchPlateau(indiceCurrentMeuble)});
@@ -3965,28 +4073,38 @@ function initializeInterface() {
     selectedMeuble.update();
   }
 
-  function switchMurGauche() {
-    if (!selectedMeuble.onMurGauche) {
-      selectedMeuble.setActiveWall("murGauche");
-      if (!selectedMeuble.recale("Z") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
+  function switchMur(mur) {
+    selectedMeuble.setActiveWall(mur);
+    selectedMeuble.automaticPlacement();
+    refreshInterfaceMeuble();
+    selectedMeuble.update();
+  }
+
+/*   function switchMurFond() {
+    if (!selectedMeuble.onMurFond) {
+      selectedMeuble.setActiveWall("murFond");
     }
     else {
       selectedMeuble.setActiveWall("murFond");
-      if (!selectedMeuble.recale("X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
+      //if (!selectedMeuble.recale("X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
     }
+    selectedMeuble.automaticPlacement();
+    refreshInterfaceMeuble();
+    selectedMeuble.update();
+  }
+
+  function switchMurGauche() {
+    selectedMeuble.setActiveWall("murGauche");
+    selectedMeuble.automaticPlacement();
     refreshInterfaceMeuble();
     selectedMeuble.update();
   }
 
   function switchMurDroit() {
-    if (!selectedMeuble.onMurDroit) {
       selectedMeuble.setActiveWall("murDroit");
-      if (!selectedMeuble.recale("Z") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
-    }
-    else {
-      selectedMeuble.setActiveWall("murFond");
-      if (!selectedMeuble.recale("-X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
-    }
+      //if (!selectedMeuble.recale("Z") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
+      //if (!selectedMeuble.recale("-X") && !selectedMeuble.recale("Y")) selectedMeuble.findGoodPosition()
+      selectedMeuble.automaticPlacement();
       refreshInterfaceMeuble();
       selectedMeuble.update();
   }
@@ -4002,7 +4120,7 @@ function initializeInterface() {
     selectedMeuble.recaleDansPiece();
     selectedMeuble.update();
     refreshInterfaceMeuble();
-  }
+  } */
 
   function switchSocle(num) {
     meubles[num].hasSocle=!meubles[num].hasSocle;
@@ -4311,15 +4429,15 @@ function initializeInterface() {
   dropDownCadre.addEventListener("click",function (event) {dropMenu(event)},false);
 
 
-function expand(divSwitch,divData) {
-  if (divSwitch.className=="expandOff") {
-    divData.style.display="";
-    divSwitch.className="expandOn";
+function expand(divSwitch, divData) {
+  if (divSwitch.className == "expandOff") {
+    divData.style.display = "";
+    divSwitch.className = "expandOn";
   }
-    else {
-      divData.style.display="none";
-      divSwitch.className="expandOff";
-    }
+  else {
+    divData.style.display = "none";
+    divSwitch.className = "expandOff";
+  }
 }
 
   meubleData.style.display="none";
@@ -4705,18 +4823,20 @@ function onMaterialAnimationFinish (meuble) {
   clipActionMaterial.stop();
   clipActionMaterial.reset();
   let boiteSelection = meuble.selectionBox;
-  boiteSelection.visible = false;
 
   boiteSelection.material = materialSelectionMeuble;
   mixerMaterial.removeEventListener('finished', onMaterialAnimationFinish, false);
   mixerMaterial=undefined;
   showChildren(boiteSelection);
+  boiteSelection.visible = false;
+
 }
 
 var materialSelectionMeubleAnim,offset,clipMaterial,mixerMaterial,clipActionMaterial,clock;
 
 function initializeAnimations() {
-  materialSelectionMeubleAnim = new THREE.MeshStandardMaterial( materialSelectionMeubleParams );
+  materialSelectionMeubleAnim = new THREE.MeshBasicMaterial( materialSelectionMeubleParams );
+  //materialSelectionMeubleAnim.depthTest=false;
   offset = new THREE.NumberKeyframeTrack( '.opacity', [ 0, 1 ], [ 0.5,0] )
   clipMaterial = new THREE.AnimationClip( 'opacity_animation', 1, [ offset ] );
   clock = new THREE.Clock();
@@ -5039,6 +5159,7 @@ function refreshButtonDupliquerMeuble() {
 }
 
 function refreshCheckboxVertical() { if (selectedMeuble.disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}}
+function refreshCheckboxMurFond() { if (selectedMeuble.onMurFond) {checkboxMurFond.checked=true} else {checkboxMurFond.checked=false}}
 function refreshCheckboxMurGauche() { if (selectedMeuble.onMurGauche) {checkboxMurGauche.checked=true} else {checkboxMurGauche.checked=false}}
 function refreshCheckboxMurDroit() { if (selectedMeuble.onMurDroit) {checkboxMurDroit.checked=true} else {checkboxMurDroit.checked=false}}
 function refreshCheckboxSurSol() { if (selectedMeuble.surSol) {checkboxSurSol.checked=true} else {checkboxSurSol.checked=false}}
@@ -5046,6 +5167,7 @@ function refreshCheckboxSimple() { if (selectedMeuble.isSimple) {checkboxSimple.
 
 function refreshButtonsMeuble() {
   refreshCheckboxVertical();
+  refreshCheckboxMurFond();
   refreshCheckboxMurGauche();
   refreshCheckboxMurDroit();
   refreshCheckboxSurSol();
