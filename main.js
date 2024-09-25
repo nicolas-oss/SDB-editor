@@ -725,25 +725,6 @@ class Meuble {
     this.etageresVerticales = false;
   }
 
- /*  set x(value) {
-    this.x = value;
-  } */
-
-/*   get x() {
-    if (this.onMurGauche) return -largeurPiece/2+this.getProfondeurReelle()/2
-      else if (this.onMurDroit) return +largeurPiece/2-this.getProfondeurReelle()/2
-      else if (this.onMurFond || this.surSol) return this.x;
-  }
-
-  set z(value) {
-    this.z=value;
-  }
-
-  get z() {
-    if (this.onMurFond) return this.getProfondeurReelle()/2
-      else return this.z;
-  } */
-
   get style() {
     if (this.localStyle) {return this.localStyle}
     else return globalStyle;
@@ -1041,7 +1022,33 @@ class Meuble {
         }
       }
     }
+    console.log("collion list=",collisionList);
     return collisionList;
+  }
+
+  isInRoom() {
+    let xMax = largeurPiece / 2 - this.getLargeurBoundingBox() / 2;
+    let xMin = -largeurPiece / 2 + this.getLargeurBoundingBox() / 2;
+    let yMin = 0;
+    let yMax = hauteurPiece - this.getHauteurBoundingBox();
+    let zMin = this.getProfondeurBoundingBox() / 2;
+    let zMax = profondeurPiece - this.getProfondeurBoundingBox() / 2;
+    let isInRoom=true;
+    if (this.x<xMin) isInRoom=false;
+    if (this.y<yMin) isInRoom=false;
+    if (this.z<zMin) isInRoom=false;
+    if (this.x>xMax) isInRoom=false;
+    if (this.y>yMax) isInRoom=false;
+    if (this.z>zMax) isInRoom=false;
+    return isInRoom;
+  }
+
+  isPositionOk() {
+    let hasNoIntersection=false;
+    hasNoIntersection=(this.getIntersectionList().length==0);
+    let isInRoom=this.isInRoom();
+    let positionOK=(hasNoIntersection && isInRoom);
+    return(positionOK);
   }
 
   recaleDansPiece() { // return true if object moved
@@ -1115,13 +1122,6 @@ class Meuble {
         else { decalY = (aY + hA / 2) - (bY - hB / 2) }
         if (aZ >= bZ) { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
         else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) }
-
-/*      if (aX >= bX || preferedAxis == "X") { decalX = (aX - wA / 2) - (bX + wB / 2) }
-        else { decalX = (aX + wA / 2) - (bX - wB / 2) }
-        if (aY >= bY || preferedAxis == "Y") { decalY = (aY - hA / 2) - (bY + hB / 2) }
-        else { decalY = (aY + hA / 2) - (bY - hB / 2) }
-        if (aZ >= bZ || preferedAxis == "Z") { decalZ = (aZ - dA / 2) - (bZ + dB / 2) }
-        else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) } */
 
       if (this.onMurFond) {
         if ((Math.abs(decalX) <= Math.abs(decalY)) || preferedAxis == "X" || preferedAxis=="-X")
@@ -1322,7 +1322,6 @@ class Meuble {
       else return undefined;
   }
 
-
   findFirstZplacement() {
     let demiProfondeur=this.getProfondeurBoundingBox()/2;
     let list=[];
@@ -1339,23 +1338,23 @@ class Meuble {
     }
     if (list.length==0) return [demiProfondeur,ySup];
     list.sort(function(a, b) {
-      return [a.z-b.z,ySup];
+      return (a.z-b.z);
     });
     let previous = 0;
     let last = profondeurPiece;
     let next;
-    let width;
+    let depth;
 
     for (var i=0;i<list.length;i++) {
       let demiProfondeurCurrent=list[i].getProfondeurBoundingBox()/2;
       next = list[i].z-demiProfondeurCurrent;
-      let width=next-previous;
-      if (width>=this.getProfondeurBoundingBox()) return [(previous+demiProfondeur),ySup];
-      previous=list[i].z+demiProfondeurCurrent;;
+      let depth=next-previous;
+      if (depth>=this.getProfondeurBoundingBox()) return [(previous+demiProfondeur),ySup];
+      previous=list[i].z+demiProfondeurCurrent;
     }
 
-    width=last-previous;
-    if (width>=this.getProfondeurBoundingBox()) return [(previous+demiProfondeur),ySup];
+    depth=last-previous;
+    if (depth>=this.getProfondeurBoundingBox()) return [(previous+demiProfondeur),ySup];
 
     console.log("pas de Z trouvé");
     return [undefined,ySup];
@@ -1989,10 +1988,45 @@ class Meuble {
       }
     }
     if (mur =="surSol") {
-      this.findGoodPosition();
+      this.recaleDansPiece();
+      console.log("recale successful",this.recale());
+      if (!this.isPositionOk()) {
+        //if (this.orientation == 0 || this.orientation == 2) {
+          console.log("looking for Z");
+          let result = this.findSecondZplacement();
+          if (result) {
+            this.z = result[0];
+            this.y = result[1];
+          }
+          else console.log("WARNING : pas de position trouvée");
+        /*}
+        else {
+          console.log("looking for X");
+          let result = this.findFirstXplacement();
+          if (result[0]) {
+            this.x = result[0];
+            this.y = result[1];
+          }
+          else console.log("WARNING : pas de position trouvée");
+        }*/
+        //this.update();
+      }
     }
+    if (this.recaleDansPiece()) this.findGoodPosition();
+
     refreshInterfaceMeuble();
     selectedMeuble.update();
+  }
+
+  tourner() {
+    if (this.surSol) {
+      this.orientation+=1;
+      if (this.orientation==4) this.orientation=0;
+      this.placeMeuble();
+      this.recaleDansPiece();
+      this.recale();
+      this.placeMeuble();
+    }
   }
 }
 
@@ -2002,7 +2036,7 @@ class SousMeuble extends Meuble {
     this.numero = num;
     //this.rename();
     this.name="sousMeuble"+num;
-    this.shotName="sousMeuble";
+    this.shortName="sousMeuble";
     //this.hauteur = 50;
     //this.largeur = 140;
     //this.profondeur = 50;
@@ -2235,7 +2269,8 @@ function duplicateMeuble(num) {
   var listKeysElement = ["numero", "unherited", "xPredefini", "yPredefini", "yTiroirPredefini", "localType", "localStyle", "isSelected", "selectionBox", "isRentrantLocal", "ouverturePorteLocal", "nombrePortesLocal"];
   var listKeysBloc = ["numero", "taille", "unherited", "etageresLocal", "localType", "localStyle", "isSelected", "isRentrantLocal", "ouverturePorteLocal", "nombrePortesLocal", "etageresVerticalesLocal"];
   var listKeysMeuble = ["hauteur", "largeur", "profondeur", "nbBlocs", "x", "y", "z", "disposition", "epaisseur", "epaisseurCadre", "hasPlateau", "hasCadre", "hasSocle", "hasPied", "IsSuspendu", "offsetPoignees", "isSousMeuble", "type", "isRentrant", "isSimple", "onMurFond", "onMurGauche", "onMurDroit", "surSol", "orientation", "localStyle", "isSelected", "etageres", "ouverturePorte", "nombrePortes", "etageresVerticales"];
-
+  //var listKeysSousMeuble = ["numero", "unherited", "xPredefini", "yPredefini", "yTiroirPredefini", "localType", "localStyle", "isSelected", "selectionBox", "isRentrantLocal", "ouverturePorteLocal", "nombrePortesLocal"];
+  
   newMeuble.setBlocsQuantity(oldMeuble.nbBlocs);
 
   //copie des blocs
@@ -3594,8 +3629,6 @@ function updateSelectableHandleMeuble() {
 function updateSelectableSousMeubles() {
   selectableSousMeubles = [];
   scene.getObjectsByProperty("shortName", "boiteSelectionSousMeuble", selectableSousMeubles);
-  //if (selectableSousMeubles) selectableSousMeubles.setObjects(selectableSousMeubles);
-  console.log(selectableSousMeubles);
 }
 
 function updateAllSelectable() {
@@ -3796,6 +3829,7 @@ var interfaceDiv;
 //var meubleDiv;
 var divEtageres;
 var buttonNewMeuble,buttonDupliquerMeuble,buttonDeleteMeuble;
+var buttonTourner;
 var buttonAjouterBloc,buttonSupprimerBloc,buttonDecalerGauche,buttonDecalerDroite;
 var listMeublesPopup;
 var listMeublesName;
@@ -3889,6 +3923,8 @@ function getHTMLElements () {
   buttonNewMeuble = document.getElementById("buttonNewMeuble");
   buttonDupliquerMeuble = document.getElementById("buttonDupliquerMeuble");
   buttonDeleteMeuble = document.getElementById("buttonDeleteMeuble");
+
+  buttonTourner=document.getElementById("buttonTourner");
   
   buttonSocle = document.getElementById("buttonSocle");
   buttonPied = document.getElementById("buttonPied");
@@ -4001,6 +4037,9 @@ function initializeInterface() {
   checkboxMurGauche.addEventListener("click", function () { selectedMeuble.switchMur("onMurGauche") });
   checkboxMurDroit.addEventListener("click", function () { selectedMeuble.switchMur("onMurDroit") });
   checkboxSurSol.addEventListener("click", function () { selectedMeuble.switchMur("surSol") });
+
+  buttonTourner.addEventListener("click",function () {selectedMeuble.tourner(); refreshInterfaceMeuble()});
+
   buttonSocle.addEventListener("click", function () { switchSocle(indiceCurrentMeuble) });
   buttonPied.addEventListener("click", function () { switchPied(indiceCurrentMeuble) });
   buttonSuspendu.addEventListener("click", function () { switchSuspendu() });  //à virer
@@ -4818,20 +4857,13 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   function eventProfondeurSliderReleased() {
     selectedMeuble.recaleDansPiece();
     refreshInterfaceMeuble();
-    console.log("slider released");
     maxDepth = undefined;
   }
   
   function eventProfondeurSliderInput() {
     if (!maxDepth) maxDepth=selectedMeuble.getMaxAllowedDepth();
-    console.log("max allowed depth = ",maxDepth);
     let profondeur=+profondeurDivSlider.value; //forçage de type
-    //console.log(maxDepth);
-    //var maxWidth = selectedMeuble.getMaxAllowedWidth();  //calcul collision sur input
     selectedMeuble.profondeur = (profondeur<maxDepth) ? profondeur : maxDepth;
-    //selectedMeuble.profondeur = profondeur;
-    //selectedMeuble.computeBlocsSize();
-    //refreshInterfaceBlocs();
     selectedMeuble.update();
     selectedMeuble.recaleDansPiece();
     refreshInterfaceProfondeur();
@@ -4843,11 +4875,6 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     eventProfondeurSliderReleased();
     refreshInterfaceMeuble();
   }
-
-
-
-
-
 
   //largeur meuble
   largeurDiv=createSlider(meuble,"largeur","Largeur",meuble.largeur,0,10,500);
@@ -4980,6 +5007,7 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
   }
 
   refreshCheckboxMeuble();
+  refreshButtonTourner();
   refreshButtonPlateau();
   refreshButtonCadre();
   refreshButtonFixationGroup();
@@ -5066,6 +5094,12 @@ function refreshButtonsMeuble() {
   refreshCheckboxMurDroit();
   refreshCheckboxSurSol();
   refreshCheckboxSimple();
+  refreshButtonTourner();
+}
+
+function refreshButtonTourner() {
+  if (!selectedMeuble.surSol) buttonTourner.disabled=true
+    else buttonTourner.disabled=false;
 }
 
 function refreshButtonPlateau() { if (selectedMeuble.hasPlateau) {buttonPlateau.className="buttonOn"} else {buttonPlateau.className="buttonOff"}}
