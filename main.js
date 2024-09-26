@@ -340,26 +340,25 @@ getPorte(isPorteBloc) {
     this.sousMeuble.calculTailleBlocs();
   }
 
-  this.sousMeuble.largeur=this.xl;
-  this.sousMeuble.hauteur=this.yl;
-  console.log("xl yl cellule",this.xl,this.yl);
-  console.log(this.sousMeuble);
+    this.sousMeuble.largeur = this.xl;
+    this.sousMeuble.hauteur = this.yl;
     this.sousMeuble.computeBlocsSize();
     this.sousMeuble.createGeometryRoot();
     this.sousMeuble.update();
-    this.sousMeuble.element=this;
+    this.sousMeuble.element = this;
     this.sousMeuble.placeMeuble();
-
-/*     for (var i=0;i<this.sousMeuble.nbBlocs;i++) {
-      let bloc=this.sousMeuble.bloc[i];
-      for (var j=0;j<bloc.etageres;j++) {
-        bloc.elements[j].meuble=this.meuble;
-        bloc.elements[j].bloc=this.bloc;
-      }
-    } */
-
-    let root=this.sousMeuble.root;
+    let root = this.sousMeuble.root;
     return root;
+  }
+
+  duplicate(bloc,j) {
+    let listKeysElement = ["numero", "unherited", "xPredefini", "yPredefini", "yTiroirPredefini", "localType", "localStyle", "isSelected", "selectionBox", "isRentrantLocal", "ouverturePorteLocal", "nombrePortesLocal"];
+    let newElement = new Element(bloc, j);
+    listKeysElement.forEach(key => {
+      //console.log()
+        if (this[key]!=undefined) newElement[key] = this[key];
+      });
+    return newElement;
   }
 }
 
@@ -688,14 +687,27 @@ get epaisseurCadre() {
     console.log("etagere number",this.etageresLocal,this.etageres);
   }
 
-/*   setTaille(num) {
-    for (var i = this.etageres+1; i < num+2; i++) {
-      if (!this.elements[i]) {
-        this.elements[i] = new Element(this, i);
+  duplicate(meuble,i) {
+    let listKeysBloc = ["numero", "taille", "unherited", "etageresLocal", "localType", "localStyle", "isSelected", "isRentrantLocal", "ouverturePorteLocal", "nombrePortesLocal", "etageresVerticalesLocal"];
+  
+    let newBloc=new Bloc(meuble,i);
+      listKeysBloc.forEach(key => {
+        newBloc[key] = this[key];
+      });
+      newBloc.elements = [];
+  
+      //copie des elements
+      for (var j = 0; j < this.etageres + 4; j++) {
+        console.log("copie elements,i,j=", i, j);
+        console.log(meuble.bloc[i].elements[j]);
+        if (this.elements[j]!=undefined) {
+          newBloc.elements[j] = this.elements[j].duplicate(newBloc,j);
+        }
       }
-    }
-    this.etageresLocal = num;
-  } */
+      newBloc.isSelected = false;
+
+      return newBloc;
+  }
 }
 
 class Meuble {
@@ -1871,6 +1883,19 @@ class Meuble {
     return this.bloc[this.bloc.length-1].taille;
   }
 
+  diviserBloc (num) {
+    console.log(num);
+    let taille=this.bloc[num].taille;
+    let newBloc=this.bloc[num].duplicate(this,num);
+    newBloc.taille=taille/2;
+    this.bloc[num].taille=taille/2;
+    this.bloc.splice(num+1,0,newBloc);
+    this.nbBlocs+=1;
+    this.recomputeBlocsId();
+    /* this.bloc[num].recomputeElementsId();
+    this.bloc[num+1].recomputeElementsId(); */
+  }
+
   //sets blocs number and keeps meuble width constant - blocs sizes adjusted proportionally
   setBlocsQuantity (num) {
     var tailleEnlevee=0;
@@ -2058,6 +2083,14 @@ class Meuble {
       this.placeMeuble();
     }
   }
+
+  duplicate() {
+    var listKeysMeuble = ["hauteur", "largeur", "profondeur", "nbBlocs", "x", "y", "z", "disposition", "epaisseur", "epaisseurCadre", "hasPlateau", "hasCadre", "hasSocle", "hasPied", "IsSuspendu", "offsetPoignees", "isSousMeuble", "type", "isRentrant", "isSimple", "onMurFond", "onMurGauche", "onMurDroit", "surSol", "orientation", "localStyle", "isSelected", "etageres", "ouverturePorte", "nombrePortes", "etageresVerticales"];
+
+
+  }
+
+
 }
 
 class SousMeuble extends Meuble {
@@ -2323,30 +2356,12 @@ function duplicateMeuble(num) {
   
   newMeuble.setBlocsQuantity(oldMeuble.nbBlocs);
 
-  //copie des blocs
   for (var i = 0; i < oldMeuble.nbBlocs; i++) {
-    let currentBloc = newMeuble.bloc[i];
-    listKeysBloc.forEach(key => {
-      currentBloc[key] = oldMeuble.bloc[i][key];
-      //console.log(key,newMeuble.bloc[i][key]);
-    });
-    currentBloc.elements = [];
-
-    //copie des elements
-    for (var j = 0; j < currentBloc.etageres + 4; j++) {
-      console.log("copie elements,i,j=", i, j);
-      currentBloc.elements[j] = new Element(currentBloc, j);
-      if (j < currentBloc.etageres + 1) listKeysElement.forEach(key => {
-        newMeuble.bloc[i].elements[j][key] = oldMeuble.bloc[i].elements[j][key];
-        console.log(key, newMeuble.bloc[i].elements[j][key]);
-      });
-    }
-    newMeuble.bloc[i].isSelected = false;
+    newMeuble.bloc[i] = oldMeuble.bloc[i].duplicate(newMeuble,i);
   }
 
   listKeysMeuble.forEach(key => {
     newMeuble[key] = oldMeuble[key];
-    //console.log(key,newMeuble[key]);
   });
 
   console.log(newMeuble);
@@ -2847,13 +2862,15 @@ function clearRaycast() {
   hideAllRaycastedBoxes();
 }
 
-/* function hideAllBoxes() {
+function hideAllBoxes() {
   let allBoxes=[];
   scene.getObjectsByProperty("category","boiteSelection",allBoxes);
+  console.log(allBoxes);
   for (var i=0; i<allBoxes.length;i++) {
     allBoxes[i].visible=false;
+    allBoxes[i].isSelected=false;
   }
-} */
+}
 
 //drag
 var newHelper;
@@ -4234,39 +4251,43 @@ function initializeInterface() {
   }
 
   //buttons etageres
-  buttonDiviserEtageres.addEventListener("click", clicDiviserEtageres);
+  buttonDiviserEtageres.addEventListener("click", clicDiviserElements);
   buttonSupprimerEtageres.addEventListener("click",clicSupprimerEtageres);
 
-  function clicDiviserEtageres() {
-    //console.log(selectedMeuble);
+  function diviserElement(element) {
+    // si première division on crée un sous meuble
+    if (!element.meuble.isSousMeuble || element.bloc.etageres>0) {
+      let type=element.type;
+      element.type="SousMeuble";
+      element.initialMeuble.update();
+      element.sousMeuble.etageres=0;
+      element.sousMeuble.type=type;
+      element.sousMeuble.nbBlocs=2;
+    }
+    //sinon on ajoute un bloc au sous meuble
+    else {
+      //element.meuble.setBlocsQuantity(element.meuble.nbBlocs+1);
+      element.meuble.diviserBloc(element.bloc.numero);
+    }
+  }
+  
+  function clicDiviserElements() {
+    /* hideAllRaycastedBoxes();
+    hideAllBoxes(); */
     let meuble=selectedMeuble;
     if (selectionMode!="elements" || selectedObjects.length==0) return;
-    let currentElement;
+    let element;
     for (var i=0;i<selectedObjects.length;i++) {
-      currentElement = selectedObjects[i];
-      console.log("isSousMeuble",currentElement.meuble.isSousMeuble);
-      if (!currentElement.meuble.isSousMeuble) {
-        let type=currentElement.type;
-        currentElement.type="SousMeuble";
-        currentElement.initialMeuble.update();
-        //currentElement.sousMeuble=currentElement.getSousMeuble();
-        currentElement.sousMeuble.etageres=0;
-        currentElement.sousMeuble.type=type;
-        currentElement.sousMeuble.nbBlocs=2;
-        //currentElement.sousMeuble.computeBlocsSize();
-        currentElement.initialMeuble.update();
-      }
-      else {
-        currentElement.meuble.setBlocsQuantity(currentElement.meuble.nbBlocs+1);
-        currentElement.initialMeuble.update();
-      }
+      element = selectedObjects[i];
+      element.isSelected = false;
+      diviserElement(element);
+      element.initialMeuble.update();
     }
-    updateSelectableElements();
+    updateAllSelectable();
     clearSelectionList();
-    //console.log(currentElement.sousMeuble.bloc[0].etageres[0]);
-    select(currentElement.sousMeuble.bloc[0].elements[0],true,true);
-    select(currentElement.sousMeuble.bloc[1].elements[0],true,true);
-    selectedMeuble=meuble;
+/*     select(element.sousMeuble.bloc[0].elements[0],true,true);
+    select(element.sousMeuble.bloc[1].elements[0],true,true);
+ */    selectedMeuble=meuble;
   }
 
   function clicSupprimerEtageres() {
