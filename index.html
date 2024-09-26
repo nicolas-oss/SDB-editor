@@ -40,7 +40,7 @@
             </div>
            <div id="meubleHiddenIfEmpty">
             <div id="switchMeuble">
-              <label class="switch">
+              <label class="switch" id="labelCheckboxVertical">
                 <input type="checkbox" id="checkboxVertical" checked="false">
                 <span class="slider round">Vertical</span>
               </label>
@@ -188,11 +188,11 @@
           </div>
           <div id="contenuData">
             <div id="buttonsBlocs" class="boutons">
-              <input type="button" id="buttonPorte" value="Portes" class="buttonFlex">
-              <input type="button" id="buttonTiroirs" value="Tiroirs" class="buttonFlex">
               <input type="button" id="buttonEtageres" value="Étagères" class="buttonFlex">
+              <input type="button" id="buttonTiroirs" value="Tiroirs" class="buttonFlex">
             </div>
             <div id="buttonsBlocs" class="boutons">
+              <input type="button" id="buttonPorte" value="Portes" class="buttonFlex">
               <input type="button" id="buttonPlein" value="Panneau" class="buttonFlex">
               <input type="button" id="buttonSousMeuble" value="Meuble" class="buttonFlex">
             </div>
@@ -215,8 +215,10 @@
               </div>
             </div>
             <div id="divEtageres">
+              <div id="divEtageresVerticale">
               <input type="checkbox" id="checkBoxEtageresVerticales">
               Étagères verticales
+            </div>
             </div>
             <div id="buttonsEtageres"></div>
             <div id="buttonsOptionsBlocs">
@@ -326,7 +328,9 @@
         </div>
 
         <div id="enregistrement">
-          <p id="expandEnregistrement" class="expandOff">Préconfiguration</p>
+          <div class="title">
+            <p id="expandEnregistrement" class="expandOff">Préconfiguration</p>
+          </div>
           <div class="deuxBoutons boutons" id="enregistrementData">
             <input type="button" id="charger" value="Charger" class="deuxBoutons">
             <input type="button" id="enregistrer" value="Enregistrer" class="deuxBoutons">

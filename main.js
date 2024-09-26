@@ -1418,7 +1418,7 @@ class Meuble {
     let result;
     this.recaleDansPiece();
 
-    if (this.onMurFond) {
+    if (this.onMurFond || this.surSol) {
       result = this.findSecondXplacement();
       if (!result) {
         console.log ("WARNING : Aucun emplacement trouvé");
@@ -1428,7 +1428,7 @@ class Meuble {
       this.y=result[1];
     }
 
-    if (this.onMurDroit || this.onMurGauche) {
+    if (this.onMurDroit || this.onMurGauche || this.surSol) {
       result = this.findSecondZplacement();
       if (!result) {
         console.log ("WARNING : Aucun emplacement trouvé");
@@ -1437,6 +1437,7 @@ class Meuble {
       this.z=result[0];
       this.y=result[1];
     }
+
     this.placeMeuble();
   }
 
@@ -2087,7 +2088,7 @@ class Meuble {
       if (this.orientation==4) this.orientation=0;
       this.placeMeuble();
       this.recaleDansPiece();
-      this.recale();
+      if (!this.recale()) this.automaticPlacement();
       this.placeMeuble();
     }
   }
@@ -2381,6 +2382,7 @@ function duplicateMeuble(num) {
   if (newMeuble.onMurGauche) newMeuble.switchMur("onMurGauche");
   if (newMeuble.onMurDroit) newMeuble.switchMur("onMurDroit");
   if (newMeuble.surSol) newMeuble.switchMur("surSol");
+  newMeuble.automaticPlacement();
   updateScene();
   frameCamera();
 }
@@ -3853,30 +3855,37 @@ function buildEnvironnement () {
   let textureSol = loader.load('src/TCom_TilesPlain0118_1_seamless_S.jpg');
   textureSol.wrapS = THREE.RepeatWrapping;
   textureSol.wrapT = THREE.RepeatWrapping;
-  textureSol.repeat.set( 10, 10 );
-  geometry = new THREE.PlaneGeometry( 1000, 1000 );
+  textureSol.repeat.set( 2000/profondeurPiece, 2000/largeurPiece );
   const materialSol = new THREE.MeshStandardMaterial( {color: 0xffffff, map:textureSol} );
   materialSol.roughness = 1;
   materialSol.metalness = 1;
   materialSol.bumpMap = textureSol;
   materialSol.bumpScale=5;
+
+  geometry = new THREE.PlaneGeometry( largeurPiece, profondeurPiece );
   const plane = new THREE.Mesh( geometry, materialSol );
+  plane.position.set(0,0,profondeurPiece/2);
   plane.rotateX(-Math.PI/2);
   plane.name = "sol";
   plane.receiveShadow = true;
   environnement.add( plane );
+
+  geometry = new THREE.PlaneGeometry( largeurPiece, hauteurPiece );
   const materialMur = new THREE.MeshStandardMaterial( {color: 0xffffff} );
   const murFond = new THREE.Mesh( geometry, materialMur );
+  murFond.position.set(0,hauteurPiece/2,0);
   murFond.name = "onMurFond"
   murFond.receiveShadow = true;
   environnement.add( murFond );
+
+  geometry = new THREE.PlaneGeometry( profondeurPiece, hauteurPiece );
   const murDroit = new THREE.Mesh( geometry, materialMur );
-  murDroit.translateX(largeurPiece/2);
+  murDroit.position.set(+largeurPiece/2,hauteurPiece/2,profondeurPiece/2);
   murDroit.rotateY(-Math.PI/2);
   murDroit.name="onMurDroit";
   environnement.add( murDroit );
   const murGauche = new THREE.Mesh( geometry, materialMur );
-  murGauche.translateX(-largeurPiece/2);
+  murGauche.position.set(-largeurPiece/2,hauteurPiece/2,profondeurPiece/2);
   murGauche.rotateY(Math.PI/2);
   murGauche.name="onMurGauche";
   environnement.add( murGauche );
@@ -5474,9 +5483,16 @@ function setTailleOnSelection(taille) {
 
 function refreshInterfaceAspect() {
   slidersAspect.innerHTML="";
-  let sliderOffsetPoignees=createSlider(selectedMeuble,"offsetPoignees","Décalage",selectedMeuble.offsetPoignees,0,-100,100);
-  slidersAspect.append(sliderOffsetPoignees);
+  let sliderOffsetPoigneesParam=createSlider(selectedMeuble,"offsetPoignees","Décalage",selectedMeuble.offsetPoignees,0,-100,100);
+
+  let sliderOffsetPoignees=sliderOffsetPoigneesParam.querySelector("#slider");
+  let inputOffsetPoignees=sliderOffsetPoigneesParam.querySelector("#number");
+
   sliderOffsetPoignees.addEventListener("input", function () {selectedMeuble.update()}, false);
+  inputOffsetPoignees.addEventListener("input", function () {selectedMeuble.update()}, false);
+  inputOffsetPoignees.addEventListener("change", function () {selectedMeuble.update()}, false);
+
+  slidersAspect.append(sliderOffsetPoigneesParam);
 }
 
 window.addEventListener("DOMContentLoaded", initializeScene);
