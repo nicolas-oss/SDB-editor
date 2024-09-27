@@ -149,9 +149,9 @@ class Element {
     return this.bloc.taille - 2 * this.epaisseurCadre;
   }
 
-  get zl() {
-    return this.epaisseur;
-  }
+ /*  get zl() {
+    return this.bloc.p;
+  } */
 
   fixYValue() {
     this._y = this.y;
@@ -232,21 +232,34 @@ getPorte(isPorteBloc) {
 }
 
   getEtagere() {
-    if (this.numero < 1 || this.numero > this.bloc.etageres) return;
+    if (this.numero < 0) return;
+    if (this.numero == 0 && !this.meuble.etagereZero) return;
+    if (this.numero > this.bloc.etageres+1) return;
+    if (this.numero == this.bloc.etageres+1 && (!this.meuble.etagereFinale || this.type!="Etageres")) return;
+    if (this.meuble.etagereUnique && this.bloc.numero>0) return;
+    
     let offsetSimple;
+    let etagere;
     if (this.bloc.meuble.isSimple) {offsetSimple=this.epaisseurCadre;}
     else {offsetSimple = this.epaisseurCadre;}
     let geometry;
     if (this.etageresVerticales) {
       geometry = new THREE.BoxGeometry(this.epaisseur, this.bloc.h - 2 * this.epaisseur, this.bloc.p - this.epaisseur);
+      etagere.position.set(this.x, 0, 0);
+      etagere = new THREE.Mesh(geometry, material);
     }
     else {
-      geometry = new THREE.BoxGeometry(this.bloc.l - offsetSimple, this.epaisseur, this.bloc.p - this.epaisseur);
+      if (!this.meuble.etagereUnique) {
+        geometry = new THREE.BoxGeometry(this.bloc.l - offsetSimple, this.epaisseur, this.bloc.p - this.epaisseur);
+        etagere = new THREE.Mesh(geometry, material);
+        etagere.position.set(0, this.y, 0);
+      }
+      else {
+        geometry = new THREE.BoxGeometry(this.meuble.largeur - offsetSimple, this.epaisseur, this.bloc.p - this.epaisseur);
+        etagere = new THREE.Mesh(geometry, material);
+        etagere.position.set(this.meuble.largeur/2-this.bloc.taille/2, this.y, 0);
+      }
     }
-    let etagere = new THREE.Mesh(geometry, material);
-
-    if (this.bloc.etageresVerticales) { etagere.position.set(this.x, 0, 0) }
-    else { etagere.position.set(0, this.y, 0) }
 
     etagere.name = "etagere " + this.numero;
     etagere.shortName = "etagere";
@@ -341,11 +354,13 @@ getPorte(isPorteBloc) {
     this.sousMeuble.name="sousMeuble";
     this.sousMeuble.largeur=this.xl;
     this.sousMeuble.hauteur=this.yl;
+    //this.sousMeuble.profondeur=this.zl;
     this.sousMeuble.calculTailleBlocs();
   }
 
     this.sousMeuble.largeur = this.xl;
     this.sousMeuble.hauteur = this.yl;
+    //this.sousMeuble.profondeur=this.zl;
     this.sousMeuble.computeBlocsSize();
     this.sousMeuble.createGeometryRoot();
     this.sousMeuble.update();
@@ -539,7 +554,7 @@ get hauteurInterieure() {
     elementsRoot.shortName = "elementsRoot";
     /* console.log(this.etageres);
     if (this.etageres==0) return elementsRoot; */
-    for (var i = 0; i < +this.etageres+1; i++) {
+    for (var i = 0; i < +this.etageres+2; i++) {
       let element = this.elements[i].getElement();
       if (element) elementsRoot.add(element);
     }
@@ -754,10 +769,19 @@ class Meuble {
     this.hauteur = 50;
     this.largeur = 140;
     this.profondeur = 50;
+
     this.elevation = 10;
 
     this.hasPlancheBas = true;
     this.hasMontants = true;
+    this.epaisseurMontants = 3;
+    this.hasMontantsExterieurs = false;
+    this.hasMontantsIntermediaires = true;
+    this.hasMontantsInterieurs = true;
+    this.largeurMontants=2.5;
+    this.etagereUnique=true;
+    this.etagereZero=true;
+    this.etagereFinale=false;
 
     this.nbBlocs = 3;
     this.x = 0;
@@ -1707,6 +1731,116 @@ class Meuble {
     return cadres;
   }
 
+  getMontants() {
+    let geoA = new THREE.BufferGeometry;
+    let geo2 = new THREE.BufferGeometry;
+    let geo3;
+    let geometries=[];
+
+    let cadres = new THREE.Group();
+    let montantsExterieurs,montantsIntermediaires,montantsInterieurs;
+
+    //armature exterieure
+    if (this.hasMontantsExterieurs) {
+      let montantProfondeur = new THREE.BufferGeometry;
+      montantProfondeur = roundEdgedBox(this.epaisseurMontants,
+        this.epaisseurMontants,
+        this.profondeur - 0.01 - 2 * this.epaisseurMontants, 0.5, 1, 1, 1, 1);
+      montantProfondeur.translate(-this.largeur / 2 + this.epaisseurMontants / 2, this.hauteur / 2 - this.epaisseurMontants / 2, 0);
+
+      let montantLargeur = new THREE.BufferGeometry;
+      montantLargeur = roundEdgedBox(
+        this.largeur - 2 * this.epaisseurMontants,
+        this.epaisseurMontants,
+        this.epaisseurMontants - 0.01, 0.5, 1, 1, 1, 1);
+      montantLargeur.translate(0, -this.hauteur / 2 + this.epaisseurMontants / 2 + this.elevation, this.profondeur / 2 - this.epaisseurMontants / 2);
+
+      let montantHauteur = new THREE.BufferGeometry;
+      montantHauteur = roundEdgedBox(
+        this.epaisseurMontants,
+        this.hauteur, // - 0.05,
+        this.epaisseurMontants, 0.5, 1, 1, 1, 1);
+
+      montantHauteur.translate(-this.largeur / 2 + this.epaisseurMontants / 2, 0, this.profondeur / 2 - this.epaisseurMontants / 2);
+      geometries = [];
+      geometries.push(montantProfondeur, montantLargeur, montantHauteur);
+
+      geoA = BufferGeometryUtils.mergeGeometries(geometries);
+
+      montantProfondeur.translate(0, -this.hauteur + this.elevation + this.epaisseurMontants, 0);
+      montantLargeur.translate(0, +this.hauteur - this.epaisseurMontants - this.elevation, 0);
+      montantHauteur.translate(0, 0, -this.profondeur + this.epaisseurMontants);
+      geometries = [];
+      geometries.push(geoA, montantProfondeur, montantLargeur, montantHauteur);
+      geo2 = BufferGeometryUtils.mergeGeometries(geometries);
+      geo3 = geo2.clone();
+      geo3.rotateY(Math.PI);
+      geometries = [];
+      geometries.push(geo2, geo3)
+      geoA = BufferGeometryUtils.mergeGeometries(geometries);
+
+      let montantsExterieurs = new THREE.Mesh(geoA, materialCadre);
+      cadres.add(montantsExterieurs);
+    }
+
+    //montants intermediaires
+    if (this.hasMontantsIntermediaires) {
+    let montantIntermediaireVertical = [];
+    geometries = [];
+    let somme = 0;
+    for (var i=1;i<this.nbBlocs;i++) {
+      somme+=this.bloc[i-1].taille;
+      montantIntermediaireVertical[i] =  new THREE.BufferGeometry;
+      montantIntermediaireVertical[i] = roundEdgedBox(
+        this.epaisseurMontants,
+        this.hauteur-this.elevation,
+        this.epaisseurMontants, 0.5, 1, 1, 1, 1);
+      montantIntermediaireVertical[i].translate(-this.largeur / 2 + somme, this.elevation/2, this.profondeur/2-this.epaisseurMontants/2);
+      geometries.push(montantIntermediaireVertical[i]);
+    }
+    geo2 = BufferGeometryUtils.mergeGeometries(geometries);
+    geo3=geo2.clone();
+    geo3.translate(0,0,-this.profondeur+this.epaisseurMontants);
+    geometries=[];
+    geometries.push(geo2,geo3);
+    geoA = BufferGeometryUtils.mergeGeometries(geometries);
+
+    let montantIntermediaireProfondeur = [];
+    geometries = [];
+    somme = 0;
+    for (var i=1;i<this.nbBlocs;i++) {
+      somme+=this.bloc[i-1].taille;
+
+      montantIntermediaireProfondeur[i] =  new THREE.BufferGeometry;
+      montantIntermediaireProfondeur[i] = roundEdgedBox(
+        this.epaisseurMontants,
+        this.epaisseurMontants,
+        this.profondeur,
+        0.5, 1, 1, 1, 1);
+      montantIntermediaireProfondeur[i].translate(-this.largeur / 2 + somme, this.hauteur/2-this.epaisseurMontants/2, 0);
+      geometries.push(montantIntermediaireProfondeur[i]);
+    }
+    geo2 = BufferGeometryUtils.mergeGeometries(geometries);
+    geo3=geo2.clone();
+    geo3.translate(0,-this.hauteur+this.elevation+this.epaisseurMontants,0);
+    geometries=[];
+    geometries.push(geoA,geo2,geo3);
+    geoA = BufferGeometryUtils.mergeGeometries(geometries);
+
+    let montantsIntermediaires = new THREE.Mesh(geoA, materialCadre);
+    cadres.add(montantsIntermediaires);
+  }
+  
+    //let montants = new THREE.Mesh(geoA, materialCadre);
+
+     //shadows
+     cadres.traverse(function (child) {
+      child.receiveShadow = true;
+      child.castShadow = true;
+    })
+    return cadres;
+  }
+
   getCadreSimple() {
     geometry = new THREE.BoxGeometry(
       this.largeur + 0.01,
@@ -1783,7 +1917,9 @@ class Meuble {
     //cadre meuble
     if (this.hasCadre) { geometries.add(this.getCadre()); }
     //cadre blocs
-    if (this.isSimple) { geometries.add(this.getCadreSimple()); }
+    //if (this.isSimple) { geometries.add(this.getCadreSimple()); }
+    //montants
+    if (this.hasMontants) { geometries.add(this.getMontants()); }
     // blocs
     var blocs = new THREE.Object3D();
     blocs.name = "blocs";
@@ -2178,7 +2314,6 @@ class SousMeuble extends Meuble {
     this.y = 0;
     this.bloc = new Array;
     this.disposition = "horizontal";
-    //valeurs possibles "horizontal" ou "vertical"
     this.epaisseur=epaisseur;
     this.epaisseurCadre=epaisseurCadre;
     for (var i=0; i<this.nbBlocs; i++) {this.bloc[i] = new Bloc(this,i)}
@@ -2228,8 +2363,6 @@ class SousMeuble extends Meuble {
       for (var j=0; j<this.bloc[i].elements.length; j++) {
         this.bloc[i].elements[j].initialBloc=this.initialBloc;
         this.bloc[i].elements[j].initialMeuble=this.initialMeuble;
-        //console.log(this.initialBloc);
-        //console.log("linkBlocsToInitialBloc",i,j,this.initialMeuble.numero,this.initialBloc.numero)
       }
     }
   }
@@ -2242,19 +2375,12 @@ class SousMeuble extends Meuble {
     material.dispose();
     if (!isPreviewOn) {
       //boite de sélection
-      //console.log("isSousMeuble=",this.isSousMeuble,this.name);
       let boiteSelection = this.getBoiteSelection();
-      console.log(boiteSelection);
       handlesMeuble.add(boiteSelection);
       this.selectionBox = boiteSelection;
       boiteSelection.meuble=this;
-      //selectableHandleMeuble = [];
-      //handlesMeuble.add(this.getHandlesMeuble());
-      //updateAllSelectable();
     }
-    console.log(selectableSousMeubles);
     this.linkBlocsToInitialBloc();
-    //if (!this.isSousMeuble) this.placeMeuble();
   } 
 
   updateGeometry() {
