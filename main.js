@@ -58,6 +58,7 @@ class Element {
     else return this.bloc.type;}
 
   get ySousMeuble() {
+    if (this.meuble.hasEtagereUnique && this.meuble.bloc[0].numero!=0) return this.meuble.bloc[0].elements[this.numero].ySousMeuble;
     let y;
     if (this.bloc.isRentrant) {
       let h = this.bloc.h - 2 * this.epaisseur + this.epaisseur;
@@ -77,6 +78,12 @@ class Element {
   }
 
   get y() {
+    //console.log (this.meuble.bloc[0].numero);
+    if (this.meuble.hasEtagereUnique && this.bloc.numero!=0) {
+      console.log("bypassed");
+      console.log(this.bloc.numero);
+      return this.meuble.bloc[0].elements[this.numero].y;
+    }
     if (this._y!=undefined) return this._y;
     if (this.meuble.isSousMeuble) return this.ySousMeuble;
     let y;
@@ -98,6 +105,7 @@ class Element {
     return step * (0.5 + this.numero - this.bloc.etageres / 2);}
 
   get yTiroir() {
+    if (this.meuble.hasEtagereUnique && this.bloc.numero!=0) return this.meuble.bloc[0].elements[this.numero].yTiroir;
     return (this.y + this.bloc.elements[this.numero+1].y) / 2;
   }
 
@@ -176,7 +184,7 @@ class Element {
 getPorte(isPorteBloc) {
     var porte = [];
     let hauteurPorte;
-    if (isPorteBloc) hauteurPorte=this.bloc.hauteur
+    if (isPorteBloc) hauteurPorte=this.bloc.h
     else hauteurPorte=this.yl;
     var offset = this.epaisseur * this.isRentrant ;
     if (this.nombrePortes == "1") {
@@ -233,10 +241,10 @@ getPorte(isPorteBloc) {
 
   getEtagere() {
     if (this.numero < 0) return;
-    if (this.numero == 0 && !this.meuble.etagereZero) return;
+    if (this.numero == 0 && !this.meuble.hasEtagereZero) return;
     if (this.numero > this.bloc.etageres+1) return;
-    if (this.numero == this.bloc.etageres+1 && (!this.meuble.etagereFinale || this.type!="Etageres")) return;
-    if (this.meuble.etagereUnique && this.bloc.numero>0) return;
+    if (this.numero == this.bloc.etageres+1 && (!this.meuble.hasEtagereFinale || this.type!="Etageres")) return;
+    if (this.meuble.hasEtagereUnique && this.bloc.numero>0) return;
     
     let offsetSimple;
     let etagere;
@@ -249,7 +257,7 @@ getPorte(isPorteBloc) {
       etagere = new THREE.Mesh(geometry, material);
     }
     else {
-      if (!this.meuble.etagereUnique) {
+      if (!this.meuble.hasEtagereUnique) {
         geometry = new THREE.BoxGeometry(this.bloc.l - offsetSimple, this.epaisseur, this.bloc.p - this.epaisseur);
         etagere = new THREE.Mesh(geometry, material);
         etagere.position.set(0, this.y, 0);
@@ -535,8 +543,11 @@ get hauteurInterieure() {
     cadreBlocRoot.name="cadreBlocRoot"+this.numero;
     cadreBlocRoot.shortName="cadreBlocRoot";
     //cadreBlocRoot.add(plancheBas,plancheHaut,plancheDroite,plancheGauche);
-    cadreBlocRoot.add(plancheHaut,plancheDroite,plancheGauche);
+    //cadreBlocRoot.add(plancheHaut,plancheDroite,plancheGauche);
     if (this.meuble.hasPlancheBas) cadreBlocRoot.add(plancheBas);
+    if (this.meuble.hasPlancheHaut) cadreBlocRoot.add(plancheHaut);
+    if (this.meuble.hasPlancheDroite) cadreBlocRoot.add(plancheDroite);
+    if (this.meuble.hasPlancheGauche) cadreBlocRoot.add(plancheGauche);
     return cadreBlocRoot;
   }
 
@@ -552,9 +563,9 @@ get hauteurInterieure() {
     var elementsRoot = new THREE.Object3D();
     elementsRoot.name = "elementsRoot" + this.numero;
     elementsRoot.shortName = "elementsRoot";
-    /* console.log(this.etageres);
-    if (this.etageres==0) return elementsRoot; */
-    for (var i = 0; i < +this.etageres+2; i++) {
+     console.log(this.etageres);
+    if (this.etageres==0) return elementsRoot;
+    for (var i = 0; i < this.etageres+2; i++) {
       let element = this.elements[i].getElement();
       if (element) elementsRoot.add(element);
     }
@@ -773,15 +784,19 @@ class Meuble {
     this.elevation = 10;
 
     this.hasPlancheBas = true;
+    this.hasPlancheHaut = true;
+    this.hasPlancheGauche = true;
+    this.hasPlancheDroite = true;
+    this.hasPlanchesIntermediaires = true;
     this.hasMontants = true;
     this.epaisseurMontants = 3;
     this.hasMontantsExterieurs = false;
     this.hasMontantsIntermediaires = true;
     this.hasMontantsInterieurs = true;
     this.largeurMontants=2.5;
-    this.etagereUnique=true;
-    this.etagereZero=true;
-    this.etagereFinale=false;
+    this.hasEtagereUnique=true;
+    this.hasEtagereZero=true;
+    this.hasEtagereFinale=false;
 
     this.nbBlocs = 3;
     this.x = 0;
@@ -1066,7 +1081,10 @@ class Meuble {
     var cadreA = this.hasCadre * this.epaisseurCadre;
     var socleA = this.hasSocle * hauteurSocle;
     var piedA = this.hasPied * hauteurPied;
-    var aY = this.y + this.hauteur / 2 + cadreA + socleA / 2 + piedA / 2;
+    var plateauA = this.hasPlateau * epaisseurPlateau;
+    var offsetHautA = Math.max(cadreA, plateauA);
+    var offsetBasA = cadreA + piedA + socleA;
+    var aY = this.y + this.hauteur / 2 + offsetHautA / 2 + offsetBasA / 2;
     return aY;
   }
 
@@ -1879,18 +1897,23 @@ class Meuble {
       this.profondeur);
 
     let cadres = new THREE.Group();
-    let cadreIntermediaire = [];
-    let somme = 0;
-    for (var i=1;i<this.nbBlocs;i++) {
-      somme+=this.bloc[i-1].taille;
-      cadreIntermediaire[i] = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-      cadreIntermediaire[i].position.set(-this.largeur / 2 + somme, this.elevation/2, 0);
-      cadres.add(cadreIntermediaire[i]);
+    if (this.hasPlanchesIntermediaires) {
+      let cadreIntermediaire = [];
+      let somme = 0;
+      for (var i = 1; i < this.nbBlocs; i++) {
+        somme += this.bloc[i - 1].taille;
+        cadreIntermediaire[i] = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
+        cadreIntermediaire[i].position.set(-this.largeur / 2 + somme, this.elevation / 2, 0);
+        cadres.add(cadreIntermediaire[i]);
+      }
     }
-    
+
     //cadres.add(cadreSimpleHaut, cadreSimpleBas, cadreSimpleDroit, cadreSimpleGauche);
-    cadres.add(cadreSimpleHaut, cadreSimpleDroit, cadreSimpleGauche);
+    //cadres.add(cadreSimpleHaut, cadreSimpleDroit, cadreSimpleGauche);
     if (this.hasPlancheBas) cadres.add(cadreSimpleBas);
+    if (this.hasPlancheHaut) cadres.add(cadreSimpleHaut);
+    if (this.hasPlancheGauche) cadres.add(cadreSimpleGauche);
+    if (this.hasPlancheDroite) cadres.add(cadreSimpleDroit);
 
      //shadows
      cadres.traverse(function (child) {
@@ -1917,7 +1940,7 @@ class Meuble {
     //cadre meuble
     if (this.hasCadre) { geometries.add(this.getCadre()); }
     //cadre blocs
-    //if (this.isSimple) { geometries.add(this.getCadreSimple()); }
+    if (this.isSimple) { geometries.add(this.getCadreSimple()); }
     //montants
     if (this.hasMontants) { geometries.add(this.getMontants()); }
     // blocs
@@ -2296,6 +2319,13 @@ class Meuble {
 
   }
 
+  resetAllEtageres() {
+    for (var i=0;i<this.nbBlocs;i++) {
+      for (var j=0;j<this.bloc[i].elements.length;j++)
+        this.bloc[i].elements[j].reset();
+    }
+  }
+
 }
 
 class SousMeuble extends Meuble {
@@ -2638,7 +2668,7 @@ var indiceCurrentBloc = -1;
 var indiceCurrentMeuble = 0;
 var indiceCurrentSousMeubles = -1;
 
-const hasPlancheBas = false;
+//const hasPlancheBas = false;
 const hauteurBloc=0.9;
 const epaisseurHandleBlocs = 6;
 const epaisseur = 1; //epaisseur etageres
@@ -3419,7 +3449,7 @@ function initDragEtagere() {
     if (selectionMode!="etageres") return;
     controls.enabled=false;
     rayCastEnabled=false;
-    let clickedEtagereBox = event.object;
+    //let clickedEtagereBox = event.object;
     let etagere = event.object.element;
     let meuble = etagere.bloc.initialMeuble;
 
@@ -3448,6 +3478,7 @@ function initDragEtagere() {
     event.object.xMin = xMin + meuble.epaisseur;
     event.object.xMax = xMax - meuble.epaisseur;
     event.object.blocId = blocId;
+    isPreviewOn=true;
   });
 
   dragEtagereControls.addEventListener('drag', function (event) {
@@ -3474,7 +3505,9 @@ function initDragEtagere() {
 
   dragEtagereControls.addEventListener('dragend', function (event) {
     //event.object.material.emissive.set(0x000000);
+    isPreviewOn=false;
     let etagere = event.object;
+    let meuble = etagere.element.bloc.initialMeuble;
     let y = etagere.position.y;
     etagere.element.y = y;
     let x = etagere.position.x;
@@ -3483,6 +3516,7 @@ function initDragEtagere() {
     etagere.element.bloc.initialMeuble.update();
     controls.enabled = true;
     rayCastEnabled = true;
+    meuble.update();
   });
 }
 
@@ -4124,6 +4158,10 @@ var styleMenu;
 var slidersAspect;
 var checkboxVertical;
 var checkboxMurFond,checkboxMurGauche,checkboxMurDroit,checkboxSurSol;
+
+var checkboxSimple,checkboxMontants,checkboxMontantsExterieurs,checkboxMontantsIntermediaires,checkboxMontantsInterieurs,checkboxEtagereUnique,checkboxEtagereZero,checkboxEtagereFinale;
+var checkboxPlancheBas,checkboxPlancheHaut,checkboxPlancheDroite,checkboxPlancheGauche, checkboxPlanchesIntermediaires;
+
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
 var menuPoignees;
 var menuTexturesPlateau,menuTexturesCadre,menuTexturesMeuble,menuTexturesTiroirs;
@@ -4132,8 +4170,8 @@ var buttonSelectMeuble,buttonSelectBloc,buttonSelectElement,buttonSelectSousMeub
 var buttonAdjustBloc,buttonAdjustMeuble,buttonAdjustEtagere,buttonAdjustSousMeuble;
 var buttonSousMeuble;
 var buttonDiviserEtageres,buttonSupprimerEtageres,buttonResetEtageres;
-var expandDimensions, expandBloc, expandMeubleData, expandAspect, expandEtageres, expandSousMeubles, expandContenu, expandEnregistrement, expandParametres;
-var blocsData,contenuData,meubleData,etageresData,sousMeublesData,aspectData,enregistrementData,parametresData;
+var expandDimensions, expandBloc, expandMeubleData, expandAspect, expandEtageres, expandSousMeubles, expandContenu, expandEnregistrement, expandParametres, expandOptions;
+var blocsData,contenuData,meubleData,etageresData,sousMeublesData,aspectData,enregistrementData,parametresData,optionsData;
 var contextMenuGeneral,contextMenuMeuble,contextMenuBloc,contextMenuEtagere;
 var warningContenu,warningBloc,warningEtageres,warningMeuble,warningSousMeubles;
 var meubleHiddenIfEmpty;
@@ -4228,7 +4266,22 @@ function getHTMLElements () {
   listPoigneesName = document.getElementById("listPoigneesName");
   styleMenu = document.getElementById("style");
   slidersAspect = document.getElementById("slidersAspect");
+
   checkboxVertical = document.getElementById("checkboxVertical");
+  checkboxSimple = document.getElementById("checkboxSimple");
+  checkboxMontants = document.getElementById("checkboxMontants");
+  checkboxMontantsExterieurs = document.getElementById("checkboxMontantsExterieurs");
+  checkboxMontantsIntermediaires = document.getElementById("checkboxMontantsIntermediaires");
+  checkboxMontantsInterieurs = document.getElementById("checkboxMontantsInterieurs");
+  checkboxEtagereUnique = document.getElementById("checkboxEtagereUnique");
+  checkboxEtagereZero = document.getElementById("checkboxEtagereZero");
+  checkboxEtagereFinale = document.getElementById("checkboxEtagereFinale");
+  checkboxPlancheBas = document.getElementById("checkboxPlancheBas");
+  checkboxPlancheHaut = document.getElementById("checkboxPlancheHaut");
+  checkboxPlancheGauche = document.getElementById("checkboxPlancheGauche");
+  checkboxPlancheDroite = document.getElementById("checkboxPlancheDroite");
+  checkboxPlanchesIntermediaires = document.getElementById("checkboxPlanchesIntermediaires");
+
   checkboxMurFond = document.getElementById("checkboxMurFond");
   checkboxMurGauche = document.getElementById("checkboxMurGauche");
   checkboxSurSol = document.getElementById("checkboxSurSol");
@@ -4267,6 +4320,7 @@ function getHTMLElements () {
   expandAspect=document.getElementById("expandAspect");
   expandEnregistrement=document.getElementById("expandEnregistrement");
   expandParametres=document.getElementById("expandParametres");
+  expandOptions=document.getElementById("expandOptions");
 
   meubleData=document.getElementById("meubleData");
   expandMeubleData=document.getElementById("expandMeubleData");
@@ -4277,6 +4331,7 @@ function getHTMLElements () {
   aspectData=document.getElementById("aspectData");
   enregistrementData=document.getElementById("enregistrementData");
   parametresData=document.getElementById("parametresData");
+  optionsData=document.getElementById("optionsData");
 
   warningContenu=document.getElementById("warningContenu");
   warningBloc=document.getElementById("warningBloc");
@@ -4299,6 +4354,19 @@ function initializeInterface() {
   //buttons meuble
   checkboxVertical.addEventListener("click", switchVertical);
   checkboxSimple.addEventListener("click", switchSimple);
+  checkboxMontants.addEventListener("click", switchMontants);
+  checkboxMontantsExterieurs.addEventListener("click", switchMontantsExterieurs);
+  checkboxMontantsIntermediaires.addEventListener("click", switchMontantsIntermediaires);
+  checkboxMontantsInterieurs.addEventListener("click", switchMontantsInterieurs);
+  checkboxEtagereUnique.addEventListener("click", switchEtagereUnique);
+  checkboxEtagereZero.addEventListener("click", switchEtagereZero);
+  checkboxEtagereFinale.addEventListener("click", switchEtagereFinale);
+  checkboxPlancheBas.addEventListener("click", switchPlancheBas);
+  checkboxPlancheHaut.addEventListener("click", switchPlancheHaut);
+  checkboxPlancheGauche.addEventListener("click", switchPlancheGauche);
+  checkboxPlancheDroite.addEventListener("click", switchPlancheDroite);
+  checkboxPlanchesIntermediaires.addEventListener("click", switchPlanchesIntermediaires);
+
   checkboxMurFond.addEventListener("click", function () { selectedMeuble.switchMur("onMurFond") });
   checkboxMurGauche.addEventListener("click", function () { selectedMeuble.switchMur("onMurGauche") });
   checkboxMurDroit.addEventListener("click", function () { selectedMeuble.switchMur("onMurDroit") });
@@ -4329,6 +4397,66 @@ function initializeInterface() {
 
   function switchSimple() {
     selectedMeuble.isSimple = !selectedMeuble.isSimple;
+    selectedMeuble.update();
+  }
+
+  function switchMontants() {
+    selectedMeuble.hasMontants = !selectedMeuble.hasMontants;
+    selectedMeuble.update();
+  }
+
+  function switchMontantsExterieurs() {
+    selectedMeuble.hasMontantsExterieurs = !selectedMeuble.hasMontantsExterieurs;
+    selectedMeuble.update();
+  }
+
+  function switchMontantsIntermediaires() {
+    selectedMeuble.hasMontantsIntermediaires = !selectedMeuble.hasMontantsIntermediaires;
+    selectedMeuble.update();
+  }
+
+  function switchMontantsInterieurs() {
+    selectedMeuble.hasMontantsInterieurs = !selectedMeuble.hasMontantsInterieurs;
+    selectedMeuble.update();
+  }
+
+  function switchEtagereUnique() {
+    selectedMeuble.hasEtagereUnique = !selectedMeuble.hasEtagereUnique;
+    selectedMeuble.update();
+  }
+
+  function switchEtagereZero() {
+    selectedMeuble.hasEtagereZero = !selectedMeuble.hasEtagereZero;
+    selectedMeuble.update();
+  }
+
+  function switchEtagereFinale() {
+    selectedMeuble.hasEtagereFinale = !selectedMeuble.hasEtagereFinale;
+    selectedMeuble.update();
+  }
+
+  function switchPlancheBas() {
+    selectedMeuble.hasPlancheBas = !selectedMeuble.hasPlancheBas;
+    selectedMeuble.update();
+  }
+
+  function switchPlancheHaut() {
+    selectedMeuble.hasPlancheHaut = !selectedMeuble.hasPlancheHaut;
+    selectedMeuble.update();
+  }
+
+  function switchPlancheGauche() {
+    selectedMeuble.hasPlancheGauche = !selectedMeuble.hasPlancheGauche;
+    selectedMeuble.update();
+  }
+
+  function switchPlancheDroite() {
+    selectedMeuble.hasPlancheDroite = !selectedMeuble.hasPlancheDroite;
+    selectedMeuble.update();
+  }
+
+  function switchPlanchesIntermediaires() {
+    selectedMeuble.hasPlanchesIntermediaires = !selectedMeuble.hasPlanchesIntermediaires;
     selectedMeuble.update();
   }
 
@@ -4444,6 +4572,7 @@ function initializeInterface() {
   //buttons etageres
   buttonDiviserEtageres.addEventListener("click", clicDiviserElements);
   buttonSupprimerEtageres.addEventListener("click",clicSupprimerEtageres);
+  buttonResetEtageres.addEventListener("click",clicResetEtageres);
 
   function diviserElement(element) {
     // si première division on crée un sous meuble
@@ -4515,6 +4644,11 @@ function initializeInterface() {
     updateScene();
     refreshInterfaceEtagere();
     refreshInterfaceBlocs();
+  }
+
+  function clicResetEtageres() {
+    selectedMeuble.resetAllEtageres();
+    selectedMeuble.update();
   }
 
   //buttons contenu
@@ -4754,6 +4888,10 @@ function expand(divSwitch, divData) {
   parametresData.style.display="none",
   expandParametres.addEventListener("click",function expandFn(event)
   {expand(expandParametres,parametresData)});
+
+ optionsData.style.display="none",
+  expandOptions.addEventListener("click",function expandFn(event)
+  {expand(expandOptions,optionsData)});
 }
 
 function setSelectionMode(value) {
@@ -5328,6 +5466,18 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
 function refreshCheckboxMeuble() {
   if (selectedMeuble.disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
   if (selectedMeuble.isSimple) {checkboxSimple.checked=true} else {checkboxSimple.checked=false}
+  if (selectedMeuble.hasMontants) {checkboxMontants.checked=true} else {checkboxMontants.checked=false}
+  if (selectedMeuble.hasMontantsInterieurs) {checkboxMontantsInterieurs.checked=true} else {checkboxMontantsInterieurs.checked=false}
+  if (selectedMeuble.hasMontantsExterieurs) {checkboxMontantsExterieurs.checked=true} else {checkboxMontantsExterieurs.checked=false}
+  if (selectedMeuble.hasMontantsIntermediaires) {checkboxMontantsIntermediaires.checked=true} else {checkboxMontantsIntermediaires.checked=false}
+  if (selectedMeuble.hasEtagereUnique) {checkboxEtagereUnique.checked=true} else {checkboxEtagereUnique.checked=false}
+  if (selectedMeuble.hasEtagereZero) {checkboxEtagereZero.checked=true} else {checkboxEtagereZero.checked=false}
+  if (selectedMeuble.hasEtagereFinale) {checkboxEtagereFinale.checked=true} else {checkboxEtagereFinale.checked=false}
+  if (selectedMeuble.hasPlancheBas) {checkboxPlancheBas.checked=true} else {checkboxPlancheBas.checked=false}
+  if (selectedMeuble.hasPlancheHaut) {checkboxPlancheBas.checked=true} else {checkboxPlancheHaut.checked=false}
+  if (selectedMeuble.hasPlancheGauche) {checkboxPlancheBas.checked=true} else {checkboxPlancheGauche.checked=false}
+  if (selectedMeuble.hasPlancheDroite) {checkboxPlancheBas.checked=true} else {checkboxPlancheDroite.checked=false}
+  if (selectedMeuble.hasPlanchesIntermediaires) {checkboxPlanchesIntermediaires.checked=true} else {checkboxPlanchesIntermediaires.checked=false}
 }
 
 function refreshButtonDelete() {

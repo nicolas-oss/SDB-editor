@@ -44,10 +44,7 @@
                 <input type="checkbox" id="checkboxVertical" checked="false">
                 <span class="slider round">Vertical</span>
               </label>
-              <label class="switch">
-                <input type="checkbox" id="checkboxSimple" checked="true">
-                <span class="slider round">Divisions blocs simples</span>
-              </label>
+              
               <label class="switch">
                 <input type="radio" id="checkboxMurFond" checked="true" name="murs">
                 <span class="slider round">Mur fond</span>
@@ -62,18 +59,75 @@
             <div class="buttons">
               <input type="button" id="buttonTourner" value="Tourner" class="buttonFlex">
             </div>
-            <div class="boutons">
-              <input type="button" id="buttonPied" value="Sur pieds" class="buttonFlex">
-              <input type="button" id="buttonSocle" value="Sur socle" class="buttonFlex">
-              <input type="button" id="buttonSuspendu" value="Fixé / Posé" class="buttonFlex">
-            </div>
-            <div class="boutons">
-              <input type="button" id="buttonCadre" value="Cadre" class="buttonFlex">
-              <input type="button" id="buttonPlateau" value="Plateau" class="buttonFlex">
-            </div>
+            
             <div id="nbBlocsSlider"></div>
-            <div class="expandOff" id="expandDimensions">Dimensions</div>
+            <div class="expandOff" id="expandDimensions">Dimensions et placement</div>
             <div id="meubleSliders" class="expandContent"></div>
+            <div class="expandOff" id="expandOptions">Options</div>
+            <div id="optionsData" class="expandContent">
+              <div class="boutons">
+                <input type="button" id="buttonPied" value="Sur pieds" class="buttonFlex">
+                <input type="button" id="buttonSocle" value="Sur socle" class="buttonFlex">
+                <input type="button" id="buttonSuspendu" value="Fixé / Posé" class="buttonFlex">
+              </div>
+              <div class="boutons">
+                <input type="button" id="buttonCadre" value="Cadre" class="buttonFlex">
+                <input type="button" id="buttonPlateau" value="Plateau" class="buttonFlex">
+              </div>
+
+              <label class="switch">
+                <input type="checkbox" id="checkboxSimple" checked="true">
+                <span class="slider round">Divisions blocs simples</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxMontants" checked="true">
+                <span class="slider round">Montants</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxMontantsExterieurs" checked="true">
+                <span class="slider round">Montants exterieurs</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxMontantsIntermediaires" checked="true">
+                <span class="slider round">Montants intermédiaires</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxMontantsInterieurs" checked="true">
+                <span class="slider round">Montants interieurs</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxEtagereUnique" checked="true">
+                <span class="slider round">Mêmes étagères pour chaque bloc</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxEtagereZero" checked="true">
+                <span class="slider round">Etagere zéro</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxEtagereFinale" checked="true">
+                <span class="slider round">Etagere finale</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxPlancheBas" checked="true">
+                <span class="slider round">Planche du bas</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxPlancheHaut" checked="true">
+                <span class="slider round">Planche du haut</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxPlancheGauche" checked="true">
+                <span class="slider round">Planche de gauche</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" id="checkboxPlancheDroite" checked="true">
+                <span class="slider round">Planche de droite</span>
+              </label>
+              <label class="switch"></label>
+                <input type="checkbox" id="checkboxPlanchesIntermediaires" checked="true">
+                <span class="slider round">Planches intermédiaires</span>
+              </label>
+            </div>
             <div class="expandOff" id="expandParametres">Paramètres</div>
             <div id="parametresData" class="expandContent"></div>
           </div>
