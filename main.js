@@ -553,10 +553,12 @@ class Bloc {
   getCadre() {
     let offsetG=0;
     let offsetD=0;
+    let offsetFond=this.meuble.hasCotesEleves*this.meuble.elevation;
+    let offsetRetraitFond = this.meuble.hasMontants*retraitCotes;
     let offsetRetraitCoteGauche = 0;
     let offsetRetraitCoteDroit = 0;
-    if (this.numero==0) offsetRetraitCoteGauche = retraitCotes*this.meuble.hasMontants;
-    if (this.numero==this.meuble.nbBlocs-1) offsetRetraitCoteDroit = retraitCotes*this.meuble.hasMontants;
+    if (this.numero==0) offsetRetraitCoteGauche = retraitCotes*this.meuble.hasMontants*this.meuble.hasCotesEleves;
+    if (this.numero==this.meuble.nbBlocs-1) offsetRetraitCoteDroit = retraitCotes*this.meuble.hasMontants*this.meuble.hasCotesEleves;
     if (this.numero==0 && !this.meuble.hasMontants) offsetG = this.meuble.elevation;
     if (this.numero==0 && this.meuble.hasMontants && !this.meuble.hasCotesEleves) offsetG = this.meuble.elevation;
     if (this.numero==this.meuble.nbBlocs-1 && !this.meuble.hasMontants) offsetD = this.meuble.elevation;
@@ -584,20 +586,18 @@ class Bloc {
     let cadreBlocRoot=new THREE.Group();
     cadreBlocRoot.name="cadreBlocRoot"+this.numero;
     cadreBlocRoot.shortName="cadreBlocRoot";
-    //cadreBlocRoot.add(plancheBas,plancheHaut,plancheDroite,plancheGauche);
-    //cadreBlocRoot.add(plancheHaut,plancheDroite,plancheGauche);
     if (this.meuble.hasPlancheBas) cadreBlocRoot.add(plancheBas);
     if (this.meuble.hasPlancheHaut) cadreBlocRoot.add(plancheHaut);
     if (this.meuble.hasPlancheDroite) cadreBlocRoot.add(plancheDroite);
     if (this.meuble.hasPlancheGauche) cadreBlocRoot.add(plancheGauche);
     if (this.meuble.hasPlancheFond) {
-      console.log(this.l,this.h,this.epaisseurCadre,offsetG,retraitCotes,this.meuble.hasMontants);
+  
       geometry = new THREE.BoxGeometry( this.l, this.h-this.epaisseurCadre+offsetG/2, this.epaisseurCadre );
       let plancheFond = new THREE.Mesh(geometry, material);
       plancheFond.name = "plancheFond";
       plancheFond.numBloc = this.numero;
-      let offsetFond = retraitCotes*this.meuble.hasMontants;
-      plancheFond.position.set(0, 0, -this.p / 2 + this.epaisseurCadre / 2 + offsetFond);
+      let offsetFond = retraitCotes*this.meuble.hasMontants*this.meuble.hasCotesEleves;
+      plancheFond.position.set(0, offsetFond, -this.p / 2 + this.epaisseurCadre / 2 + offsetRetraitFond);
       cadreBlocRoot.add(plancheFond);
     }
     return cadreBlocRoot;
@@ -851,6 +851,7 @@ class Meuble {
     this.hasPlancheGauche = true;
     this.hasPlancheDroite = true;
     this.hasPlancheFond = true;
+    this.hasPlanchesIntermediaires = true;
     this.hasCotesEleves = true;
     this.hasMontants = false;
     this.epaisseurMontants = 3;
@@ -861,6 +862,7 @@ class Meuble {
     this.hasEtagereUnique=false;
     this.hasEtagereZero=false;
     this.hasEtagereFinale=false;
+    this.hasRoundedMontants=true;
 
     this.nbBlocs = 1;
     this.x = 0;
@@ -1818,6 +1820,20 @@ class Meuble {
     return cadres;
   }
 
+  getMontant(x,y,isPrimaire) {
+    let offset=0;
+    if (isPrimaire) offset=x/2 
+    else offset=-x/2;
+    console.log(isPrimaire);
+    console.log(offset);
+    if (this.hasRoundedMontants) {
+      //return new THREE.CylinderGeometry(x/2,x/2,y+x*isSecondaire,12,1);
+      return getRoundedCylinder(x,y-offset);
+    }
+    else {return roundEdgedBox(x,
+      y, x, 0.5, 1, 1, 1, 1);}
+  }
+
   getMontants() {
     let geoA = new THREE.BufferGeometry;
     let geo2 = new THREE.BufferGeometry;
@@ -1829,25 +1845,32 @@ class Meuble {
 
     //armature exterieure
     if (this.hasMontantsExterieurs) {
-      let montantProfondeur = new THREE.BufferGeometry;
-      montantProfondeur = roundEdgedBox(this.epaisseurMontants,
+
+/*       let montantProfondeur = new THREE.BufferGeometry;
+        montantProfondeur = new THREE.CylinderGeometry()
+        montantProfondeur = roundEdgedBox(this.epaisseurMontants,
         this.epaisseurMontants,
-        this.profondeur - 0.01 - 2 * this.epaisseurMontants, 0.5, 1, 1, 1, 1);
+        this.profondeur - 0.01 - 2 * this.epaisseurMontants, 0.5, 1, 1, 1, 1); */
+      let montantProfondeur = this.getMontant(this.epaisseurMontants,this.profondeur-2*this.epaisseurMontants);
+      montantProfondeur.rotateX(Math.PI/2);
       montantProfondeur.translate(-this.largeur / 2 + this.epaisseurMontants / 2, this.hauteur / 2 - this.epaisseurMontants / 2, 0);
 
-      let montantLargeur = new THREE.BufferGeometry;
+ /*      let montantLargeur = new THREE.BufferGeometry;
       montantLargeur = roundEdgedBox(
         this.largeur - 2 * this.epaisseurMontants,
         this.epaisseurMontants,
-        this.epaisseurMontants - 0.01, 0.5, 1, 1, 1, 1);
+        this.epaisseurMontants - 0.01, 0.5, 1, 1, 1, 1); */
+      let montantLargeur = this.getMontant(this.epaisseurMontants,this.largeur - 2 * this.epaisseurMontants);
+      montantLargeur.rotateZ(Math.PI/2);
       montantLargeur.translate(0, -this.hauteur / 2 + this.epaisseurMontants / 2 + this.elevation, this.profondeur / 2 - this.epaisseurMontants / 2);
 
-      let montantHauteur = new THREE.BufferGeometry;
+/*       let montantHauteur = new THREE.BufferGeometry;
       montantHauteur = roundEdgedBox(
         this.epaisseurMontants,
         this.hauteur, // - 0.05,
-        this.epaisseurMontants, 0.5, 1, 1, 1, 1);
-
+        this.epaisseurMontants, 0.5, 1, 1, 1, 1); */
+      let montantHauteur = this.getMontant(this.epaisseurMontants,this.hauteur,true);
+      //montantHauteur.rotateY(-Math.PI/2);
       montantHauteur.translate(-this.largeur / 2 + this.epaisseurMontants / 2, 0, this.profondeur / 2 - this.epaisseurMontants / 2);
       geometries = [];
       geometries.push(montantProfondeur, montantLargeur, montantHauteur);
@@ -1877,11 +1900,12 @@ class Meuble {
     let somme = 0;
     for (var i=1;i<this.nbBlocs;i++) {
       somme+=this.bloc[i-1].taille;
-      montantIntermediaireVertical[i] =  new THREE.BufferGeometry;
+      /* montantIntermediaireVertical[i] =  new THREE.BufferGeometry;
       montantIntermediaireVertical[i] = roundEdgedBox(
         this.epaisseurMontants,
         this.hauteur-this.elevation,
-        this.epaisseurMontants, 0.5, 1, 1, 1, 1);
+        this.epaisseurMontants, 0.5, 1, 1, 1, 1); */
+        montantIntermediaireVertical[i] = this.getMontant(this.epaisseurMontants,this.hauteur-this.elevation,true);
       montantIntermediaireVertical[i].translate(-this.largeur / 2 + somme, this.elevation/2, this.profondeur/2-this.epaisseurMontants/2);
       geometries.push(montantIntermediaireVertical[i]);
     }
@@ -1898,12 +1922,15 @@ class Meuble {
     for (var i=1;i<this.nbBlocs;i++) {
       somme+=this.bloc[i-1].taille;
 
-      montantIntermediaireProfondeur[i] =  new THREE.BufferGeometry;
+/*        montantIntermediaireProfondeur[i] =  new THREE.BufferGeometry;
       montantIntermediaireProfondeur[i] = roundEdgedBox(
         this.epaisseurMontants,
         this.epaisseurMontants,
         this.profondeur,
-        0.5, 1, 1, 1, 1);
+        0.5, 1, 1, 1, 1); */
+      
+      montantIntermediaireProfondeur[i]=this.getMontant(this.epaisseurMontants,this.profondeur,true);
+      montantIntermediaireProfondeur[i].rotateX(Math.PI/2);
       montantIntermediaireProfondeur[i].translate(-this.largeur / 2 + somme, this.hauteur/2-this.epaisseurMontants/2, 0);
       geometries.push(montantIntermediaireProfondeur[i]);
     }
@@ -1929,26 +1956,28 @@ class Meuble {
   }
 
   getCadreSimple() {
+    //let offsetMontantsRonds=this.hasRoundedMontants*this.epaisseurMontants*this.hasMontants;
+    let offsetMontantsRonds=this.epaisseurMontants*this.hasMontants;
+    let offsetCote = this.elevation*this.hasCotesEleves*this.hasMontants;
+    let OffsetRetraitCotes = retraitCotes*this.hasMontants*this.meuble.hasCotesEleves;
+
     geometry = new THREE.BoxGeometry(
-      this.largeur + 0.01,
+      this.largeur + 0.01 - offsetMontantsRonds,
       this.epaisseurCadre,
-      this.profondeur +  0.01);
+      this.profondeur +  0.01 - offsetMontantsRonds);
 
     let cadreSimpleHaut = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleHaut.position.set(0, this.hauteur / 2 - this.epaisseurCadre/2 , 0);
+    cadreSimpleHaut.position.set(0, this.hauteur / 2 - this.epaisseurCadre/2 - OffsetRetraitCotes * (this.hasRoundedMontants+1), 0);
     cadreSimpleHaut.name = "cadreSimpleHaut";
 
     geometry = new THREE.BoxGeometry(
       this.largeur - this.epaisseurCadre,
       this.epaisseurCadre,
-      this.profondeur +  0.01);
+      this.profondeur +  0.01 - offsetMontantsRonds);
 
     let cadreSimpleBas = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
     cadreSimpleBas.position.set(0, -this.hauteur / 2 + this.epaisseurCadre/2 + this.elevation, 0);
     cadreSimpleBas.name = "cadreSimpleBas";
-
-    let offsetCote = this.elevation*this.hasCotesEleves*this.hasMontants;
-    let OffsetRetraitCotes = retraitCotes*this.hasMontants;
 
     geometry = new THREE.BoxGeometry(
       this.largeur - this.epaisseurCadre,
@@ -1961,8 +1990,8 @@ class Meuble {
 
     geometry = new THREE.BoxGeometry(
       this.epaisseurCadre,
-      this.hauteur-offsetCote, // - 0.05,
-      this.profondeur);
+      this.hauteur - offsetCote - offsetMontantsRonds * this.hasRoundedMontants, // - 0.05,
+      this.profondeur - offsetMontantsRonds);
 
     let cadreSimpleGauche = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
     cadreSimpleGauche.position.set(-this.largeur / 2+this.epaisseurCadre/2+OffsetRetraitCotes, offsetCote/2, 0);
@@ -1974,8 +2003,8 @@ class Meuble {
 
     geometry = new THREE.BoxGeometry(
       this.epaisseurCadre,
-      this.hauteur-this.elevation, // - 0.05,
-      this.profondeur);
+      this.hauteur-this.elevation - offsetMontantsRonds, // - 0.05,
+      this.profondeur - offsetMontantsRonds);
 
     let cadres = new THREE.Group();
     if (this.hasPlanchesIntermediaires) {
@@ -2717,6 +2746,17 @@ function duplicatePropertiesValues(fromObj, toObj) {
 
 //fonctions creations geometries
 
+function getRoundedCylinder(x,y) {
+  let cylindre = new THREE.CylinderGeometry(x/2,x/2,y-x/2,12,1,true);
+  let demiSphereSup = new THREE.SphereGeometry(x/2,12,6,0,Math.PI*2,0,Math.PI/2);
+  let demiSphereInf=demiSphereSup.clone();
+  demiSphereInf.rotateX(Math.PI);
+  demiSphereInf.translate(0,-y/2+x/4,0);
+  demiSphereSup.translate(0,y/2-x/4,0);
+  let geometries = [cylindre,demiSphereSup,demiSphereInf];
+  return BufferGeometryUtils.mergeGeometries(geometries);
+}
+
 function getPlancheSuedoise(x, y, z, largeur, epaisseurS,arrondi) {
   let geo = new THREE.BufferGeometry;
   let pieceA = new THREE.BufferGeometry;
@@ -2767,7 +2807,7 @@ function createPlanche (x,y,z,styleParam,arrondi) {
 var globalStyle="Arrondi";
 //valeurs possibles : "Basique", "Arrondi", "Suédois 1", "Suédois 2"
 
-var arrondi = 0.7;
+var arrondi = 0.7;        // a rajouter en parametre
 const retraitCotes = 0.5; // a rajouter en parametre
 
 var selectionMode="meubles";
@@ -4271,7 +4311,7 @@ var slidersAspect;
 var checkboxVertical;
 var checkboxMurFond,checkboxMurGauche,checkboxMurDroit,checkboxSurSol;
 
-var checkboxSimple,checkboxCotesEleves,checkboxMontants,checkboxMontantsExterieurs,checkboxMontantsIntermediaires,checkboxMontantsInterieurs,checkboxEtagereUnique,checkboxEtagereZero,checkboxEtagereFinale;
+var checkboxSimple,checkboxCotesEleves,checkboxMontants,checkboxRoundedMontants,checkboxMontantsExterieurs,checkboxMontantsIntermediaires,checkboxMontantsInterieurs,checkboxEtagereUnique,checkboxEtagereZero,checkboxEtagereFinale;
 var checkboxPlancheBas,checkboxPlancheHaut,checkboxPlancheDroite,checkboxPlancheGauche,checkboxPlancheFond,checkboxPlanchesIntermediaires;
 
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
@@ -4383,6 +4423,7 @@ function getHTMLElements () {
   checkboxSimple = document.getElementById("checkboxSimple");
   checkboxCotesEleves = document.getElementById("checkboxCotesEleves");
   checkboxMontants = document.getElementById("checkboxMontants");
+  checkboxRoundedMontants = document.getElementById("checkboxRoundedMontants");
   checkboxMontantsExterieurs = document.getElementById("checkboxMontantsExterieurs");
   checkboxMontantsIntermediaires = document.getElementById("checkboxMontantsIntermediaires");
   checkboxMontantsInterieurs = document.getElementById("checkboxMontantsInterieurs");
@@ -4470,6 +4511,7 @@ function initializeInterface() {
   checkboxSimple.addEventListener("click", switchSimple);
   checkboxCotesEleves.addEventListener("click",switchCotesEleves);
   checkboxMontants.addEventListener("click", switchMontants);
+  checkboxRoundedMontants.addEventListener("click",switchRoundedMontants);
   checkboxMontantsExterieurs.addEventListener("click", switchMontantsExterieurs);
   checkboxMontantsIntermediaires.addEventListener("click", switchMontantsIntermediaires);
   checkboxMontantsInterieurs.addEventListener("click", switchMontantsInterieurs);
@@ -4523,6 +4565,12 @@ function initializeInterface() {
 
   function switchMontants() {
     selectedMeuble.hasMontants = !selectedMeuble.hasMontants;
+    refreshCheckboxMeuble();
+    selectedMeuble.update();
+  }
+
+  function switchRoundedMontants() {
+    selectedMeuble.hasRoundedMontants = !selectedMeuble.hasRoundedMontants;
     selectedMeuble.update();
   }
 
@@ -5632,7 +5680,21 @@ function refreshCheckboxMeuble() {
   if (selectedMeuble.disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
   if (selectedMeuble.isSimple) {checkboxSimple.checked=true} else {checkboxSimple.checked=false}
   if (selectedMeuble.hasCotesEleves) {checkboxCotesEleves.checked=true} else {checkboxCotesEleves.checked=false}
-  if (selectedMeuble.hasMontants) {checkboxMontants.checked=true} else {checkboxMontants.checked=false}
+  if (selectedMeuble.hasMontants) {
+    checkboxMontants.checked=true;
+    checkboxRoundedMontants.disabled=false;
+    checkboxMontantsInterieurs.disabled=false;
+    checkboxMontantsExterieurs.disabled=false;
+    checkboxMontantsIntermediaires.disabled=false;
+  }
+  else {
+    checkboxMontants.checked=false;
+    checkboxRoundedMontants.disabled=true;
+    checkboxMontantsInterieurs.disabled=true;
+    checkboxMontantsExterieurs.disabled=true;
+    checkboxMontantsIntermediaires.disabled=true;
+  }
+  if (selectedMeuble.hasRoundedMontants) {checkboxRoundedMontants.checked=true} else {checkboxRoundedMontants.checked=false}
   if (selectedMeuble.hasMontantsInterieurs) {checkboxMontantsInterieurs.checked=true} else {checkboxMontantsInterieurs.checked=false}
   if (selectedMeuble.hasMontantsExterieurs) {checkboxMontantsExterieurs.checked=true} else {checkboxMontantsExterieurs.checked=false}
   if (selectedMeuble.hasMontantsIntermediaires) {checkboxMontantsIntermediaires.checked=true} else {checkboxMontantsIntermediaires.checked=false}
@@ -5642,7 +5704,7 @@ function refreshCheckboxMeuble() {
   if (selectedMeuble.hasPlancheBas) {checkboxPlancheBas.checked=true} else {checkboxPlancheBas.checked=false}
   if (selectedMeuble.hasPlancheHaut) {checkboxPlancheBas.checked=true} else {checkboxPlancheHaut.checked=false}
   if (selectedMeuble.hasPlancheGauche) {checkboxPlancheBas.checked=true} else {checkboxPlancheGauche.checked=false}
-  if (selectedMeuble.hasPlancheDroite) {checkboxPlancheBas.checked=true} else {checkboxPlancheDroite.checked=false}
+  if (selectedMeuble.hasPlancheDroite) {checkboxPlancheDroite.checked=true} else {checkboxPlancheDroite.checked=false}
   if (selectedMeuble.hasPlancheFond) {checkboxPlancheFond.checked=true} else {checkboxPlancheFond.checked=false}
   if (selectedMeuble.hasPlanchesIntermediaires) {checkboxPlanchesIntermediaires.checked=true} else {checkboxPlanchesIntermediaires.checked=false}
 }
