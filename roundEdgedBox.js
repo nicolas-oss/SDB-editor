@@ -3,6 +3,7 @@ import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 
 export function roundEdgedBox(width, height, depth, radius, widthSegments, heightSegments, depthSegments, smoothness) {
     depth<smoothness ? smoothness : depth;
+    radius>depth ? depth : radius;
     width = width || 1;
     height = height || 1;
     depth = depth || 1;

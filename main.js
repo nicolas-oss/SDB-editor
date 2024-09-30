@@ -19,8 +19,6 @@ class Element {
     this.meuble=this.bloc.meuble;
     this.initialMeuble=this.bloc.initialMeuble;
     this.initialBloc=this.bloc.initialBloc;
-    console.log("constructor element ");
-    console.log(this.bloc.initialMeuble);
     
     this._x=undefined;
     this._y=undefined;
@@ -33,6 +31,7 @@ class Element {
     this.isSelected=false;
     this.selectionBox=undefined;
     this._isRentrant = undefined;
+    this._arrondi = undefined;
     this.ouverturePorteLocal = undefined;
     this.nombrePortesLocal = undefined;
 
@@ -47,10 +46,19 @@ class Element {
     return this.meuble.epaisseurCadre;
   }
 
+  get epaisseurTiroirs() {
+    return epaisseurTiroirs;
+  }
+
   set style(value) {this._style=value;}
 
   get style() {if (this._style) {return this._style}
     else return this.bloc.style;}
+
+  set arrondi(value) {this._arrondi=value}
+
+  get arrondi() {if (this._arrondi!=undefined) {return this._arrondi}
+  else return this.bloc.arrondi;}
 
   set type(value) {this._type=value;}
 
@@ -157,9 +165,9 @@ class Element {
     return this.bloc.taille - 2 * this.epaisseurCadre;
   }
 
- /*  get zl() {
-    return this.bloc.p;
-  } */
+  get zl() {
+    return this.epaisseur;
+  }
 
   fixYValue() {
     this._y = this.y;
@@ -173,6 +181,7 @@ class Element {
     this._isRentrant = undefined;
     this._type = undefined;
     this._style = undefined;
+    this._arrondi=undefined;
   }
 
   offsetTiroir() {
@@ -186,10 +195,9 @@ getPorte(isPorteBloc) {
     let hauteurPorte;
     if (isPorteBloc) hauteurPorte=this.bloc.h
     else hauteurPorte=this.yl;
-    var offset = this.epaisseur * this.isRentrant ;
+    var offset = this.epaisseurTiroirs * this.isRentrant ;
     if (this.nombrePortes == "1") {
-      //geometry = createPlanche(this.xl - 0.25 * this.epaisseur - 2 * offset, this.yl - 0.25 * this.epaisseur - 2 * offset, this.epaisseur, this.style);
-      geometry = createPlanche(this.xl, hauteurPorte, this.epaisseur, this.style);
+      geometry = createPlanche(this.xl, hauteurPorte, this.epaisseurTiroirs, this.style, this.arrondi);
       porte[0] = new THREE.Mesh(geometry, materialTiroirs);
       porte[0].name = "porte 0";
       //poignee
@@ -200,13 +208,13 @@ getPorte(isPorteBloc) {
       if (deltaX < 0) deltaX = 0;
       if (this.ouverturePorte == "droite") { deltaX *= -1; poigneeB.rotateZ(Math.PI / 2); }
       else poigneeB.rotateZ(-Math.PI / 2);  // a soumettre à option
-      poigneeB.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
+      poigneeB.position.set(deltaX, 0, this.epaisseurTiroirs / 2 + offsetSuedois);
       porte[0].position.set(0, 0, this.bloc.p / 2 - offset);
       return porte[0];
     }
     else {
       //porte gauche
-      geometry = createPlanche(this.xl/2, hauteurPorte, this.epaisseur, this.style);
+      geometry = createPlanche(this.xl/2, hauteurPorte, this.epaisseurTiroirs, this.style, this.arrondi);
       porte[0] = new THREE.Mesh(geometry, materialTiroirs);
       porte[0].name = "porte 0";
 
@@ -217,7 +225,7 @@ getPorte(isPorteBloc) {
       porte[0].add(poigneeB);
       let deltaX = this.xl / 4 - 4 * taillePoignees;
       if (4 * taillePoignees > this.xl / 4) deltaX = 0;
-      poigneeB.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
+      poigneeB.position.set(deltaX, 0, this.epaisseurTiroirs / 2 + offsetSuedois);
       porte[0].position.set(-this.xl / 4, 0, this.bloc.p / 2 - offset);
 
       //porte droite
@@ -228,7 +236,7 @@ getPorte(isPorteBloc) {
       poigneeC.rotateZ(Math.PI / 2);  // a soumettre à option
       porte[1].add(poigneeC);
       deltaX *= -1
-      poigneeC.position.set(deltaX, 0, this.epaisseur / 2 + offsetSuedois);
+      poigneeC.position.set(deltaX, 0, this.epaisseurTiroirs / 2 + offsetSuedois);
       poigneeC.name = "poignee";
       porte[1].position.set(this.xl / 4, 0, this.bloc.p / 2 - offset);
       let porteDoubleRoot=new THREE.Object3D();
@@ -306,7 +314,8 @@ getPorte(isPorteBloc) {
 
     if (this.type == "Tiroirs") {
       //tiroir
-      geometry = createPlanche(this.xl, this.yl, this.zl, this.style);
+      geometry = createPlanche(this.xl, this.yl, this.epaisseurTiroirs, this.style, this.arrondi);
+      console.log("this.zl=",this.zl);
       let tiroir = new THREE.Mesh(geometry, materialTiroirs);
       tiroir.name = "tiroir " + this.numero;
       tiroir.shortName = "tiroir";
@@ -350,8 +359,8 @@ getPorte(isPorteBloc) {
 
   getSousMeuble() {
     if (!this.sousMeuble) {
-      console.log("getSousMeuble meuble",this.meuble.numero);
-      console.log(this.initialMeuble,this.bloc.initialBloc);
+      //console.log("getSousMeuble meuble",this.meuble.numero);
+      //console.log(this.initialMeuble,this.bloc.initialBloc);
       this.sousMeuble=new SousMeuble(this.initialMeuble,this.bloc.initialBloc,this,this.numero);
     this.sousMeuble.etageres=1;
     this.sousMeuble.type="Etageres";
@@ -379,12 +388,27 @@ getPorte(isPorteBloc) {
   }
 
   duplicate(bloc,j) {
-    let listKeysElement = ["numero", "unherited", "_x", "_y", "_yTiroir", "_type", "_style", "isSelected", "selectionBox", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal"];
+    let listKeysElement = ["numero", "unherited", "_x", "_y", "_yTiroir", "_type", "_style", "_arrondi", "isSelected", "selectionBox", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal"];
     let newElement = new Element(bloc, j);
+    newElement.bloc = bloc;
+    newElement.meuble = bloc.meuble;
+    newElement.initialMeuble = bloc.initialMeuble;
+    newElement.initialBloc = bloc.initialBloc;
+    //newElement.parentElement = 
     listKeysElement.forEach(key => {
       //console.log()
         if (this[key]!=undefined) newElement[key] = this[key];
       });
+
+     if (this.type=="SousMeuble" && this.sousMeuble!=undefined) {
+      console.log ("sousMeuble depart=",this.sousMeuble);
+
+      //newElement.getSousMeuble();
+      newElement.sousMeuble=this.sousMeuble.duplicate(newElement.initialMeuble,newElement.initialBloc,this);
+      console.log ("sousMeuble copie=",newElement.sousMeuble);
+      newElement.sousMeuble.isSousMeuble=true;
+    }
+    
     return newElement;
   }
 }
@@ -418,6 +442,7 @@ class Bloc {
     //commun aux autres classes
     this._type = undefined;
     this._style = undefined;
+    this._arrondi = undefined;
     this.isSelected = false;
     this._isRentrant = undefined;
     this.ouverturePorteLocal = undefined;
@@ -425,46 +450,49 @@ class Bloc {
     this.etageresVerticalesLocal = undefined;
   }
 
-get epaisseur() {
-  return this.meuble.epaisseur;
-}
+  get epaisseur() {
+    return this.meuble.epaisseur;
+  }
 
-get epaisseurCadre() {
-  return this.meuble.epaisseurCadre;
-}
+  get epaisseurCadre() {
+    return this.meuble.epaisseurCadre;
+  }
 
-get l() {
-  if (this.meuble.disposition == "horizontal") return this.taille;
-  if (this.meuble.disposition == "vertical") return this.meuble.largeur;
-}
+  get l() {
+    if (this.meuble.disposition == "horizontal") return this.taille;
+    if (this.meuble.disposition == "vertical") return this.meuble.largeur;
+  }
 
-get h() {
-  if (this.meuble.disposition == "horizontal") return this.meuble.hauteur-this.meuble.elevation;
-  if (this.meuble.disposition == "vertical") return this.taille;
-}
+  get h() {
+    if (this.meuble.disposition == "horizontal") return this.meuble.hauteur - this.meuble.elevation;
+    if (this.meuble.disposition == "vertical") return this.taille;
+  }
 
-get p() {
-  return this.meuble.profondeur;
-}
+  get p() {
+    return this.meuble.profondeur;
+  }
 
-get hauteurInterieure() {
-  return this.meuble.hauteur - 2 * this.epaisseurCadre;
-}
+  get hauteurInterieure() {
+    return this.meuble.hauteur - 2 * this.epaisseurCadre;
+  }
 
-   get etageres() {
-    if (this.etageresLocal!=undefined) {
-      return this.etageresLocal;}
+  get etageres() {
+    if (this.meuble.hasEtagereUnique && this.numero>0) return (this.meuble.bloc[0].etageres)
+    if (this.etageresLocal != undefined) {
+      return this.etageresLocal;
+    }
     else {
-      return this.meuble.etageres;}
+      return this.meuble.etageres;
+    }
   }
 
   get ouverturePorte() {
-    if (this.ouverturePorteLocal) {return this.ouverturePorteLocal}
+    if (this.ouverturePorteLocal) { return this.ouverturePorteLocal }
     else return this.meuble.ouverturePorte;
   }
 
   get nombrePortes() {
-    if (this.nombrePortesLocal) {return this.nombrePortesLocal}
+    if (this.nombrePortesLocal) { return this.nombrePortesLocal }
     else return this.meuble.nombrePortes;
   }
 
@@ -480,6 +508,11 @@ get hauteurInterieure() {
 
   get style() { if (this._style) {return this._style;}
     else return this.meuble.style;}
+
+  set arrondi(value) {this._arrondi=value}
+
+  get arrondi() {if (this._arrondi!=undefined) {return this._arrondi}
+  else return this.meuble.arrondi;}
 
   get type() { if (this._type) {return this._type;}
     else { return this.meuble.type;}}
@@ -499,6 +532,7 @@ get hauteurInterieure() {
   reset() {
     this.unherited = true;
     this._type = undefined;
+    this._arrondi=undefined;
   }
 
   createBlocRoot() {
@@ -519,8 +553,15 @@ get hauteurInterieure() {
   getCadre() {
     let offsetG=0;
     let offsetD=0;
-    if (this.numero==0) offsetG = this.meuble.elevation;
-    if (this.numero==this.meuble.nbBlocs-1) offsetD = this.meuble.elevation;
+    let offsetRetraitCoteGauche = 0;
+    let offsetRetraitCoteDroit = 0;
+    if (this.numero==0) offsetRetraitCoteGauche = retraitCotes*this.meuble.hasMontants;
+    if (this.numero==this.meuble.nbBlocs-1) offsetRetraitCoteDroit = retraitCotes*this.meuble.hasMontants;
+    if (this.numero==0 && !this.meuble.hasMontants) offsetG = this.meuble.elevation;
+    if (this.numero==0 && this.meuble.hasMontants && !this.meuble.hasCotesEleves) offsetG = this.meuble.elevation;
+    if (this.numero==this.meuble.nbBlocs-1 && !this.meuble.hasMontants) offsetD = this.meuble.elevation;
+    if (this.numero==this.meuble.nbBlocs-1 && this.meuble.hasMontants && !this.meuble.hasCotesEleves) offsetD = this.meuble.elevation;
+
     geometry = new THREE.BoxGeometry( this.l, this.epaisseurCadre, this.p );
     plancheHaut = new THREE.Mesh( geometry, material );
     plancheHaut.name = "plancheHaut";
@@ -537,8 +578,9 @@ get hauteurInterieure() {
     plancheGauche = new THREE.Mesh( geometry, material );
     plancheGauche.name = "plancheGauche";
     plancheGauche.numBloc = this.numero;
-    plancheDroite.position.set(this.l/2 - this.epaisseurCadre/2,-this.epaisseurCadre/2-offsetD/2,0);
-    plancheGauche.position.set(-this.l/2 + this.epaisseurCadre/2,-this.epaisseurCadre/2-offsetG/2,0);
+    plancheDroite.position.set(this.l/2 - this.epaisseurCadre/2 - offsetRetraitCoteDroit,-this.epaisseurCadre/2-offsetD/2,0);
+    plancheGauche.position.set(-this.l/2 + this.epaisseurCadre/2 + offsetRetraitCoteGauche,-this.epaisseurCadre/2-offsetG/2,0);
+    
     let cadreBlocRoot=new THREE.Group();
     cadreBlocRoot.name="cadreBlocRoot"+this.numero;
     cadreBlocRoot.shortName="cadreBlocRoot";
@@ -548,6 +590,16 @@ get hauteurInterieure() {
     if (this.meuble.hasPlancheHaut) cadreBlocRoot.add(plancheHaut);
     if (this.meuble.hasPlancheDroite) cadreBlocRoot.add(plancheDroite);
     if (this.meuble.hasPlancheGauche) cadreBlocRoot.add(plancheGauche);
+    if (this.meuble.hasPlancheFond) {
+      console.log(this.l,this.h,this.epaisseurCadre,offsetG,retraitCotes,this.meuble.hasMontants);
+      geometry = new THREE.BoxGeometry( this.l, this.h-this.epaisseurCadre+offsetG/2, this.epaisseurCadre );
+      let plancheFond = new THREE.Mesh(geometry, material);
+      plancheFond.name = "plancheFond";
+      plancheFond.numBloc = this.numero;
+      let offsetFond = retraitCotes*this.meuble.hasMontants;
+      plancheFond.position.set(0, 0, -this.p / 2 + this.epaisseurCadre / 2 + offsetFond);
+      cadreBlocRoot.add(plancheFond);
+    }
     return cadreBlocRoot;
   }
 
@@ -563,9 +615,9 @@ get hauteurInterieure() {
     var elementsRoot = new THREE.Object3D();
     elementsRoot.name = "elementsRoot" + this.numero;
     elementsRoot.shortName = "elementsRoot";
-     console.log(this.etageres);
+/*      console.log(this.etageres);
     if (this.etageres==0) return elementsRoot;
-    for (var i = 0; i < this.etageres+2; i++) {
+ */    for (var i = 0; i < this.etageres+2; i++) {
       let element = this.elements[i].getElement();
       if (element) elementsRoot.add(element);
     }
@@ -747,26 +799,37 @@ get hauteurInterieure() {
     }
   }
 
-  duplicate(meuble,i) {
-    let listKeysBloc = ["numero", "taille", "unherited", "etageresLocal", "_type", "_style", "isSelected", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal", "etageresVerticalesLocal"];
-  
-    let newBloc=new Bloc(meuble,i);
-      listKeysBloc.forEach(key => {
-        newBloc[key] = this[key];
-      });
-      newBloc.elements = [];
-  
-      //copie des elements
-      for (var j = 0; j < this.etageres + 4; j++) {
-        console.log("copie elements,i,j=", i, j);
-        console.log(meuble.bloc[i].elements[j]);
-        if (this.elements[j]!=undefined) {
-          newBloc.elements[j] = this.elements[j].duplicate(newBloc,j);
-        }
-      }
-      newBloc.isSelected = false;
+  duplicate(meuble, i) {
+    let listKeysBloc = ["numero", "taille", "unherited", "etageresLocal", "_type", "_style","_arrondi","isSelected", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal", "etageresVerticalesLocal"];
 
-      return newBloc;
+    let newBloc = new Bloc(meuble, i);
+    listKeysBloc.forEach(key => {
+      newBloc[key] = this[key];
+    });
+    newBloc.elements = [];
+
+    //copie des elements
+    for (var j = 0; j < this.etageres + 4; j++) {
+      //console.log("copie elements,i,j=", i, j);
+      //console.log(meuble.bloc[i].elements[j]);
+      newBloc.isSelected = false;
+      newBloc.meuble = meuble;
+      if (!newBloc.meuble.isSousMeuble) {
+        newBloc.initialBloc = newBloc;
+        newBloc.initialMeuble = newBloc.meuble;
+      }
+      else {
+        newBloc.initialBloc = newBloc.meuble.intialBloc;
+        newBloc.initialMeuble = newBloc.meuble.initialMeuble;
+      }
+      if (this.elements[j] != undefined) {
+        newBloc.elements[j] = this.elements[j].duplicate(newBloc, j);
+      }
+      console.log("bloc",newBloc.numero," duplicated");
+    }
+
+
+    return newBloc;
   }
 }
 
@@ -787,18 +850,19 @@ class Meuble {
     this.hasPlancheHaut = true;
     this.hasPlancheGauche = true;
     this.hasPlancheDroite = true;
-    this.hasPlanchesIntermediaires = true;
-    this.hasMontants = true;
+    this.hasPlancheFond = true;
+    this.hasCotesEleves = true;
+    this.hasMontants = false;
     this.epaisseurMontants = 3;
-    this.hasMontantsExterieurs = false;
+    this.hasMontantsExterieurs = true;
     this.hasMontantsIntermediaires = true;
     this.hasMontantsInterieurs = true;
     this.largeurMontants=2.5;
-    this.hasEtagereUnique=true;
-    this.hasEtagereZero=true;
+    this.hasEtagereUnique=false;
+    this.hasEtagereZero=false;
     this.hasEtagereFinale=false;
 
-    this.nbBlocs = 3;
+    this.nbBlocs = 1;
     this.x = 0;
     this.y = 0;
     this.z = 0;
@@ -835,9 +899,10 @@ class Meuble {
 
     //commun aux autres classes
     this._style = undefined;
+    this._arrondi=undefined;
     this.isSelected = false;
     this.selectionBox = undefined;
-    this.etageres=1;
+    this.etageres=0;
     
     //commun à la classe bloc
     this.ouverturePorte = "gauche";
@@ -853,6 +918,11 @@ class Meuble {
   set style(value) {
     this._style=value;
   } 
+
+  set arrondi(value) {this._arrondi=value}
+
+  get arrondi() {if (this._arrondi!=undefined) {return this._arrondi}
+  else return arrondi;}
 
   //fixe une taille identique pour chaque bloc en fonction de la largeur du meuble
   calculTailleBlocs() {
@@ -1146,7 +1216,6 @@ class Meuble {
         }
       }
     }
-    console.log("collion list=",collisionList);
     return collisionList;
   }
 
@@ -1802,7 +1871,7 @@ class Meuble {
     }
 
     //montants intermediaires
-    if (this.hasMontantsIntermediaires) {
+    if (this.hasMontantsIntermediaires && this.nbBlocs>1) {
     let montantIntermediaireVertical = [];
     geometries = [];
     let somme = 0;
@@ -1878,17 +1947,29 @@ class Meuble {
     cadreSimpleBas.position.set(0, -this.hauteur / 2 + this.epaisseurCadre/2 + this.elevation, 0);
     cadreSimpleBas.name = "cadreSimpleBas";
 
+    let offsetCote = this.elevation*this.hasCotesEleves*this.hasMontants;
+    let OffsetRetraitCotes = retraitCotes*this.hasMontants;
+
+    geometry = new THREE.BoxGeometry(
+      this.largeur - this.epaisseurCadre,
+      this.hauteur-offsetCote, // - 0.05,
+      this.epaisseurCadre);
+
+    let cadreSimpleFond = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
+    cadreSimpleFond.position.set(0, offsetCote/2, -this.profondeur/2+this.epaisseurCadre/2+OffsetRetraitCotes);
+    cadreSimpleFond.name = "cadreSimpleFond";
+
     geometry = new THREE.BoxGeometry(
       this.epaisseurCadre,
-      this.hauteur, // - 0.05,
+      this.hauteur-offsetCote, // - 0.05,
       this.profondeur);
 
     let cadreSimpleGauche = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleGauche.position.set(-this.largeur / 2+this.epaisseurCadre/2, 0, 0);
+    cadreSimpleGauche.position.set(-this.largeur / 2+this.epaisseurCadre/2+OffsetRetraitCotes, offsetCote/2, 0);
     cadreSimpleGauche.name = "cadreSimpleGauche";
 
     let cadreSimpleDroit = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
-    cadreSimpleDroit.position.set(this.largeur / 2-this.epaisseurCadre/2, 0, 0);
+    cadreSimpleDroit.position.set(this.largeur / 2-this.epaisseurCadre/2-OffsetRetraitCotes, offsetCote/2, 0);
     cadreSimpleDroit.name = "cadreSimpleDroit";
 
     geometry = new THREE.BoxGeometry(
@@ -1914,6 +1995,7 @@ class Meuble {
     if (this.hasPlancheHaut) cadres.add(cadreSimpleHaut);
     if (this.hasPlancheGauche) cadres.add(cadreSimpleGauche);
     if (this.hasPlancheDroite) cadres.add(cadreSimpleDroit);
+    if (this.hasPlancheFond) cadres.add(cadreSimpleFond);
 
      //shadows
      cadres.traverse(function (child) {
@@ -2293,7 +2375,8 @@ class Meuble {
   }  
 
   rename() {
-    this.name="Meuble "+(this.numero+1);
+    if (!this.isSousMeuble) this.name="Meuble "+(this.numero+1)
+      else this.name="SousMeuble "+(this.numero+1)+"meuble"+this.initialMeuble.numero;
   }
 
   setEtageresNumber(num) {
@@ -2313,10 +2396,43 @@ class Meuble {
     }
   }
 
-  duplicate() {
+ /*  duplicate() {
     var listKeysMeuble = ["hauteur", "largeur", "profondeur", "nbBlocs", "x", "y", "z", "disposition", "epaisseur", "epaisseurCadre", "hasPlateau", "hasCadre", "hasSocle", "hasPied", "IsSuspendu", "offsetPoignees", "isSousMeuble", "type", "isRentrant", "isSimple", "onMurFond", "onMurGauche", "onMurDroit", "surSol", "orientation", "_style", "isSelected", "etageres", "ouverturePorte", "nombrePortes", "etageresVerticales"];
 
 
+  } */
+
+
+  duplicate() {
+    var newMeuble = new Meuble(meubles.length);
+    var oldMeuble = this;
+  
+    var listKeysMeuble = ["hauteur", "largeur", "profondeur", "elevation", "nbBlocs", "x", "y", "z", "disposition", "epaisseur", "epaisseurCadre", "hasPlateau", "hasCadre", "hasSocle", "hasPied", "IsSuspendu", "offsetPoignees", "isSousMeuble", "type", "isRentrant", "isSimple", "onMurFond", "onMurGauche", "onMurDroit", "surSol", "orientation", "_style", "_arrondi", "isSelected", "etageres", "ouverturePorte", "nombrePortes", "etageresVerticales",
+      "hasPlancheBas","hasPlancheHaut","hasPlancheGauche","hasPlancheDroite","hasPlancheFond","hasPlanchesIntermediaires","hasCotesEleves","hasMontants","epaisseurMontants","hasMontantsExterieurs","hasMontantsIntermediaires","hasMontantsInterieurs","largeurMontants","hasEtagereUnique","hasEtagereZero","hasEtagereFinale"];
+    var listKeysSousMeuble = ["numero", "unherited", "_x", "_y", "_yTiroir", "_type", "_style", "isSelected", "selectionBox", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal"];
+    
+    newMeuble.setBlocsQuantity(oldMeuble.nbBlocs);
+  
+    for (var i = 0; i < oldMeuble.nbBlocs; i++) {
+      newMeuble.bloc[i] = oldMeuble.bloc[i].duplicate(newMeuble,i);
+    }
+  
+    listKeysMeuble.forEach(key => {
+      if (newMeuble[key]!=undefined) newMeuble[key] = oldMeuble[key];
+    });
+
+/*     listKeysSousMeuble.forEach(key => {
+      if (newMeuble[key]!=undefined) newMeuble[key] = oldMeuble[key];
+    }); */
+    console.log("duplicate meuble");
+    newMeuble.meuble=newMeuble;
+    //if (!newMeuble.isSousMeuble) 
+    newMeuble.initialMeuble=newMeuble;
+    //else newMeuble.initialMeuble=this.initialMeuble;
+    
+    //newMeuble.numero = meubles.length;
+    newMeuble.rename();
+    return newMeuble;
   }
 
   resetAllEtageres() {
@@ -2496,6 +2612,37 @@ class SousMeuble extends Meuble {
 
     return boite;
   }
+
+  duplicate(initialMeuble,initialBloc,parentElement) {
+    var newSousMeuble = new SousMeuble(initialMeuble,initialBloc,parentElement,meubles.length);
+    var oldSousMeuble = this;
+  
+    var listKeysMeuble = ["hauteur", "largeur", "profondeur", "elevation", "nbBlocs", "x", "y", "z", "disposition", "epaisseur", "epaisseurCadre", "hasPlateau", "hasCadre", "hasSocle", "hasPied", "IsSuspendu", "offsetPoignees", "isSousMeuble", "type", "isRentrant", "isSimple", "onMurFond", "onMurGauche", "onMurDroit", "surSol", "orientation", "_style", "isSelected", "etageres", "ouverturePorte", "nombrePortes", "etageresVerticales",
+      "hasPlancheBas","hasPlancheHaut","hasPlancheGauche","hasPlancheDroite","hasPlanchesIntermediaires","hasMontants","epaisseurMontants","hasMontantsExterieurs","hasMontantsIntermediaires","hasMontantsInterieurs","largeurMontants","hasEtagereUnique","hasEtagereZero","hasEtagereFinale"];
+    var listKeysSousMeuble = ["numero", "unherited", "_x", "_y", "_yTiroir", "_type", "_style", "isSelected", "selectionBox", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal"];
+    
+    newSousMeuble.setBlocsQuantity(oldSousMeuble.nbBlocs);
+  
+    for (var i = 0; i < oldSousMeuble.nbBlocs; i++) {
+      newSousMeuble.bloc[i] = oldSousMeuble.bloc[i].duplicate(newSousMeuble,i);
+    }
+  
+    listKeysMeuble.forEach(key => {
+      if (newSousMeuble[key]!=undefined) newSousMeuble[key] = oldSousMeuble[key];
+    });
+
+     listKeysSousMeuble.forEach(key => {
+      if (newSousMeuble[key]!=undefined) newSousMeuble[key] = oldSousMeuble[key];
+    });
+
+    console.log("duplicate sous Meuble");
+    newSousMeuble.meuble=newSousMeuble;
+    /* if (!newSousMeuble.isSousMeuble) newSousMeuble.initialMeuble=newSousMeuble;
+    else newSousMeuble.initialMeuble=this.initialMeuble; */
+    //newSousMeuble.numero = meubles.length;
+    newSousMeuble.rename();
+    return newSousMeuble;
+  }
 }
 
 function remap(inMin, inMax, outMin, outMax, value) {
@@ -2568,58 +2715,21 @@ function duplicatePropertiesValues(fromObj, toObj) {
   });
 }
 
-function duplicateMeuble(num) {
-  var num = selectedMeuble.numero;
-  var indiceNewMeuble = meubles.length;
-
-  meubles[indiceNewMeuble] = new Meuble(indiceNewMeuble);
-  var newMeuble = meubles[indiceNewMeuble];
-  var oldMeuble = selectedMeuble;
-
-  var listKeysElement = ["numero", "unherited", "_x", "_y", "_yTiroir", "_type", "_style", "isSelected", "selectionBox", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal"];
-  var listKeysBloc = ["numero", "taille", "unherited", "etageresLocal", "_type", "_style", "isSelected", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal", "etageresVerticalesLocal"];
-  var listKeysMeuble = ["hauteur", "largeur", "profondeur", "nbBlocs", "x", "y", "z", "disposition", "epaisseur", "epaisseurCadre", "hasPlateau", "hasCadre", "hasSocle", "hasPied", "IsSuspendu", "offsetPoignees", "isSousMeuble", "type", "isRentrant", "isSimple", "onMurFond", "onMurGauche", "onMurDroit", "surSol", "orientation", "_style", "isSelected", "etageres", "ouverturePorte", "nombrePortes", "etageresVerticales"];
-  //var listKeysSousMeuble = ["numero", "unherited", "_x", "_y", "_yTiroir", "_type", "_style", "isSelected", "selectionBox", "_isRentrant", "ouverturePorteLocal", "nombrePortesLocal"];
-  
-  newMeuble.setBlocsQuantity(oldMeuble.nbBlocs);
-
-  for (var i = 0; i < oldMeuble.nbBlocs; i++) {
-    newMeuble.bloc[i] = oldMeuble.bloc[i].duplicate(newMeuble,i);
-  }
-
-  listKeysMeuble.forEach(key => {
-    newMeuble[key] = oldMeuble[key];
-  });
-
-  console.log(newMeuble);
-
-  newMeuble.numero = indiceNewMeuble;
-  newMeuble.rename();
-  newMeuble.update();
-  if (newMeuble.onMurFond) newMeuble.switchMur("onMurFond");
-  if (newMeuble.onMurGauche) newMeuble.switchMur("onMurGauche");
-  if (newMeuble.onMurDroit) newMeuble.switchMur("onMurDroit");
-  if (newMeuble.surSol) newMeuble.switchMur("surSol");
-  newMeuble.automaticPlacement();
-  updateScene();
-  frameCamera();
-}
-
 //fonctions creations geometries
 
-function getPlancheSuedoise(x, y, z, largeur, epaisseurS) {
+function getPlancheSuedoise(x, y, z, largeur, epaisseurS,arrondi) {
   let geo = new THREE.BufferGeometry;
   let pieceA = new THREE.BufferGeometry;
-  pieceA = roundEdgedBox(largeur, y, epaisseurS, 0.5, 1, 1, 1, 1);
+  pieceA = roundEdgedBox(largeur, y, epaisseurS, arrondi, 1, 1, 1, 1);
   let pieceB = pieceA.clone(true);
-  pieceA.translate(largeur / 2 - x / 2, 0, 0);
-  pieceB.translate(-largeur / 2 + x / 2, 0, 0);
+  pieceA.translate(largeur / 2 - x / 2, 0, epaisseurTiroirs/2);
+  pieceB.translate(-largeur / 2 + x / 2, 0, epaisseurTiroirs/2);
   let pieceC = new THREE.BufferGeometry;
   let offset = -0.70;
-  pieceC = roundEdgedBox(x - 2 * largeur - offset, largeur, epaisseurS, 0.5, 1, 1, 1, 1);
+  pieceC = roundEdgedBox(x - 2 * largeur - offset, largeur, epaisseurS, arrondi, 1, 1, 1, 1);
   let pieceD = pieceC.clone(true);
-  pieceC.translate(0, -y / 2 + largeur/2, 0);
-  pieceD.translate(0, y / 2 - largeur/2, 0);
+  pieceC.translate(0, -y / 2 + largeur/2, epaisseurTiroirs/2);
+  pieceD.translate(0, y / 2 - largeur/2, epaisseurTiroirs/2);
   let cadre = new THREE.BoxGeometry(x - 2 * largeur, y - largeur, z);
   let geometries = [];
   geometries.push(pieceA, pieceB, pieceC, pieceD, cadre);
@@ -2631,20 +2741,21 @@ function getPlancheSuedoise(x, y, z, largeur, epaisseurS) {
   return geo;
 }
 
-function createPlanche (x,y,z,styleParam) {
+function createPlanche (x,y,z,styleParam,arrondi) {
   let geo = new THREE.BufferGeometry;
   if (isPreviewOn || styleParam=="Basique") {
     geo = new THREE.BoxGeometry( x,y,z );
     return geo;
   }
-  if (styleParam == "Arrondi") {geo = roundEdgedBox(x,y,z,0.5,1,1,1,1)}
-  if (styleParam=="Suédois 1") { 
-    geo = getPlancheSuedoise (x,y,z,largeurSuedois,epaisseurSuedois);
+  if (styleParam == "Arrondi") {geo = roundEdgedBox(x,y,z,arrondi,1,1,1,1)}
+  if (styleParam == "Suédois 1") { 
+    geo = getPlancheSuedoise (x,y,z,largeurSuedois,epaisseurSuedois,0.5);
   }
   if (styleParam=="Suédois 2") { 
-    let geoTemp = getPlancheSuedoise (x,y,z,largeurSuedois/2,epaisseurSuedois);
+    let geoTemp = getPlancheSuedoise (x,y,z,largeurSuedois,epaisseurSuedois,0.5);
     let pieceCentre = new THREE.BufferGeometry;
-    pieceCentre = roundEdgedBox(x-2*largeurSuedois, y-2*largeurSuedois, epaisseurSuedois, 0.5, 1, 1, 1, 1);
+    pieceCentre = roundEdgedBox(x-4*largeurSuedois, y-4*largeurSuedois, epaisseurSuedois, 0.5, 1, 1, 1, 1);
+    pieceCentre.translate(0,0,epaisseurTiroirs/2);
     let geometries=[];
     geometries.push(geoTemp,pieceCentre);
     geo = BufferGeometryUtils.mergeGeometries(geometries);
@@ -2655,6 +2766,9 @@ function createPlanche (x,y,z,styleParam) {
 //variables globales et constantes
 var globalStyle="Arrondi";
 //valeurs possibles : "Basique", "Arrondi", "Suédois 1", "Suédois 2"
+
+var arrondi = 0.7;
+const retraitCotes = 0.5; // a rajouter en parametre
 
 var selectionMode="meubles";
 //valeurs possibles : "meubles", "blocs", "etageres", 'sousMeubles", "elements", "ajusteMeubles", "ajusteBlocs"
@@ -2671,8 +2785,8 @@ var indiceCurrentSousMeubles = -1;
 //const hasPlancheBas = false;
 const hauteurBloc=0.9;
 const epaisseurHandleBlocs = 6;
-const epaisseur = 1; //epaisseur etageres
-const epaisseurTiroirs = 1;
+const epaisseur = 2; //epaisseur etageres
+const epaisseurTiroirs = 1; // a rajouter en parametre
 const epaisseurPlateau = 3;
 const debordPlateau = 2;
 const epaisseurCadre = 2;
@@ -2682,7 +2796,7 @@ const hauteurSocle = 8;
 const hauteurPied = 6;
 const largeurPied= 4;
 const tailleBlocDefaut = 40;
-const epaisseurSuedois = 2;
+const epaisseurSuedois = 3;
 const largeurSuedois = 4;
 const maxBlocs = 9;
 const maxEtageres = 20;
@@ -3608,7 +3722,7 @@ function initDragMeuble() {
 
     //changement de mur actif si on va dans l'angle
 
-    if (meuble.onMurFond) {
+ /*    if (meuble.onMurFond) {
       let switchMur = false;
       if (aX < -(largeurPiece / 2) && aZ > meuble.getProfondeurReelle()) {
         meuble.setActiveWall("onMurGauche");
@@ -3628,8 +3742,6 @@ function initDragMeuble() {
 
       if (switchMur) {
         console.log("switchmur !!!");
-        /* meuble.z=0;
-        aX=wpos.z; */
         //meuble.recaleDansPiece();
         meuble.placeMeuble();
         boxMeuble.position.x = 0;
@@ -3682,7 +3794,7 @@ function initDragMeuble() {
 
         refreshInterfaceMeuble();
       }
-    }
+    } */
 
     //contraintes sur surfaces (murs et sol)
 
@@ -4159,8 +4271,8 @@ var slidersAspect;
 var checkboxVertical;
 var checkboxMurFond,checkboxMurGauche,checkboxMurDroit,checkboxSurSol;
 
-var checkboxSimple,checkboxMontants,checkboxMontantsExterieurs,checkboxMontantsIntermediaires,checkboxMontantsInterieurs,checkboxEtagereUnique,checkboxEtagereZero,checkboxEtagereFinale;
-var checkboxPlancheBas,checkboxPlancheHaut,checkboxPlancheDroite,checkboxPlancheGauche, checkboxPlanchesIntermediaires;
+var checkboxSimple,checkboxCotesEleves,checkboxMontants,checkboxMontantsExterieurs,checkboxMontantsIntermediaires,checkboxMontantsInterieurs,checkboxEtagereUnique,checkboxEtagereZero,checkboxEtagereFinale;
+var checkboxPlancheBas,checkboxPlancheHaut,checkboxPlancheDroite,checkboxPlancheGauche,checkboxPlancheFond,checkboxPlanchesIntermediaires;
 
 var colorDrawer,colorMeuble,colorPlateau,colorCadre;
 var menuPoignees;
@@ -4269,6 +4381,7 @@ function getHTMLElements () {
 
   checkboxVertical = document.getElementById("checkboxVertical");
   checkboxSimple = document.getElementById("checkboxSimple");
+  checkboxCotesEleves = document.getElementById("checkboxCotesEleves");
   checkboxMontants = document.getElementById("checkboxMontants");
   checkboxMontantsExterieurs = document.getElementById("checkboxMontantsExterieurs");
   checkboxMontantsIntermediaires = document.getElementById("checkboxMontantsIntermediaires");
@@ -4280,6 +4393,7 @@ function getHTMLElements () {
   checkboxPlancheHaut = document.getElementById("checkboxPlancheHaut");
   checkboxPlancheGauche = document.getElementById("checkboxPlancheGauche");
   checkboxPlancheDroite = document.getElementById("checkboxPlancheDroite");
+  checkboxPlancheFond = document.getElementById("checkboxPlancheFond");
   checkboxPlanchesIntermediaires = document.getElementById("checkboxPlanchesIntermediaires");
 
   checkboxMurFond = document.getElementById("checkboxMurFond");
@@ -4354,6 +4468,7 @@ function initializeInterface() {
   //buttons meuble
   checkboxVertical.addEventListener("click", switchVertical);
   checkboxSimple.addEventListener("click", switchSimple);
+  checkboxCotesEleves.addEventListener("click",switchCotesEleves);
   checkboxMontants.addEventListener("click", switchMontants);
   checkboxMontantsExterieurs.addEventListener("click", switchMontantsExterieurs);
   checkboxMontantsIntermediaires.addEventListener("click", switchMontantsIntermediaires);
@@ -4365,6 +4480,7 @@ function initializeInterface() {
   checkboxPlancheHaut.addEventListener("click", switchPlancheHaut);
   checkboxPlancheGauche.addEventListener("click", switchPlancheGauche);
   checkboxPlancheDroite.addEventListener("click", switchPlancheDroite);
+  checkboxPlancheFond.addEventListener("click", switchPlancheFond);
   checkboxPlanchesIntermediaires.addEventListener("click", switchPlanchesIntermediaires);
 
   checkboxMurFond.addEventListener("click", function () { selectedMeuble.switchMur("onMurFond") });
@@ -4399,6 +4515,11 @@ function initializeInterface() {
     selectedMeuble.isSimple = !selectedMeuble.isSimple;
     selectedMeuble.update();
   }
+
+  function switchCotesEleves() {
+    selectedMeuble.hasCotesEleves = !selectedMeuble.hasCotesEleves;
+    selectedMeuble.update();
+  } 
 
   function switchMontants() {
     selectedMeuble.hasMontants = !selectedMeuble.hasMontants;
@@ -4452,6 +4573,11 @@ function initializeInterface() {
 
   function switchPlancheDroite() {
     selectedMeuble.hasPlancheDroite = !selectedMeuble.hasPlancheDroite;
+    selectedMeuble.update();
+  }
+
+  function switchPlancheFond() {
+    selectedMeuble.hasPlancheFond = !selectedMeuble.hasPlancheFond;
     selectedMeuble.update();
   }
 
@@ -4649,6 +4775,7 @@ function initializeInterface() {
   function clicResetEtageres() {
     selectedMeuble.resetAllEtageres();
     selectedMeuble.update();
+    refreshInterface();
   }
 
   //buttons contenu
@@ -4682,6 +4809,10 @@ function initializeInterface() {
       let object = selectedObjects[i - 1];
       object[key] = value;
       object.initialMeuble.update();
+    }
+    if (selectedObjects.length==0) {
+      selectedMeuble[key] = value;
+      selectedMeuble.update();
     }
     refreshInterfaceBlocs();
     updateSelection();
@@ -4748,6 +4879,28 @@ function initializeInterface() {
     indiceCurrentBloc = -1;
     refreshInterface();
   });
+
+  function duplicateMeuble() {
+    let newMeuble=selectedMeuble.duplicate();
+    meubles[newMeuble.numero]=newMeuble;
+    newMeuble.update();
+    updateAllSelectable();
+    console.log(selectedMeuble,newMeuble);
+    /* if (newMeuble.onMurFond) newMeuble.switchMur("onMurFond");
+    if (newMeuble.onMurGauche) newMeuble.switchMur("onMurGauche");
+    if (newMeuble.onMurDroit) newMeuble.switchMur("onMurDroit");
+    if (newMeuble.surSol) newMeuble.switchMur("surSol"); */
+    newMeuble.automaticPlacement();
+    updateScene();
+    select(newMeuble,true);
+    indiceCurrentMeuble=newMeuble.numero;
+    selectedMeuble=newMeuble;
+    refreshInterface();
+    newMeuble.update();
+
+    updateAllSelectable();
+    frameCamera();
+  }
 
   buttonDeleteMeuble.addEventListener("click", function eventButtonDeleteMeuble() {
     if (deleteMeuble(selectedMeuble)) console.log("meuble deleted");
@@ -5454,6 +5607,18 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
     selectedMeuble.update();
   }
 
+  //epaisseur montants
+  let epaisseurMontantsDiv = createSlider(meuble, "epaisseurMontants", "Epaisseur des montants", meuble.epaisseurMontants, 0, 0, 20);
+  parametresData.append(epaisseurMontantsDiv);
+  let epaisseurMontantsSlider = epaisseurMontantsDiv.querySelector("#slider");
+  let epaisseurMontantsInput = epaisseurMontantsDiv.querySelector("#number");
+  epaisseurMontantsSlider.addEventListener("input", function () { eventepaisseurMontantsInput(+epaisseurMontantsSlider.value) }, false);
+  epaisseurMontantsInput.addEventListener("change", function () { eventepaisseurMontantsInput(+epaisseurMontantsInput.value) }, false);
+
+  function eventepaisseurMontantsInput(ep) {
+    selectedMeuble.update();
+  }
+
   refreshCheckboxMeuble();
   refreshButtonTourner();
   refreshButtonPlateau();
@@ -5466,6 +5631,7 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
 function refreshCheckboxMeuble() {
   if (selectedMeuble.disposition=="vertical") {checkboxVertical.checked=true} else {checkboxVertical.checked=false}
   if (selectedMeuble.isSimple) {checkboxSimple.checked=true} else {checkboxSimple.checked=false}
+  if (selectedMeuble.hasCotesEleves) {checkboxCotesEleves.checked=true} else {checkboxCotesEleves.checked=false}
   if (selectedMeuble.hasMontants) {checkboxMontants.checked=true} else {checkboxMontants.checked=false}
   if (selectedMeuble.hasMontantsInterieurs) {checkboxMontantsInterieurs.checked=true} else {checkboxMontantsInterieurs.checked=false}
   if (selectedMeuble.hasMontantsExterieurs) {checkboxMontantsExterieurs.checked=true} else {checkboxMontantsExterieurs.checked=false}
@@ -5477,6 +5643,7 @@ function refreshCheckboxMeuble() {
   if (selectedMeuble.hasPlancheHaut) {checkboxPlancheBas.checked=true} else {checkboxPlancheHaut.checked=false}
   if (selectedMeuble.hasPlancheGauche) {checkboxPlancheBas.checked=true} else {checkboxPlancheGauche.checked=false}
   if (selectedMeuble.hasPlancheDroite) {checkboxPlancheBas.checked=true} else {checkboxPlancheDroite.checked=false}
+  if (selectedMeuble.hasPlancheFond) {checkboxPlancheFond.checked=true} else {checkboxPlancheFond.checked=false}
   if (selectedMeuble.hasPlanchesIntermediaires) {checkboxPlanchesIntermediaires.checked=true} else {checkboxPlanchesIntermediaires.checked=false}
 }
 
@@ -5631,12 +5798,14 @@ function refreshInterfaceContenu() {
 
   if (displayWarning(expandBloc,blocsData,warningBloc,(indiceCurrentMeuble==-1))) {  blocsData.style.display="none";}
   else {  blocsData.style.display="";}
-  if (displayWarning(expandContenu,contenuData,warningContenu,(selectedObjects.length==0))) return;
+  if (displayWarning(expandContenu,contenuData,warningContenu,(indiceCurrentMeuble==-1))) return;
   warningContenu.style.display="none";
 
   contenuData.style.display="";
 
   var object=selectedObjects[selectedObjects.length-1];
+  if (!object) object=selectedMeuble;
+  if (!object) object=meubles[indiceCurrentMeuble];
   if (object.type == "Portes") {
     buttonPorte.className = "buttonOn";
     divPortes.style.display = "inline";
