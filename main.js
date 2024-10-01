@@ -88,8 +88,6 @@ class Element {
   get y() {
     //console.log (this.meuble.bloc[0].numero);
     if (this.meuble.hasEtagereUnique && this.bloc.numero!=0) {
-      console.log("bypassed");
-      console.log(this.bloc.numero);
       return this.meuble.bloc[0].elements[this.numero].y;
     }
     if (this._y!=undefined) return this._y;
@@ -1188,6 +1186,7 @@ class Meuble {
     var lA = this.getLargeurBoundingBox();
     var lB = meubles[indiceMeubleB].getLargeurBoundingBox();
     var intersectX = (Math.abs(xA - xB) * 2 < (lA + lB));
+    //console.log("intersectX",Math.abs(xA - xB) * 2 - (lA + lB));
     return intersectX;
   }
 
@@ -1238,11 +1237,13 @@ class Meuble {
     return isInRoom;
   }
 
-  isPositionOk() {
+  isPositionCorrect() {
     let hasNoIntersection=false;
     hasNoIntersection=(this.getIntersectionList().length==0);
+    //console.log(this.getIntersectionList().length);
     let isInRoom=this.isInRoom();
     let positionOK=(hasNoIntersection && isInRoom);
+    //console.log("isInRoom",isInRoom,"hasNoIntersection",hasNoIntersection);
     return(positionOK);
   }
 
@@ -1274,7 +1275,16 @@ class Meuble {
     else return true;
   }
 
-  recale(preferedAxis) { //returns true if successful
+  recale(preferedAxis,count) { //returns true if successful
+    if (count!=undefined) count++;
+    if (count>4) return;
+    if (this.isPositionCorrect()) {
+      console.log("position correct");
+      return;
+    }
+    console.log("count",count,preferedAxis);
+    let x0=this.x;
+    let y0=this.y;
     let cadreB, plateauB, piedB, socleB, offsetHautB, offsetBasB;
     let bX, bY, bZ, hB, wB, dB;
     let aX, aY, aZ, hA, wA, dA;
@@ -1319,6 +1329,7 @@ class Meuble {
         else { decalZ = (aZ + dA / 2) - (bZ - dB / 2) }
 
       if (this.onMurFond) {
+        //console.log((Math.abs(decalX) <= Math.abs(decalY)));
         if ((Math.abs(decalX) <= Math.abs(decalY)) || preferedAxis == "X" || preferedAxis=="-X")
           if (preferedAxis == "-X") {
             this.x += decalX;
@@ -1332,9 +1343,18 @@ class Meuble {
           }
         else 
         {
-          this.y -= decalY;
-          aY -= decalY;
-          usedAxis="Y";
+          if (preferedAxis == "-Y") {
+            console.log("decalage en Y");
+            this.y += decalY;
+            aY += decalY;
+            usedAxis = "-Y";
+          }
+          else {
+            console.log("decalage en Y");
+            this.y -= decalY;
+            aY -= decalY;
+            usedAxis = "Y";
+          }
         }
       }
 
@@ -1369,21 +1389,31 @@ class Meuble {
       }
     }
 
-    //test deuxième itération sur deuxième si non concluant sur le premier axe
-    if (!preferedAxis && this.getIntersectionList().length > 0) {
-      console.log("deuxième intération");
-      if (this.onMurFond) {
-        if (usedAxis == "X" || usedAxis == "-X") this.recale("Y");   //reprendre orientation +/-
-        if (usedAxis == "Y" || usedAxis == "-Y") this.recale("X");
-      }
-      if (this.onMurDroit || this.onMurGauche) {
-        if (usedAxis == "Z" || usedAxis == "-Z") this.recale("Y");
-        if (usedAxis == "Y" || usedAxis == "-Y") this.recale("Z");
-      }
-      if (this.surSol) {
-        if (usedAxis == "X" || usedAxis == "-X") this.recale("Y");
-        if (usedAxis == "Z" || usedAxis == "-Z") this.recale("X");
-      }
+    //test deuxième itération sur deuxième axe si non concluant sur le premier axe
+    if (this.getIntersectionList().length > 0) {
+      //if (!preferedAxis) {
+        console.log("deuxième itération");
+        this.x = x0;
+        this.y = y0;
+        if (count==undefined) count=0;
+        if (this.onMurFond) {
+          if (usedAxis == "X") this.recale("-X", count);
+          if (usedAxis == "-X") this.recale("Y", count);
+          if (usedAxis == "Y") this.recale("-Y", count);
+        }
+        if (this.onMurDroit || this.onMurGauche) {
+          if (usedAxis == "Z" || usedAxis == "-Z") this.recale("Y", count);
+          if (usedAxis == "Y" || usedAxis == "-Y") this.recale("Z", count);
+        }
+        if (this.surSol) {
+          if (usedAxis == "X" || usedAxis == "-X") this.recale("Y", count);
+          if (usedAxis == "Z" || usedAxis == "-Z") this.recale("X", count);
+        }
+      //}
+/*       else if (count>=0) {
+        if (preferedAxis=="X") this.recale("Y",count);
+        if (preferedAxis=="Y") this.recale("X",count);
+      } */
     }
     return (this.getIntersectionList().length == 0);
   }
@@ -2348,9 +2378,13 @@ class Meuble {
     this.nbBlocs=num;
   }
 
-  deleteBloc (bloc) {
-    if (bloc=undefined || this.nbBlocs==1) return;
-    this.bloc.splice(bloc.numero, 1);
+  deleteBloc (blocToDelete) {
+    console.log("delete bloc",blocToDelete.numero);
+    if (blocToDelete=undefined || this.nbBlocs==1) return;
+    //console.log(this.bloc);
+    let num=blocToDelete.numero;
+    this.bloc.splice(num, 1);
+    //console.log(this.bloc);
     this.nbBlocs -= 1;
     this.recomputeBlocsId();
     this.computeBlocsSize();
@@ -2543,6 +2577,13 @@ class SousMeuble extends Meuble {
   }
 
    update() {
+    this.hasMontants=this.initialMeuble.hasMontants;
+    this.hasMontantsExterieurs=this.initialMeuble.hasMontantsExterieurs;
+    this.hasMontantsIntermediaires=this.initialMeuble.hasMontantsIntermediaires;
+    this.hasMontantsInterieurs=this.initialMeuble.hasMontantsInterieurs;
+    this.epaisseurMontants=this.initialMeuble.epaisseurMontants;
+
+
     this.updateGeometry();
     let handlesMeuble = this.root.getObjectByName("handlesMeuble");
     handlesMeuble.children=[];
@@ -3921,8 +3962,8 @@ function initDragMeuble() {
       box.position.z -= deltaMeuble.z;
     }
 
-    if (isPositionOk) { //position ok
-      console.log("position ok");
+    if (meuble.isPositionCorrect()) { //position ok
+      //console.log("position ok");
       box.xMeubleOk = meuble.x;
       box.yMeubleOk = meuble.y;
       box.zMeubleOk = meuble.z;
@@ -3931,15 +3972,18 @@ function initDragMeuble() {
       box.zBoxOk = box.position.z;
     }
 
-    else { //on ne deplace pas
+     else { //on ne deplace pas
       console.log("on ne deplace pas");
-      box.position.x = box.xBoxOk;
-      box.position.y = box.yBoxOk;
-      box.position.z = box.zBoxOk;
+  /*     getDeltaBox();
+      applyDeltaToMeuble(); */
       meuble.x = box.xMeubleOk;
       meuble.y = box.yMeubleOk;
       meuble.z = box.zMeubleOk;
+             box.position.x = box.xBoxOk;
+      box.position.y = box.yBoxOk;
+      box.position.z = box.zBoxOk;
     }
+   //console.log("meuble",meuble.x,meuble.y,"box",box.position.x,box.position.y);
   }
 
   function dragMeubleEnd(event) {
@@ -4691,12 +4735,26 @@ function initializeInterface() {
     refreshInterfaceBlocs();
   }
 
+  function deleteBlocFn (meuble,num) {
+    //let meuble = bloc.meuble;
+    console.log("delete bloc",num);
+    let blocToDelete=meuble.bloc[num];
+    if (blocToDelete=undefined || meuble.nbBlocs==1) return;
+    //console.log(this.bloc);
+    meuble.bloc.splice(num, 1);
+    //console.log(this.bloc);
+    meuble.nbBlocs -= 1;
+    meuble.recomputeBlocsId();
+    meuble.computeBlocsSize();
+  }
+
+
   function deleteBlocsOnSelection() {
     for (var i = selectedObjects.length - 1; i > -1; i--) {
       let bloc = selectedObjects[i];
       let meuble = bloc.meuble;
       if (bloc.constructor.name == "Bloc") {
-      meuble.deleteBloc(bloc);
+      deleteBlocFn(meuble,bloc.numero);
       }
     }
   }
@@ -4784,10 +4842,12 @@ function initializeInterface() {
     console.log("element to delete",element);
     if (element.bloc.etageres == 0) {
       if (element.meuble.nbBlocs>2) {
-        element.meuble.deleteBloc(element.bloc);
+        deleteBlocFn(element.meuble,element.bloc.numero);
+        //element.meuble.deleteBloc(element.bloc);
       }
       else  if (element.meuble.nbBlocs==2) {
-        element.meuble.deleteBloc(element.bloc);
+        deleteBlocFn(element.meuble,element.bloc.numero);
+        //element.meuble.deleteBloc(element.bloc);
         if (element.meuble.bloc[0].etageres==0) element.meuble.parentElement.type="Etageres";
       }
     }
@@ -5686,6 +5746,7 @@ function refreshCheckboxMeuble() {
     checkboxMontantsInterieurs.disabled=false;
     checkboxMontantsExterieurs.disabled=false;
     checkboxMontantsIntermediaires.disabled=false;
+    checkboxCotesEleves.disabled=false;
   }
   else {
     checkboxMontants.checked=false;
@@ -5693,6 +5754,7 @@ function refreshCheckboxMeuble() {
     checkboxMontantsInterieurs.disabled=true;
     checkboxMontantsExterieurs.disabled=true;
     checkboxMontantsIntermediaires.disabled=true;
+    checkboxCotesEleves.disabled=true;
   }
   if (selectedMeuble.hasRoundedMontants) {checkboxRoundedMontants.checked=true} else {checkboxRoundedMontants.checked=false}
   if (selectedMeuble.hasMontantsInterieurs) {checkboxMontantsInterieurs.checked=true} else {checkboxMontantsInterieurs.checked=false}
