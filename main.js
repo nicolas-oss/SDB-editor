@@ -17,7 +17,6 @@ import { MeshStandardMaterial, Mesh, SphereGeometry, BoxGeometry } from 'three';
 
 //pb planches intermediaires sur cadre double !!!!
 
-
 class Element {
   constructor(bloc,i) {
 
@@ -345,7 +344,7 @@ getPorte(isPorteBloc) {
     elementRoot.name = "elementRoot";
     elementRoot.attach(this.getSelectionBox());
     if (this.type == "tiroirs" && this.numero<this.bloc.nbEtageres+1) elementRoot.attach(this.getTiroir());
-    if (this.type == "etageres" || this.type == "tiroirs" || this.type=="sousMeuble" || this.type=="portes") {
+    if (this.type !="panneau") {
       let etagere = this.getEtagere();
       if (etagere) elementRoot.attach(etagere);
     }
@@ -360,13 +359,16 @@ getPorte(isPorteBloc) {
       porteRoot.position.set(this.xTiroir,this.yTiroir,0);
       elementRoot.attach(porteRoot);
     }
+    if (this.type == "four") {
+      let four=this.bloc.getFour();
+      four.position.set(0,this.yTiroir,this.bloc.p/2);
+      if (four) elementRoot.attach(four);
+    }
     return elementRoot;
   }
 
   getSousMeuble() {
     if (!this.sousMeuble) {
-      //console.log("getSousMeuble meuble",this.meuble.numero);
-      //console.log(this.initialMeuble,this.bloc.initialBloc);
       this.sousMeuble=new SousMeuble(this.initialMeuble,this.bloc.initialBloc,this,this.numero);
     this.sousMeuble.nbEtageres=1;
     this.sousMeuble.type="etageres";
@@ -559,7 +561,8 @@ class Bloc {
   } */
 
 getFour() {
-  return fourGroup;
+  let four = fourGroup.clone(true);
+  return four;
 }
 
   getCadre() {
@@ -627,9 +630,7 @@ getFour() {
     var elementsRoot = new THREE.Object3D();
     elementsRoot.name = "elementsRoot" + this.numero;
     elementsRoot.shortName = "elementsRoot";
-/*      console.log(this.nbEtageres);
-    if (this.nbEtageres==0) return elementsRoot;
- */    for (var i = 0; i < this.nbEtageres+2; i++) {
+    for (var i = 0; i < this.nbEtageres+2; i++) {
       let element = this.elements[i].getElement();
       if (element) elementsRoot.add(element);
     }
@@ -731,14 +732,9 @@ getFour() {
 
     //four
     if (this.type=="four") {
-      //let four=this.getFour();
       let four=this.getFour();
-      console.log(four);
-      //console.log(this.getFour());
-      let fourRoot=new THREE.Group();
-      fourRoot.position.set(0,0,this.p/2);
-      fourRoot.add(four)
-      this.blocRoot.add(fourRoot);
+      four.position.set(0,0,this.p/2);
+      this.blocRoot.add(four);
 /*       this.taille=60.1;
       this.meuble.hauteur=59.5;
       this.meuble.elevation=0;
@@ -866,7 +862,8 @@ class Meuble {
     this.numero = num;
     this.meuble=this;
     this.initialMeuble=this;
-
+    
+    this.baseName="Meuble";
     this.rename();
     this.hauteur = 70;
     this.largeur = 140;
@@ -890,9 +887,9 @@ class Meuble {
     this.hasEtagereUnique=false;
     this.hasEtagereZero=false;
     this.hasEtagereFinale=false;
-    this.hasRoundedMontants=true;
+    this.hasRoundedMontants=true;   ////to add to list
 
-    this.nbBlocs = 2;
+    this.nbBlocs = 3;
     this.x = 0;
     this.y = 0;
     this.z = 0;
@@ -902,7 +899,7 @@ class Meuble {
     this.epaisseur=epaisseur;
     this.epaisseurCadre=epaisseurCadre;
     for (var i=0; i<this.nbBlocs; i++) {this.blocs[i] = new Bloc(this.initialMeuble,i)}
-    this.blocs[1].type="four";
+    //this.blocs[1].type="four";
     this.calculTailleBlocs();
     //setTailleOnBloc(this.blocs[2],60.1);
     this.hasPlateau=true;
@@ -910,7 +907,11 @@ class Meuble {
     this.hasSocle=false;
     this.hasPied=false;
 
-    this.hasEvier=true;
+    this.hasEvier=true;     ////to add to list
+    this.xEvier=0;          ////
+    this.yEvier=0;          ////
+    this.zEvier=0;          ////
+    this.evier=undefined;
 
     this.IsSuspendu=true;
     this.offsetPoignees=0;
@@ -937,7 +938,7 @@ class Meuble {
     this._arrondi=undefined;
     this.isSelected = false;
     this.selectionBox = undefined;
-    this.nbEtageres=0;
+    this.nbEtageres=1;
     
     //commun à la classe bloc
     this.ouverturePorte = "gauche";
@@ -1023,6 +1024,7 @@ class Meuble {
 
   getHauteurReelle() {
     var bordSup=Math.max(this.hasCadre*this.epaisseurCadre,this.hasPlateau*epaisseurPlateau);
+    bordSup+=this.hasEvier*hauteurEvier;
     return (this.hauteur+this.hasCadre*this.epaisseurCadre+this.hasSocle*hauteurSocle+this.hasPied*hauteurPied+bordSup);
   }
 
@@ -1187,7 +1189,8 @@ class Meuble {
     var socleA = this.hasSocle * hauteurSocle;
     var piedA = this.hasPied * hauteurPied;
     var plateauA = this.hasPlateau * epaisseurPlateau;
-    var offsetHautA = Math.max(cadreA, plateauA);
+    var evierA = this.hasEvier * hauteurEvier;
+    var offsetHautA = Math.max(cadreA, plateauA)+evierA;
     var offsetBasA = cadreA + piedA + socleA;
     var aY = this.y + this.hauteur / 2 + offsetHautA / 2 + offsetBasA / 2;
     return aY;
@@ -1320,7 +1323,7 @@ class Meuble {
     console.log("count",count,preferedAxis);
     let x0=this.x;
     let y0=this.y;
-    let cadreB, plateauB, piedB, socleB, offsetHautB, offsetBasB;
+    let cadreB, plateauB, evierB, piedB, socleB, offsetHautB, offsetBasB;
     let bX, bY, bZ, hB, wB, dB;
     let aX, aY, aZ, hA, wA, dA;
     let decalX, decalY, decalZ;
@@ -1345,7 +1348,8 @@ class Meuble {
       plateauB = meubleB.hasPlateau * epaisseurPlateau;
       piedB = meubleB.hasPied * hauteurPied;
       socleB = meubleB.hasSocle * hauteurSocle;
-      offsetHautB = Math.max(cadreB, plateauB);
+      evierB = meubleB.hasEvier * hauteurEvier;
+      offsetHautB = Math.max(cadreB, plateauB)+evierB;
       offsetBasB = socleB + piedB + cadreB;
 
       hB = meubleB.getHauteurBoundingBox();
@@ -1735,11 +1739,10 @@ class Meuble {
   }
 
   placeMeuble() {
-    if (this.isSousMeuble==true) {
+/*     if (this.isSousMeuble==true) {
       this.root.position.set(this.element.xTiroir,this.element.yTiroir,-this.epaisseur);
       return;
-    }
-
+    } */
     let y=this.hauteur / 2 + this.y;
     if (this.hasCadre) y+=this.epaisseurCadre;
     if (this.hasSocle) y+=hauteurSocle;
@@ -1776,7 +1779,7 @@ class Meuble {
       this.root.position.set(
         this.x,
         y,
-        this.z);//+this.getProfondeurReelle()/2);
+        this.z);
     }
   }
 
@@ -1786,23 +1789,30 @@ class Meuble {
       let sz = this.profondeur + debordPlateau;
       if (this.style == "Basique" || isPreviewOn) {
         geometry = new THREE.BoxGeometry(sx, sy, sz);
-        //plateau = new THREE.Mesh(geometry, [materialPlateauCote, materialPlateauCote, materialPlateau, materialPlateau, materialPlateauAvant, materialPlateauAvant])
       }
       else {
         geometry = roundEdgedBox(sx, sy, sz, 0.5, 1, 1, 1, 1);
       }
 
-      const brush1 = new Brush( geometry );
+    if (this.hasEvier) {
+      const brush1 = new Brush(geometry);
       brush1.updateMatrixWorld();
-      
-      const brush2 = new Brush( new THREE.BoxGeometry(100,10000,47) );
+
+      //let evierBrushB = this.evier.getObjectByName('evierBrush');
+      let geo = evierBrush.geometry.clone();
+      geo.translate(this.xEvier, 0, this.zEvier);
+
+      const brush2 = new Brush(geo);
       brush2.updateMatrixWorld();
-      
+
       const evaluator = new Evaluator();
-      const result = evaluator.evaluate( brush1, brush2, SUBTRACTION );
+      const result = evaluator.evaluate(brush1, brush2, SUBTRACTION);
 
       plateau = result;
-      plateau.material=materialPlateau;
+    }
+    else plateau = new THREE.Mesh(geometry, [materialPlateauCote, materialPlateauCote, materialPlateau, materialPlateau, materialPlateauAvant, materialPlateauAvant]);
+
+    plateau.material = materialPlateau;
 
       plateau.position.set(0, this.hauteur / 2 + epaisseurPlateau / 2, debordPlateau / 2);
       plateau.name = "plateau";
@@ -1810,14 +1820,21 @@ class Meuble {
       plateau.sy = sy;
       plateau.sz = sz;
 
-      return result;
+      return plateau;
   }
   
   getEvier() {
+    if (evierHandle==undefined) return;
     const ecartEvier = 5;
-    evierGroup.position.set(0, this.hauteur / 2 + epaisseurPlateau, this.profondeur/2 - ecartEvier);
-    evierBrush.position.set(0, this.hauteur / 2 + epaisseurPlateau, this.profondeur/2 - ecartEvier);
-    return evierGroup;
+    this.yEvier = this.hauteur / 2 + epaisseurPlateau;
+    //let evierGroupB=evierGroup.clone(true);
+    //console.log(evierGroupB);
+    //let evierHandleB=evierGroupB.getObjectByName("evierHandle");
+    evierHandle.position.set(this.xEvier, this.yEvier, this.zEvier);//this.profondeur/2 - ecartEvier);
+    evierHandle.meuble=this;
+    this.evier = evierGroup;
+    //scene.add(evierHandle);
+    return evierHandle;
   }
 
   getSocle() {
@@ -2056,14 +2073,17 @@ class Meuble {
       const brush1 = new Brush( geometry );
       brush1.updateMatrixWorld();
       
-      const brush2 = new Brush( new THREE.BoxGeometry(100,10000,47) );
+      let geo = evierBrush.geometry.clone();
+      geo.translate(this.xEvier,0,this.zEvier);
+      
+      const brush2 = new Brush( geo );
       brush2.updateMatrixWorld();
       
       const evaluator = new Evaluator();
       const result = evaluator.evaluate( brush1, brush2, SUBTRACTION );
 
       cadreSimpleHaut = result;
-      cadreSimpleHaut.material=materialPlateau;
+      cadreSimpleHaut.material=materialCadre;
     }
 
     else cadreSimpleHaut = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
@@ -2092,7 +2112,7 @@ class Meuble {
     geometry = new THREE.BoxGeometry(
       this.epaisseurCadre,
       this.hauteur - offsetCote - offsetMontantsRonds * this.hasRoundedMontants, // - 0.05,
-      this.profondeur - offsetMontantsRonds);
+      this.profondeur - offsetMontantsRonds-0.01);
 
     let cadreSimpleGauche = new THREE.Mesh(geometry, materialCadreCote, materialCadreCote, materialCadre, materialCadre, materialCadreAvant, materialCadreAvant);
     cadreSimpleGauche.position.set(-this.largeur / 2+this.epaisseurCadre/2+OffsetRetraitCotes, offsetCote/2, 0);
@@ -2186,7 +2206,8 @@ class Meuble {
   }
 
   getBoiteSelection() {
-    let delta = 0.1 * this.numero;
+    let delta=0;
+    if (this.numero!=undefined) delta = 0.1 * this.numero;
     let x=this.largeur + delta + epsilon;
     let y=this.hauteur + delta + epsilon;
     let z=this.profondeur + delta + epsilon;
@@ -2511,8 +2532,8 @@ class Meuble {
   }  
 
   rename() {
-    if (!this.isSousMeuble) this.name="Meuble "+(this.numero+1)
-      else this.name="SousMeuble "+(this.numero+1)+"meuble"+this.initialMeuble.numero;
+    let indice=" "+(this.numero+1);
+    this.name=this.baseName+indice;
   }
 
   setEtageresNumber(num) {
@@ -2584,9 +2605,10 @@ class SousMeuble extends Meuble {
   constructor (initialMeuble,initialBloc,parentElement,num) {
     super(num);
     this.numero = num;
-    //this.rename();
-    this.name="sousMeuble"+num;
-    this.shortName="sousMeuble";
+    this.baseName="sousMeuble";
+    this.rename();
+    //this.name=this.baseName+num;
+    //this.shortName=this.baseName;
     //this.hauteur = 50;
     //this.largeur = 140;
     //this.profondeur = 50;
@@ -2600,11 +2622,6 @@ class SousMeuble extends Meuble {
     this.epaisseurCadre=epaisseurCadre;
     for (var i=0; i<this.nbBlocs; i++) {this.blocs[i] = new Bloc(this,i)}
     this.updateTaille();
-    //this.hasPlateau=false;
-    //this.hasCadre=false;
-    //this.hasSocle=false;
-    //this.hasPied=false;
-    //this.IsSuspendu=true;
     this.offsetPoignees=0;
     this.isSousMeuble=true;
     this.meubleRoot=undefined;
@@ -2615,11 +2632,8 @@ class SousMeuble extends Meuble {
     this.initialMeuble=initialMeuble;
     this.initialBloc=initialBloc;
     this.parentElement=parentElement;
-    //console.log(initialBloc);
-    //console.log(this.initialBloc);
 
     this.type="etageres";
-    //valeurs possibles : "etageres", "tiroirs", "portes", "panneau", "sousMeuble"
 
     this.isRentrant = true;
     this.isSimple = true;
@@ -2648,6 +2662,11 @@ class SousMeuble extends Meuble {
       }
     }
   }
+
+  placeMeuble() {
+      this.root.position.set(this.element.xTiroir, this.element.yTiroir, -this.epaisseur);
+    }
+
 
    update() {
     this.hasMontants=this.initialMeuble.hasMontants;
@@ -2785,6 +2804,161 @@ class SousMeuble extends Meuble {
     //newSousMeuble.numero = meubles.length;
     newSousMeuble.rename();
     return newSousMeuble;
+  }
+}
+
+class 
+ObjetStatique extends Meuble {
+  constructor (numero, baseName,largeur,hauteur,profondeur) {
+    super(numero);
+
+    this.baseName=baseName;
+    this.rename();
+    this.hauteur = hauteur;
+    this.largeur = largeur;
+    this.profondeur = profondeur;
+
+    this.elevation = 0;
+
+    this.hasPlancheBas = true;
+    this.hasPlancheHaut = true;
+    this.hasPlancheGauche = true;
+    this.hasPlancheDroite = true;
+    this.hasPlancheFond = true;
+    this.hasPlanchesIntermediaires = true;
+    this.hasCotesEleves = true;
+    this.hasMontants = false;
+    this.epaisseurMontants = 3;
+    this.hasMontantsExterieurs = true;
+    this.hasMontantsIntermediaires = true;
+    this.hasMontantsInterieurs = true;
+    this.largeurMontants=2.5;
+    this.hasEtagereUnique=false;
+    this.hasEtagereZero=false;
+    this.hasEtagereFinale=false;
+    this.hasRoundedMontants=true;   ////to add to list
+
+    this.nbBlocs = 1;
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+    this.blocs = new Array;
+    this.disposition = "horizontal";
+    //valeurs possibles "horizontal" ou "vertical"
+    this.epaisseur=epaisseur;
+    this.epaisseurCadre=epaisseurCadre;
+    for (var i=0; i<this.nbBlocs; i++) {this.blocs[i] = new Bloc(this.initialMeuble,i)}
+    //this.blocs[1].type="four";
+    this.calculTailleBlocs();
+    //setTailleOnBloc(this.blocs[2],60.1);
+    this.hasPlateau=false;
+    this.hasCadre=false;
+    this.hasSocle=false;
+    this.hasPied=false;
+
+    this.hasEvier=false;     ////to add to list
+    this.xEvier=0;          ////
+    this.yEvier=0;          ////
+    this.zEvier=0;          ////
+    this.evier=undefined;
+
+    this.IsSuspendu=false;
+    //this.offsetPoignees=0;
+    this.isSousMeuble=false;
+    this.meubleRoot=undefined;
+    this.createGeometryRoot();
+
+    this.type="objetStatique";
+    //valeurs possibles : "etageres", "tiroirs", "portes", "panneau", "sousMeuble"
+
+    this.isRentrant = false;
+    this.isSimple = true;
+
+    this.onMurFond = false;
+    this.onMurGauche = false;
+    this.onMurDroit = false;
+    this.surSol = true;
+
+    this.orientation = 0;
+    //valeurs possibles : 0, 1 (rotation PI/2), 2 (rotation PI), 3 (rotation -PI/2)
+
+    //commun aux autres classes
+    this._style = undefined;
+    this._arrondi=undefined;
+    this.isSelected = false;
+    this.selectionBox = undefined;
+    this.nbEtageres=0;
+    
+    //commun à la classe bloc
+    this.ouverturePorte = "gauche";
+    this.nombrePortes = "1";
+    this.etageresVerticales = false;
+
+    this.objet3D=new THREE.Object3D();
+  }
+
+  initialize(filename) {
+/*     let name="/src/"+filename;
+    const loader = new GLTFLoader();
+    loader.load(name, function (gltf) {
+      let objetRoot = gltf.scene.getObjectByName('objet');
+      for (var i = objetRoot.children.length; i > 0; i--) {
+        this.objet3D.add(objetRoot.children[i - 1]);
+      }
+      this.objetRoot.scale.set(100, 100, 100);
+      scene.add(this.objet3D);
+    }); */
+
+    let objectGeometries = new THREE.Group();
+
+    let name="/src/"+filename;
+    const loader = new GLTFLoader();
+    loader.load(name, function (gltf) {
+      let objetRoot = gltf.scene.getObjectByName('objet');
+      for (var i = objetRoot.children.length; i > 0; i--) {
+        objectGeometries.add(objetRoot.children[i - 1]);
+      }
+      objectGeometries.scale.set(100, 100, 100);
+    });
+      scene.add(objectGeometries);
+
+      this.createGeometryRoot();
+
+      let geometries = this.root.getObjectByName("geometries");
+      objectGeometries.position.set(0,-this.hauteur/2,this.profondeur/2-epsilon/2);
+      geometries.add(objectGeometries);
+
+      //this.updateGeometry();
+      let handlesMeuble = this.root.getObjectByName("handlesMeuble");
+      handlesMeuble.children=[];
+      geometry.dispose();
+      material.dispose();
+      //if (!isPreviewOn) {
+        //boite de sélection
+        let boiteSelection = this.getBoiteSelection();
+        handlesMeuble.add(boiteSelection);
+        this.selectionBox = boiteSelection;
+        boiteSelection.meuble=this;
+        //selectableHandleMeuble = [];
+        //handlesMeuble.add(this.getHandlesMeuble());
+      //updateAllSelectable();
+      //}
+        this.placeMeuble();
+    }
+
+    rename() {
+      this.name=this.baseName;
+    }
+
+  update() {
+
+
+
+
+
+
+
+    this.placeMeuble();
   }
 }
 
@@ -2929,6 +3103,8 @@ var selectionMode="meubles";
 var selectedMeuble;
 var selectedSousMeuble;
 var selectedObjects=[];
+
+let frigo=undefined;
 
 var isPreviewOn = false;
 
@@ -3235,18 +3411,23 @@ function checkRaycastEtageres() {
 }
 
 function checkRaycastHandle(selectableList) {
+  //console.log(selectableList);
   if (!rayCastEnabled) return;
   raycaster.setFromCamera(pointer, camera, 0, 1000);
   const intersectsHandleBloc = raycaster.intersectObjects(selectableList, false);
   if (intersectsHandleBloc.length > 0 ) {
+    //console.log(intersectsHandleBloc[0].object.name);
     if (intersectedHandle != intersectsHandleBloc[0].object) {
       if (intersectedHandle && (intersectedHandle.shortName=="handleBloc" || intersectedHandle.shortName=="handleMeuble")) {
         //intersectedHandle.material.depthTest = true;
-        intersectedHandle.visible = false;
+        if (intersectedHandle.name=="evierHandle") {intersectedHandle.material.visible = false}
+        else {intersectedHandle.visible = false;}
         intersectedHandle.renderOrder = 1;
       }
       intersectedHandle = intersectsHandleBloc[0].object;
-      intersectedHandle.visible = true;
+      if (intersectedHandle.name=="evierHandle") {intersectedHandle.material.visible = true}
+      else {intersectedHandle.visible = true;}
+      //intersectedHandle.visible = true;
       intersectedHandle.material.depthTest = false;
       intersectedHandle.renderOrder = 1;
       raycastedHandle = intersectsHandleBloc[0].object;
@@ -3254,7 +3435,8 @@ function checkRaycastHandle(selectableList) {
   }
   else {
     if (intersectedHandle && (intersectedHandle.shortName=="handleBloc" || intersectedHandle.shortName=="handleMeuble")) {
-      intersectedHandle.visible = false;
+      if (intersectedHandle.name=="evierHandle") intersectedHandle.material.visible = false
+      else intersectedHandle.visible = false;
       //intersectedHandle.material.depthTest = true;
       intersectedHandle.renderOrder = 0;
     }
@@ -3403,6 +3585,37 @@ function initDragElements() {
   });
 }
 
+function dragEvierStart(handle) {
+  console.log("drag evier start");
+  let xMax=handle.meuble.largeur/2-largeurEvier/2;
+  let zMax=handle.meuble.profondeur/2-profondeurEvier/2;
+  handle.xMax=xMax;
+  handle.zMax=zMax;
+  console.log("xMax,zMax",xMax,zMax);
+  return;
+}
+
+function dragEvier(handle) {
+  let x=handle.position.x;
+  let z=handle.position.z;
+  x= (x<-handle.xMax) ? -handle.xMax : x;
+  x= (x>handle.xMax) ? handle.xMax : x;
+  z= (z<-handle.zMax) ? -handle.zMax : z;
+  z= (z>handle.zMax) ? handle.zMax : z;
+  handle.position.set(x,handle.meuble.yEvier,z);
+}
+
+function dragEvierEnd(handle) {
+  handle.meuble.xEvier = handle.position.x;
+  handle.meuble.zEvier = handle.position.z;
+  handle.meuble.update();
+  resetRaycast();
+  updateAllSelectable();
+  controls.enabled = true;
+  rayCastEnabled = true;
+  handle.material.visible=false;
+}
+
 var dragHandleBlocControls;
 function initDragHandleBloc() {
   var factOrientation = 1;
@@ -3411,9 +3624,17 @@ function initDragHandleBloc() {
   dragHandleBlocControls.recursive=false;
 
   dragHandleBlocControls.addEventListener('dragstart', function (event) {
+
+    console.log(event.object);
+
     if (selectionMode!="ajusteBlocs") return;
     controls.enabled = false;
     rayCastEnabled = false;
+
+    if (event.object.name=="evierHandle") {
+      dragEvierStart(event.object);
+      return;
+    }
 
     let meuble=event.object.bloc.meuble;
     let blocId = event.object.bloc.numero;
@@ -3488,6 +3709,10 @@ function initDragHandleBloc() {
   });
 
   dragHandleBlocControls.addEventListener('drag', function (event) {
+    if (event.object.name=="evierHandle") {
+      dragEvier(event.object);
+      return;
+    }
     if (selectionMode!="ajusteBlocs") return;
     var obj1 = event.object;
     var meuble = obj1.bloc.meuble;
@@ -3564,6 +3789,10 @@ function initDragHandleBloc() {
   });
 
   dragHandleBlocControls.addEventListener('dragend', function (event) {
+    if (event.object.name=="evierHandle") {
+      dragEvierEnd(event.object);
+      return;
+    }
     scene.remove(newHelper);
     geometry.dispose();
     material.dispose();
@@ -3842,7 +4071,8 @@ function initDragMeuble() {
     let plateauA = meuble.hasPlateau * epaisseurPlateau;
     let piedA = meuble.hasPied * hauteurPied;
     let socleA = meuble.hasSocle * hauteurSocle;
-    let offsetHautA = Math.max(cadreA, plateauA);
+    let evierA = meuble.hasEvier * hauteurEvier;
+    let offsetHautA = Math.max(cadreA, plateauA)+evierA;
     let offsetBasA = cadreA + piedA + socleA;
     wA = meuble.getLargeurBoundingBox();
     hA = meuble.getHauteurBoundingBox();
@@ -4188,6 +4418,7 @@ function updateSelectableHandleMeuble() {
   selectableHandleMeuble = [];
   scene.getObjectsByProperty("shortName", "handleMeuble", selectableHandleMeuble);
   if (dragHandleMeubleControls) dragHandleMeubleControls.setObjects(selectableHandleMeuble);
+  console.log(selectableHandleMeuble);
 }
 
 function updateSelectableSousMeubles() {
@@ -4398,17 +4629,18 @@ var body;
 var interfaceDiv;
 var divEtageres;
 var buttonNewMeuble,buttonDupliquerMeuble,buttonDeleteMeuble;
+var buttonFrigo;
 var buttonTourner;
 var buttonAjouterBloc,buttonSupprimerBloc,buttonDecalerGauche,buttonDecalerDroite;
 var listMeublesPopup;
 var listMeublesName;
-var buttonPlateau,buttonCadre,buttonSocle,buttonPied;
+var buttonPlateau,buttonCadre,buttonSocle,buttonPied,buttonEvier;
 var buttonSuspendu;
 var selectListMeubles;
 var selectListBlocs;
 var blocsDiv;
 var listBlocs;
-var buttonPorte,buttonEtageres,buttonTiroirs,buttonPlein;
+var buttonPorte,buttonEtageres,buttonTiroirs,buttonPlein,buttonFour;
 var buttonDeuxPortes,buttonUnePorte,buttonOuverturePorteDroite,buttonOuverturePorteGauche;
 var nbPortes,sensOuverture;
 var buttonEtageresVerticales;
@@ -4503,6 +4735,8 @@ function getHTMLElements () {
   buttonDupliquerMeuble = document.getElementById("buttonDupliquerMeuble");
   buttonDeleteMeuble = document.getElementById("buttonDeleteMeuble");
 
+  buttonFrigo = document.getElementById("buttonFrigo");
+
   buttonTourner=document.getElementById("buttonTourner");
   
   buttonSocle = document.getElementById("buttonSocle");
@@ -4510,6 +4744,7 @@ function getHTMLElements () {
   buttonSuspendu = document.getElementById("buttonSuspendu");
   buttonPlateau = document.getElementById("buttonPlateau");
   buttonCadre = document.getElementById("buttonCadre");
+  buttonEvier = document.getElementById("buttonEvier");
   blocsDiv = document.getElementById("blocs");
 
   selectListBlocs=document.getElementById("selectListBlocs");
@@ -4522,6 +4757,7 @@ function getHTMLElements () {
   buttonTiroirs = document.getElementById("buttonTiroirs");
   buttonEtageres = document.getElementById("buttonEtageres");
   buttonPlein = document.getElementById("buttonPlein");
+  buttonFour = document.getElementById("buttonFour");
   divPortes = document.getElementById("divPortes");
   divEtageres = document.getElementById("divEtageres");
   buttonUnePorte = document.getElementById("buttonUnePorte");
@@ -4657,11 +4893,14 @@ function initializeInterface() {
 
   buttonTourner.addEventListener("click",function () {selectedMeuble.tourner(); refreshInterfaceMeuble()});
 
+  buttonFrigo.addEventListener("click",getFrigo);
+
   buttonSocle.addEventListener("click", function () { switchSocle(indiceCurrentMeuble) });
   buttonPied.addEventListener("click", function () { switchPied(indiceCurrentMeuble) });
   buttonSuspendu.addEventListener("click", function () { switchSuspendu() });  //à virer
   buttonPlateau.addEventListener("click", function () { switchPlateau(indiceCurrentMeuble) });
   buttonCadre.addEventListener("click", function () { switchCadre(indiceCurrentMeuble) });
+  buttonEvier.addEventListener("click", function () { switchEvier(indiceCurrentMeuble) });
   //context menu meuble
   document.getElementById("switchVertical").addEventListener("click",function() {switchVertical()});
   document.getElementById("switchPlateau").addEventListener("click",function() {switchPlateau(indiceCurrentMeuble)});
@@ -4670,6 +4909,37 @@ function initializeInterface() {
   document.getElementById("switchPied").addEventListener("click",function() {switchPied()});
 
   //functions meubles
+  function getFrigo() {
+    if (frigo==undefined) {
+      frigo=new ObjetStatique(meubles.length,"frigo",70,187,65);
+      frigo.initialize("frigo.glb");
+      //frigo.type="frigo";
+      /* frigo.largeur=70;
+      frigo.hauteur=187;
+      frigo.profondeur=65; */
+
+      updateAllSelectable();
+      selectableMeuble[1].visible=true;
+      frigo.recaleDansPiece();
+      frigo.recale("X");
+      frigo.placeMeuble();
+      meubles[meubles.length]=frigo;
+      /* select(frigo);
+      indiceCurrentMeuble=meubles.length;
+      indiceCurrentBloc=-1;
+      selectedMeuble=frigo; */
+    }
+    else {
+      scene.remove(frigo.root);
+      meubles.splice(frigo.numero,1);
+      recomputeMeublesId;
+      frigo=undefined;
+      updateScene();
+    }
+    refreshInterface();
+    //refreshButtonFrigo();
+  }
+
   function switchVertical() {
     if (selectedMeuble.disposition == "vertical") selectedMeuble.disposition = "horizontal";
     else selectedMeuble.disposition = "vertical";
@@ -4798,6 +5068,12 @@ function initializeInterface() {
   function switchCadre(num) {
     meubles[num].hasCadre=!meubles[num].hasCadre;
     refreshButtonCadre(num);
+    meubles[num].update();
+  }
+
+  function switchEvier(num) {
+    meubles[num].hasEvier=!meubles[num].hasEvier;
+    refreshButtonEvier(num);
     meubles[num].update();
   }
 
@@ -4972,6 +5248,7 @@ function initializeInterface() {
   buttonTiroirs.addEventListener("click", switchTiroirs);
   buttonEtageres.addEventListener("click", switchEtageres);
   buttonPlein.addEventListener("click", switchPanneau);
+  buttonFour.addEventListener("click", switchFour);
   buttonSousMeuble.addEventListener("click", switchSousMeuble);
 
   //contexte menu contenu
@@ -5019,6 +5296,7 @@ function initializeInterface() {
   function switchEtageres() { setValueOnSelection("type","etageres"); }
   function switchPanneau() { setValueOnSelection("type","panneau"); }
   function switchSousMeuble() { setValueOnSelection("type","sousMeuble"); }
+  function switchFour() { setValueOnSelection("type","four"); }
   function switchUnePorte() { setValueOnSelection("nombrePortes","1"); }
   function switchDeuxPortes() { setValueOnSelection("nombrePortes","2"); }
   function switchPorteGauche() { setValueOnSelection("ouverturePorte","gauche"); }
@@ -5412,8 +5690,27 @@ function initializePoignees() {
   poigneeGroup.add(poignee);
 }
 
+const largeurEvier = 100;
+const profondeurEvier = 48;
+const hauteurEvier = 50;
 let evierGroup = new THREE.Group();
-let evierBrush = new THREE.Group();
+let evierGeometries = new THREE.Group();
+let evierBrushGeometry = new THREE.BoxGeometry(largeurEvier,10000,profondeurEvier);
+let evierHandleGeometry = new THREE.BoxGeometry(largeurEvier,2,profondeurEvier);
+let evierHandle = new THREE.Mesh(evierHandleGeometry,materialHelper.clone());
+let evierBrush = new THREE.Mesh(evierBrushGeometry,materialHelper);
+evierBrush.visible=false;
+evierHandle.material.visible=false;
+evierHandle.name="evierHandle";
+evierHandle.shortName="handleBloc";
+evierBrush.name="evierBrush";
+console.log(evierHandle);
+evierHandle.add(evierBrush);
+evierHandle.add(evierGeometries);
+evierGeometries.visible=true;
+evierHandle.isSelected=false;
+evierGroup.add(evierHandle);
+evierGeometries.position.set(0,0,profondeurEvier/2+2);
 
 function initializeEvier() {
   let name="/src/evier.glb";
@@ -5421,21 +5718,15 @@ function initializeEvier() {
   loader.load(name, function (gltf) {
     let evierRoot = gltf.scene.getObjectByName('evier');
     for (var i = evierRoot.children.length; i > 0; i--) {
-      evierGroup.add(evierRoot.children[i - 1]);
+      evierGeometries.add(evierRoot.children[i - 1]);
     }
-    evierGroup.scale.set(100, 100, 100);
+    evierGeometries.scale.set(100, 100, 100);
   });
-  name="/src/evier_brush.glb";
-  loader.load(name, function (gltf) {
-    let evierBrushRoot = gltf.scene.getObjectByName('cube');
-    for (var i = evierRoot.children.length; i > 0; i--) {
-      evierBrush.add(evierBrushRoot.children[i - 1]);
-    }
-    evierBrush.scale.set(100, 100, 100);
-  });
+  //scene.add(evierHandle);
 }
 
 let fourGroup = new THREE.Group();
+fourGroup.name="four";
 function initializeFour() {
   let name="/src/four.glb";
   const loader = new GLTFLoader();
@@ -5496,8 +5787,6 @@ function refreshInterface() {
   refreshInterfaceSousMeuble();
   refreshInterfaceAspect();  
 }
-
-
 
 
 function clearInterfaceSousMeuble() {
@@ -5846,8 +6135,10 @@ function createInterfaceMeuble() { // Rebuild HTML content for list meubles
 
   refreshCheckboxMeuble();
   refreshButtonTourner();
+  refreshButtonFrigo();
   refreshButtonPlateau();
   refreshButtonCadre();
+  refreshButtonEvier();
   refreshButtonFixationGroup();
   refreshButtonDelete();
   refreshButtonDupliquerMeuble();
@@ -5928,11 +6219,14 @@ function refreshButtonTourner() {
     else buttonTourner.disabled=false;
 }
 
+function refreshButtonFrigo() { if (frigo!=undefined) {buttonFrigo.className="buttonOn"} else {buttonFrigo.className="buttonOff"}}
+
 function refreshButtonPlateau() { if (selectedMeuble.hasPlateau) {buttonPlateau.className="buttonOn"} else {buttonPlateau.className="buttonOff"}}
 function refreshButtonCadre() { if (selectedMeuble.hasCadre) {buttonCadre.className="buttonOn"} else {buttonCadre.className="buttonOff"}}
 function refreshButtonSocle() { if (selectedMeuble.hasSocle) {buttonSocle.className="buttonOn"} else {buttonSocle.className="buttonOff"}}
 function refreshButtonPied() { if (selectedMeuble.hasPied) {buttonPied.className="buttonOn"} else {buttonPied.className="buttonOff"} }
 function refreshButtonSuspendu() { if (selectedMeuble.IsSuspendu) {buttonSuspendu.className="buttonOn"} else {buttonSuspendu.className="buttonOff"}}
+function refreshButtonEvier() { if (selectedMeuble.hasEvier) {buttonEvier.className="buttonOn"} else {buttonEvier.className="buttonOff"}}
 
 function refreshButtonFixationGroup() {
   refreshButtonSocle();
@@ -6065,6 +6359,7 @@ function refreshInterfaceContenu() {
     divEtageres.style.display = "none";
   }
   if (object.type == "panneau") { buttonPlein.className = "buttonOn" } else { buttonPlein.className = "buttonOff" }
+  if (object.type == "four") { buttonFour.className = "buttonOn" } else { buttonFour.className = "buttonOff" }
   if (object.nombrePortes == "1") {
     buttonUnePorte.className = "buttonOn";
     sensOuverture.style.display="inline";
